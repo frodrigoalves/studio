@@ -62,6 +62,16 @@ export default function AdminDashboard() {
   useEffect(() => {
     const allRecords = getStoredRecords();
     setRecords(allRecords);
+
+    const handleStorageChange = () => {
+        setRecords(getStoredRecords());
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+        window.removeEventListener('storage', handleStorageChange);
+    };
+
   }, []);
 
   useEffect(() => {
@@ -92,13 +102,21 @@ export default function AdminDashboard() {
     }
 
     const filteredRecords = records.filter(r => {
-        const recordDate = parseISO(r.date);
-        return recordDate >= startDate;
+        try {
+            const recordDate = parseISO(r.date);
+            return recordDate >= startDate;
+        } catch {
+            return false;
+        }
     });
 
     const previousRecords = records.filter(r => {
-        const recordDate = parseISO(r.date);
-        return recordDate >= previousStartDate && recordDate <= previousEndDate;
+        try {
+            const recordDate = parseISO(r.date);
+            return recordDate >= previousStartDate && recordDate <= previousEndDate;
+        } catch {
+            return false;
+        }
     });
     
     // Calculate total KM for the current period
@@ -122,7 +140,7 @@ export default function AdminDashboard() {
                     day.setDate(day.getDate() + i);
                     const dayString = format(day, 'EEE', { locale: ptBR });
                     const total = filteredRecords
-                        .filter(r => r.status === 'Finalizado' && format(parseISO(r.date), 'EEE', { locale: ptBR }) === dayString)
+                        .filter(r => r.status === 'Finalizado' && format(parseISO(r.date), 'EEE', { locale: ptBR }) === dayString && r.kmEnd && r.kmStart)
                         .reduce((sum, r) => sum + (r.kmEnd! - r.kmStart!), 0);
                     return { name: dayString, total: total };
                 });
@@ -131,15 +149,21 @@ export default function AdminDashboard() {
                     {
                       name: "Semana Anterior",
                       total: records.filter(r => {
+                          if (r.status !== 'Finalizado' || !r.kmEnd || !r.kmStart) return false;
                           const recordDate = parseISO(r.date);
-                          return r.status === 'Finalizado' && recordDate >= startOfWeek(subWeeks(now, 1)) && recordDate <= endOfWeek(subWeeks(now, 1));
+                          const start = startOfWeek(subWeeks(now, 1), { locale: ptBR });
+                          const end = endOfWeek(subWeeks(now, 1), { locale: ptBR });
+                          return recordDate >= start && recordDate <= end;
                       }).reduce((sum, r) => sum + (r.kmEnd! - r.kmStart!), 0)
                     },
                     {
                       name: "Semana Atual",
                       total: records.filter(r => {
-                          const recordDate = parseISO(r.date);
-                          return r.status === 'Finalizado' && recordDate >= startOfWeek(now) && recordDate <= endOfWeek(now);
+                           if (r.status !== 'Finalizado' || !r.kmEnd || !r.kmStart) return false;
+                           const recordDate = parseISO(r.date);
+                           const start = startOfWeek(now, { locale: ptBR });
+                           const end = endOfWeek(now, { locale: ptBR });
+                           return recordDate >= start && recordDate <= end;
                       }).reduce((sum, r) => sum + (r.kmEnd! - r.kmStart!), 0)
                     }
                 ];
@@ -148,7 +172,7 @@ export default function AdminDashboard() {
                     const month = subMonths(now, 5 - i);
                     const monthString = format(month, 'MMM', { locale: ptBR });
                     const total = records
-                        .filter(r => r.status === 'Finalizado' && format(parseISO(r.date), 'MMM', { locale: ptBR }) === monthString)
+                        .filter(r => r.status === 'Finalizado' && r.kmEnd && r.kmStart && format(parseISO(r.date), 'MMM', { locale: ptBR }) === monthString)
                         .reduce((sum, r) => sum + (r.kmEnd! - r.kmStart!), 0);
                     return { name: monthString, total: total };
                 });
@@ -167,7 +191,7 @@ export default function AdminDashboard() {
         }, {} as Record<string, number>);
 
     const topVehicles = Object.entries(vehicleKm)
-        .map(([name, km]) => ({ name, km, fill: `hsl(var(--chart-${Math.floor(Math.random() * 5) + 1}))`}))
+        .map(([name, km]) => ({ name, km, fill: `var(--color-km)`}))
         .sort((a, b) => b.km - a.km)
         .slice(0, 5);
 
@@ -185,7 +209,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-6">
-       <div className="flex items-center justify-between">
+       <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold">Análise de Desempenho</h1>
         <div className="flex gap-2">
             <Button variant={filter === 'semanal' ? 'default' : 'outline'} onClick={() => setFilter('semanal')}>Semanal</Button>
@@ -196,7 +220,7 @@ export default function AdminDashboard() {
       <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">KM Total ({filter})</CardTitle>
+            <h3 className="text-sm font-medium">KM Total ({filter})</h3>
             <GaugeCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -208,7 +232,7 @@ export default function AdminDashboard() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Alertas de Preenchimento</CardTitle>
+            <h3 className="text-sm font-medium">Alertas de Preenchimento</h3>
             <AlertTriangle className="h-4 w-4 text-destructive" />
           </CardHeader>
           <CardContent>
@@ -224,7 +248,7 @@ export default function AdminDashboard() {
             <CardDescription>Total de quilômetros rodados no período.</CardDescription>
           </CardHeader>
           <CardContent className="pl-2">
-            <ChartContainer config={chartConfig} className="h-[300px] w-full">
+            <ChartContainer config={chartConfig} className="h-[250px] w-full">
               <LineChart data={dashboardData.performanceData} margin={{ left: 12, right: 12 }}>
                 <CartesianGrid vertical={false} />
                 <XAxis dataKey={xAxisKey} tickLine={false} axisLine={false} tickMargin={8} />
@@ -241,7 +265,7 @@ export default function AdminDashboard() {
             <CardDescription>Veículos que mais rodaram no período.</CardDescription>
           </CardHeader>
           <CardContent>
-             <ChartContainer config={chartConfig} className="h-[300px] w-full">
+             <ChartContainer config={chartConfig} className="h-[250px] w-full">
                 <BarChart data={dashboardData.topVehicles} layout="vertical" margin={{ left: 10 }}>
                     <CartesianGrid horizontal={false} />
                     <YAxis dataKey="name" type="category" tickLine={false} axisLine={false} tickMargin={8} width={80} />
