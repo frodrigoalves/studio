@@ -193,7 +193,7 @@ export default function AdminDashboard() {
             <Button variant={filter === 'mensal' ? 'default' : 'outline'} onClick={() => setFilter('mensal')}>Mensal</Button>
         </div>
       </div>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">KM Total ({filter})</CardTitle>
@@ -217,7 +217,7 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
       </div>
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+      <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-7">
         <Card className="lg:col-span-4">
           <CardHeader>
             <CardTitle>Desempenho Geral</CardTitle>
@@ -256,5 +256,3 @@ export default function AdminDashboard() {
     </div>
   );
 }
-
-    
