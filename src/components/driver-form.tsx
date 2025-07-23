@@ -59,12 +59,12 @@ export function DriverForm() {
 
   const startForm = useForm<StartTripFormValues>({
     resolver: zodResolver(startTripSchema),
-    defaultValues: { chapa: "", name: "", car: "", initialKm: undefined, odometerPhoto: null },
+    defaultValues: { chapa: "", name: "", car: "", initialKm: "" as any, odometerPhoto: null },
   });
 
   const endForm = useForm<EndTripFormValues>({
     resolver: zodResolver(endTripSchema),
-    defaultValues: { chapa: "", name: "Preenchido automaticamente", car: "Preenchido automaticamente", finalKm: undefined, odometerPhoto: null },
+    defaultValues: { chapa: "", name: "Preenchido automaticamente", car: "Preenchido automaticamente", finalKm: "" as any, odometerPhoto: null },
   });
 
   const handleChapaChange = useCallback(async (chapa: string) => {
@@ -102,7 +102,7 @@ export function DriverForm() {
       variant: "default",
       className: "bg-accent text-accent-foreground",
     });
-    startForm.reset({ chapa: "", name: "", car: "", initialKm: undefined, odometerPhoto: null });
+    startForm.reset({ chapa: "", name: "", car: "", initialKm: "" as any, odometerPhoto: null });
   }
 
   async function onEndSubmit(data: EndTripFormValues) {
@@ -111,7 +111,7 @@ export function DriverForm() {
       title: "Viagem finalizada com sucesso!",
       description: "Seus dados foram atualizados.",
     });
-    endForm.reset({ chapa: "", name: "Preenchido automaticamente", car: "Preenchido automaticamente", finalKm: undefined, odometerPhoto: null });
+    endForm.reset({ chapa: "", name: "Preenchido automaticamente", car: "Preenchido automaticamente", finalKm: "" as any, odometerPhoto: null });
   }
 
   return (
