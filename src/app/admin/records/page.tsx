@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -7,6 +8,17 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { MoreHorizontal, PlusCircle, FileUp } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface Record {
   id: number;
@@ -37,11 +49,21 @@ const getStoredRecords = (): Record[] => {
 const setStoredRecords = (records: Record[]) => {
     if (typeof window !== 'undefined') {
         localStorage.setItem('tripRecords', JSON.stringify(records));
+        window.dispatchEvent(new Event('storage'));
     }
 };
 
 export default function RecordsPage() {
     const [records, setRecords] = useState<Record[]>([]);
+    const [isAddDialogOpen, setAddDialogOpen] = useState(false);
+    const [newRecord, setNewRecord] = useState<Omit<Record, 'id' | 'status'>>({
+        date: new Date().toISOString().split('T')[0],
+        driver: '',
+        car: '',
+        plate: '',
+        kmStart: null,
+        kmEnd: null,
+    });
 
     useEffect(() => {
         setRecords(getStoredRecords());
@@ -56,6 +78,28 @@ export default function RecordsPage() {
         };
     }, []);
 
+    const handleAddRecord = () => {
+      const newRecordWithId: Record = {
+        ...newRecord,
+        id: Date.now(),
+        kmStart: newRecord.kmStart ? Number(newRecord.kmStart) : null,
+        kmEnd: newRecord.kmEnd ? Number(newRecord.kmEnd) : null,
+        status: newRecord.kmEnd ? "Finalizado" : "Em Andamento",
+      };
+      const updatedRecords = [...records, newRecordWithId];
+      setRecords(updatedRecords);
+      setStoredRecords(updatedRecords);
+      setAddDialogOpen(false);
+      setNewRecord({
+        date: new Date().toISOString().split('T')[0],
+        driver: '',
+        car: '',
+        plate: '',
+        kmStart: null,
+        kmEnd: null,
+      });
+    }
+
   return (
     <Card>
       <CardHeader>
@@ -69,10 +113,58 @@ export default function RecordsPage() {
                     <FileUp className="mr-2 h-4 w-4" />
                     Exportar
                 </Button>
-                <Button>
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Adicionar Registro
-                </Button>
+                <Dialog open={isAddDialogOpen} onOpenChange={setAddDialogOpen}>
+                    <DialogTrigger asChild>
+                        <Button>
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            Adicionar Registro
+                        </Button>
+                    </DialogTrigger>
+                    <DialogContent className="sm:max-w-[480px]">
+                        <DialogHeader>
+                            <DialogTitle>Adicionar Novo Registro</DialogTitle>
+                            <DialogDescription>
+                                Preencha os detalhes da viagem manualmente.
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="grid gap-4 py-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="driver">Motorista</Label>
+                                    <Input id="driver" value={newRecord.driver} onChange={(e) => setNewRecord({...newRecord, driver: e.target.value})} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="plate">Chapa</Label>
+                                    <Input id="plate" value={newRecord.plate} onChange={(e) => setNewRecord({...newRecord, plate: e.target.value})} />
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                               <div className="space-y-2">
+                                    <Label htmlFor="car">Veículo</Label>
+                                    <Input id="car" value={newRecord.car} onChange={(e) => setNewRecord({...newRecord, car: e.target.value})} />
+                                </div>
+                               <div className="space-y-2">
+                                    <Label htmlFor="date">Data</Label>
+                                    <Input id="date" type="date" value={newRecord.date} onChange={(e) => setNewRecord({...newRecord, date: e.target.value})} />
+                                </div>
+                            </div>
+                             <div className="grid grid-cols-2 gap-4">
+                               <div className="space-y-2">
+                                    <Label htmlFor="kmStart">KM Início</Label>
+                                    <Input id="kmStart" type="number" value={newRecord.kmStart ?? ''} onChange={(e) => setNewRecord({...newRecord, kmStart: e.target.valueAsNumber})} />
+                                </div>
+                               <div className="space-y-2">
+                                    <Label htmlFor="kmEnd">KM Fim</Label>
+                                    <Input id="kmEnd" type="number" value={newRecord.kmEnd ?? ''} onChange={(e) => setNewRecord({...newRecord, kmEnd: e.target.valueAsNumber})} />
+                                </div>
+                            </div>
+                        </div>
+                        <DialogFooter>
+                            <Button variant="outline" onClick={() => setAddDialogOpen(false)}>Cancelar</Button>
+                            <Button onClick={handleAddRecord}>Salvar Registro</Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
             </div>
         </div>
       </CardHeader>
@@ -132,3 +224,5 @@ export default function RecordsPage() {
     </Card>
   );
 }
+
+    
