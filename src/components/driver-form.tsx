@@ -62,8 +62,8 @@ const endFormSchema = z.object({
 type StartFormValues = z.infer<typeof startFormSchema>;
 type EndFormValues = z.infer<typeof endFormSchema>;
 
-const initialStartValues: StartFormValues = { chapa: "", name: "", car: "", initialKm: 0, startOdometerPhoto: null };
-const initialEndValues: EndFormValues = { chapa: "", name: "", car: "", finalKm: 0, endOdometerPhoto: null };
+const initialStartValues: Omit<StartFormValues, 'initialKm'> & { initialKm: string | number } = { chapa: "", name: "", car: "", initialKm: '', startOdometerPhoto: null };
+const initialEndValues: Omit<EndFormValues, 'finalKm'> & { finalKm: string | number } = { chapa: "", name: "", car: "", finalKm: '', endOdometerPhoto: null };
 
 
 export function DriverForm() {
@@ -281,7 +281,7 @@ export function DriverForm() {
                     <FormItem>
                       <FormLabel>Km Inicial</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="123456" {...field} onChange={e => field.onChange(e.target.valueAsNumber)} />
+                        <Input type="number" placeholder="123456" {...field} value={field.value || ''} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -374,7 +374,7 @@ export function DriverForm() {
                     <FormItem>
                       <FormLabel>KM Final</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="123567" {...field} onChange={e => field.onChange(e.target.valueAsNumber)} />
+                        <Input type="number" placeholder="123567" {...field} value={field.value || ''} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -412,5 +412,3 @@ export function DriverForm() {
     </Card>
   );
 }
-
-    
