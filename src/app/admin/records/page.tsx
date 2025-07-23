@@ -1,3 +1,6 @@
+"use client";
+
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -5,7 +8,18 @@ import { Badge } from "@/components/ui/badge";
 import { MoreHorizontal, PlusCircle, FileUp } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
-const records = [
+interface Record {
+  id: number;
+  date: string;
+  driver: string;
+  car: string;
+  plate: string;
+  kmStart: number | null;
+  kmEnd: number | null;
+  status: "Finalizado" | "Em Andamento";
+}
+
+const initialRecords: Record[] = [
   { id: 1, date: "2024-05-20", driver: "João Silva", car: "Fiat Argo", plate: "A123", kmStart: 12345, kmEnd: 12445, status: "Finalizado" },
   { id: 2, date: "2024-05-20", driver: "Maria Oliveira", car: "VW Gol", plate: "B456", kmStart: 54321, kmEnd: 54401, status: "Finalizado" },
   { id: 3, date: "2024-05-21", driver: "Carlos Pereira", car: "Hyundai HB20", plate: "C789", kmStart: 87654, kmEnd: null, status: "Em Andamento" },
@@ -14,7 +28,34 @@ const records = [
   { id: 6, date: "2024-05-23", driver: "Pedro Martins", car: "Ford Ka", plate: "E212", kmStart: 98765, kmEnd: null, status: "Em Andamento" },
 ];
 
+const getStoredRecords = (): Record[] => {
+    if (typeof window === 'undefined') return initialRecords;
+    const stored = localStorage.getItem('tripRecords');
+    return stored ? JSON.parse(stored) : initialRecords;
+};
+
+const setStoredRecords = (records: Record[]) => {
+    if (typeof window !== 'undefined') {
+        localStorage.setItem('tripRecords', JSON.stringify(records));
+    }
+};
+
 export default function RecordsPage() {
+    const [records, setRecords] = useState<Record[]>([]);
+
+    useEffect(() => {
+        setRecords(getStoredRecords());
+
+        const handleStorageChange = () => {
+            setRecords(getStoredRecords());
+        };
+        
+        window.addEventListener('storage', handleStorageChange);
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+        };
+    }, []);
+
   return (
     <Card>
       <CardHeader>
@@ -60,7 +101,7 @@ export default function RecordsPage() {
                 <TableCell>
                   <Badge variant="secondary">{record.plate}</Badge>
                 </TableCell>
-                <TableCell className="text-right">{record.kmStart}</TableCell>
+                <TableCell className="text-right">{record.kmStart ?? "—"}</TableCell>
                 <TableCell className="text-right">{record.kmEnd ?? "—"}</TableCell>
                 <TableCell className="text-center">
                   <Badge variant={record.status === "Finalizado" ? "default" : "outline"} className={record.status === "Finalizado" ? "bg-accent/80 text-accent-foreground" : ""}>
