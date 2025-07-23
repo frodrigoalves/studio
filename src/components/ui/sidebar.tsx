@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -194,22 +195,18 @@ const Sidebar = React.forwardRef<
 
     if (isMobile) {
       return (
-        <Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
+        <Sheet open={openMobile} onOpenChange={setOpenMobile}>
           <SheetContent
-            data-sidebar="sidebar"
-            data-mobile="true"
-            className="w-[--sidebar-width] bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
-            style={
-              {
-                "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
-              } as React.CSSProperties
-            }
             side={side}
+            className="w-[var(--sidebar-width-mobile)] p-0"
+            style={{ '--sidebar-width-mobile': SIDEBAR_WIDTH_MOBILE } as React.CSSProperties}
           >
-            <SheetHeader className="p-2 absolute">
+             <SheetHeader className="p-0 absolute">
               <SheetTitle className="sr-only">Menu de Navegação</SheetTitle>
             </SheetHeader>
-            <div className="flex h-full w-full flex-col">{children}</div>
+            <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
+                {children}
+            </div>
           </SheetContent>
         </Sheet>
       )
@@ -764,3 +761,5 @@ export {
   SidebarTrigger,
   useSidebar,
 }
+
+    
