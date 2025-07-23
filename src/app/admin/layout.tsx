@@ -1,3 +1,6 @@
+
+'use client';
+
 import Link from "next/link";
 import {
   SidebarProvider,
@@ -14,12 +17,20 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { LayoutDashboard, Settings, FileText, LogOut, Bus, Sparkles } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const router = useRouter();
+
+  const handleLogout = () => {
+    // Here you can add any logic to clear user session, etc.
+    router.push('/login');
+  };
+
   return (
     <SidebarProvider>
       <Sidebar>
@@ -80,7 +91,7 @@ export default function AdminLayout({
               <p className="font-semibold">Admin</p>
               <p className="text-xs text-muted-foreground">admin@fleet.com</p>
             </div>
-            <Button variant="ghost" size="icon" className="ml-auto group-data-[collapsible=icon]:hidden">
+            <Button variant="ghost" size="icon" className="ml-auto group-data-[collapsible=icon]:hidden" onClick={handleLogout}>
               <LogOut />
             </Button>
           </div>
