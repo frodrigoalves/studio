@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useCallback } from "react";
+import { useState, useTransition, useCallback, useRef, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -52,6 +52,10 @@ const endTripSchema = z.object({
 type StartTripFormValues = z.infer<typeof startTripSchema>;
 type EndTripFormValues = z.infer<typeof endTripSchema>;
 
+const initialStartValues = { chapa: "", name: "", car: "", initialKm: undefined, odometerPhoto: null };
+const initialEndValues = { chapa: "", name: "Preenchido automaticamente", car: "Preenchido automaticamente", finalKm: undefined, odometerPhoto: null };
+
+
 export function DriverForm() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("start");
@@ -59,12 +63,12 @@ export function DriverForm() {
 
   const startForm = useForm<StartTripFormValues>({
     resolver: zodResolver(startTripSchema),
-    defaultValues: { chapa: "", name: "", car: "", initialKm: "" as any, odometerPhoto: null },
+    defaultValues: initialStartValues,
   });
 
   const endForm = useForm<EndTripFormValues>({
     resolver: zodResolver(endTripSchema),
-    defaultValues: { chapa: "", name: "Preenchido automaticamente", car: "Preenchido automaticamente", finalKm: "" as any, odometerPhoto: null },
+    defaultValues: initialEndValues,
   });
 
   const handleChapaChange = useCallback(async (chapa: string) => {
@@ -102,7 +106,7 @@ export function DriverForm() {
       variant: "default",
       className: "bg-accent text-accent-foreground",
     });
-    startForm.reset({ chapa: "", name: "", car: "", initialKm: "" as any, odometerPhoto: null });
+    startForm.reset(initialStartValues);
   }
 
   async function onEndSubmit(data: EndTripFormValues) {
@@ -111,7 +115,7 @@ export function DriverForm() {
       title: "Viagem finalizada com sucesso!",
       description: "Seus dados foram atualizados.",
     });
-    endForm.reset({ chapa: "", name: "Preenchido automaticamente", car: "Preenchido automaticamente", finalKm: "" as any, odometerPhoto: null });
+    endForm.reset(initialEndValues);
   }
 
   return (
@@ -182,7 +186,7 @@ export function DriverForm() {
                     <FormItem>
                       <FormLabel>KM Inicial</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="123456" {...field} />
+                        <Input type="number" placeholder="123456" {...field} value={field.value ?? ""} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -270,7 +274,7 @@ export function DriverForm() {
                     <FormItem>
                       <FormLabel>KM Final</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="123567" {...field} />
+                        <Input type="number" placeholder="123567" {...field} value={field.value ?? ""} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
