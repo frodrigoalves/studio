@@ -2,11 +2,12 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { MoreHorizontal, PlusCircle, FileUp } from "lucide-react";
+import { MoreHorizontal, PlusCircle, FileUp, Camera, AlertCircle } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import {
   Dialog,
@@ -29,15 +30,17 @@ interface Record {
   kmStart: number | null;
   kmEnd: number | null;
   status: "Finalizado" | "Em Andamento";
+  startOdometerPhoto: string | null;
+  endOdometerPhoto: string | null;
 }
 
 const initialRecords: Record[] = [
-  { id: 1, date: "2024-05-20", driver: "João Silva", car: "Fiat Argo", plate: "A123", kmStart: 12345, kmEnd: 12445, status: "Finalizado" },
-  { id: 2, date: "2024-05-20", driver: "Maria Oliveira", car: "VW Gol", plate: "B456", kmStart: 54321, kmEnd: 54401, status: "Finalizado" },
-  { id: 3, date: "2024-05-21", driver: "Carlos Pereira", car: "Hyundai HB20", plate: "C789", kmStart: 87654, kmEnd: null, status: "Em Andamento" },
-  { id: 4, date: "2024-05-21", driver: "João Silva", car: "Fiat Argo", plate: "A123", kmStart: 12500, kmEnd: 12600, status: "Finalizado" },
-  { id: 5, date: "2024-05-22", driver: "Ana Costa", car: "Chevrolet Onix", plate: "D101", kmStart: 34567, kmEnd: 34667, status: "Finalizado" },
-  { id: 6, date: "2024-05-23", driver: "Pedro Martins", car: "Ford Ka", plate: "E212", kmStart: 98765, kmEnd: null, status: "Em Andamento" },
+  { id: 1, date: "2024-05-20", driver: "João Silva", car: "Fiat Argo", plate: "A123", kmStart: 12345, kmEnd: 12445, status: "Finalizado", startOdometerPhoto: null, endOdometerPhoto: null },
+  { id: 2, date: "2024-05-20", driver: "Maria Oliveira", car: "VW Gol", plate: "B456", kmStart: 54321, kmEnd: 54401, status: "Finalizado", startOdometerPhoto: null, endOdometerPhoto: null },
+  { id: 3, date: "2024-05-21", driver: "Carlos Pereira", car: "Hyundai HB20", plate: "C789", kmStart: 87654, kmEnd: null, status: "Em Andamento", startOdometerPhoto: null, endOdometerPhoto: null },
+  { id: 4, date: "2024-05-21", driver: "João Silva", car: "Fiat Argo", plate: "A123", kmStart: 12500, kmEnd: 12600, status: "Finalizado", startOdometerPhoto: null, endOdometerPhoto: null },
+  { id: 5, date: "2024-05-22", driver: "Ana Costa", car: "Chevrolet Onix", plate: "D101", kmStart: 34567, kmEnd: 34667, status: "Finalizado", startOdometerPhoto: null, endOdometerPhoto: null },
+  { id: 6, date: "2024-05-23", driver: "Pedro Martins", car: "Ford Ka", plate: "E212", kmStart: 98765, kmEnd: null, status: "Em Andamento", startOdometerPhoto: null, endOdometerPhoto: null },
 ];
 
 const getStoredRecords = (): Record[] => {
@@ -56,7 +59,10 @@ const setStoredRecords = (records: Record[]) => {
 export default function RecordsPage() {
     const [records, setRecords] = useState<Record[]>([]);
     const [isAddDialogOpen, setAddDialogOpen] = useState(false);
-    const [newRecord, setNewRecord] = useState<Omit<Record, 'id' | 'status'>>({
+    const [isPhotosDialogOpen, setPhotosDialogOpen] = useState(false);
+    const [selectedRecord, setSelectedRecord] = useState<Record | null>(null);
+
+    const [newRecord, setNewRecord] = useState<Omit<Record, 'id' | 'status' | 'startOdometerPhoto' | 'endOdometerPhoto'>>({
         date: new Date().toISOString().split('T')[0],
         driver: '',
         car: '',
@@ -85,6 +91,8 @@ export default function RecordsPage() {
         kmStart: newRecord.kmStart ? Number(newRecord.kmStart) : null,
         kmEnd: newRecord.kmEnd ? Number(newRecord.kmEnd) : null,
         status: newRecord.kmEnd ? "Finalizado" : "Em Andamento",
+        startOdometerPhoto: null,
+        endOdometerPhoto: null,
       };
       const updatedRecords = [...records, newRecordWithId];
       setRecords(updatedRecords);
@@ -100,7 +108,13 @@ export default function RecordsPage() {
       });
     }
 
+    const openPhotosDialog = (record: Record) => {
+        setSelectedRecord(record);
+        setPhotosDialogOpen(true);
+    };
+
   return (
+    <>
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
@@ -124,7 +138,7 @@ export default function RecordsPage() {
                         <DialogHeader>
                             <DialogTitle>Adicionar Novo Registro</DialogTitle>
                             <DialogDescription>
-                                Preencha os detalhes da viagem manualmente.
+                                Preencha os detalhes da viagem manualmente. Esta opção não inclui upload de fotos.
                             </DialogDescription>
                         </DialogHeader>
                         <div className="grid gap-4 py-4">
@@ -211,7 +225,7 @@ export default function RecordsPage() {
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>Ações</DropdownMenuLabel>
                       <DropdownMenuItem>Editar</DropdownMenuItem>
-                      <DropdownMenuItem>Ver Fotos</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => openPhotosDialog(record)}>Ver Fotos</DropdownMenuItem>
                       <DropdownMenuItem className="text-destructive focus:text-destructive-foreground focus:bg-destructive">Excluir</DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -222,7 +236,57 @@ export default function RecordsPage() {
         </Table>
       </CardContent>
     </Card>
+
+    <Dialog open={isPhotosDialogOpen} onOpenChange={setPhotosDialogOpen}>
+        <DialogContent className="sm:max-w-[80vw] md:max-w-[60vw] lg:max-w-[50vw]">
+            <DialogHeader>
+                <DialogTitle>Fotos do Odômetro</DialogTitle>
+                <DialogDescription>
+                    Fotos registradas para a viagem de {selectedRecord?.driver} com a chapa {selectedRecord?.plate}.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+                <div className="space-y-2">
+                    <h4 className="font-semibold text-center">Início da Viagem</h4>
+                    {selectedRecord?.startOdometerPhoto ? (
+                        <div className="relative w-full aspect-video rounded-md overflow-hidden border">
+                            <Image src={selectedRecord.startOdometerPhoto} alt="Odômetro Início" layout="fill" objectFit="contain" />
+                        </div>
+                    ) : (
+                         <div className="aspect-video flex flex-col items-center justify-center bg-muted rounded-md text-muted-foreground">
+                            <Camera className="h-12 w-12 mb-2" />
+                            <span>Nenhuma foto encontrada.</span>
+                        </div>
+                    )}
+                </div>
+                 <div className="space-y-2">
+                    <h4 className="font-semibold text-center">Fim da Viagem</h4>
+                     {selectedRecord?.endOdometerPhoto ? (
+                        <div className="relative w-full aspect-video rounded-md overflow-hidden border">
+                            <Image src={selectedRecord.endOdometerPhoto} alt="Odômetro Fim" layout="fill" objectFit="contain" />
+                        </div>
+                    ) : (
+                         <div className="aspect-video flex flex-col items-center justify-center bg-muted rounded-md text-muted-foreground">
+                             {selectedRecord?.status === "Finalizado" ? (
+                                <>
+                                    <Camera className="h-12 w-12 mb-2" />
+                                    <span>Nenhuma foto encontrada.</span>
+                                </>
+                             ) : (
+                                <>
+                                    <AlertCircle className="h-12 w-12 mb-2" />
+                                    <span>Viagem ainda em andamento.</span>
+                                </>
+                             )}
+                        </div>
+                    )}
+                </div>
+            </div>
+            <DialogFooter>
+                <Button variant="outline" onClick={() => setPhotosDialogOpen(false)}>Fechar</Button>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
+    </>
   );
 }
-
-    

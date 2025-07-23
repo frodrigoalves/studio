@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useTransition, useCallback } from "react";
@@ -31,6 +32,15 @@ function debounce<T extends (...args: any[]) => void>(func: T, wait: number) {
     timeout = setTimeout(later, wait);
   };
 }
+
+const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = (error) => reject(error);
+    });
+};
 
 const formSchema = z.object({
   chapa: z.string().min(1, "Chapa é obrigatória."),
@@ -78,7 +88,6 @@ export function DriverForm() {
   const handleChapaChange = useCallback(async (chapa: string) => {
     if (chapa.length < 3) return;
     
-    // For the end trip tab, check for an ongoing trip first
     if (activeTab === 'end' && typeof window !== 'undefined') {
         const stored = localStorage.getItem('tripRecords') || '[]';
         const records = JSON.parse(stored);
@@ -87,7 +96,7 @@ export function DriverForm() {
         if (existingRecord) {
             endForm.setValue("name", existingRecord.driver);
             endForm.setValue("car", existingRecord.car);
-            return; // Don't call AI if we found a local record
+            return;
         }
     }
     
@@ -116,7 +125,7 @@ export function DriverForm() {
 
   const debouncedChapaChange = useCallback(debounce(handleChapaChange, 500), [handleChapaChange]);
 
-  const updateLocalStorage = (data: Partial<FormValues>) => {
+  const updateLocalStorage = async (data: Partial<FormValues>) => {
     if (typeof window === 'undefined') return;
     try {
       const stored = localStorage.getItem('tripRecords') || '[]';
@@ -133,6 +142,9 @@ export function DriverForm() {
             });
             return;
         }
+
+        const photoBase64 = data.startOdometerPhoto ? await fileToBase64(data.startOdometerPhoto) : null;
+
         const newRecord = {
           id: Date.now(),
           date: new Date().toISOString().split('T')[0],
@@ -142,6 +154,8 @@ export function DriverForm() {
           kmStart: data.initialKm,
           kmEnd: null,
           status: "Em Andamento",
+          startOdometerPhoto: photoBase64,
+          endOdometerPhoto: null,
         };
         records.push(newRecord);
         toast({
@@ -160,8 +174,12 @@ export function DriverForm() {
             });
             return;
         }
+
+        const photoBase64 = data.endOdometerPhoto ? await fileToBase64(data.endOdometerPhoto) : null;
+
         records[existingRecordIndex].kmEnd = data.finalKm;
         records[existingRecordIndex].status = "Finalizado";
+        records[existingRecordIndex].endOdometerPhoto = photoBase64;
         toast({
           title: "Viagem finalizada com sucesso!",
           description: "Seus dados foram atualizados.",
@@ -183,12 +201,10 @@ export function DriverForm() {
 
 
   function onStartSubmit(data: FormValues) {
-    console.log("Starting trip with data:", data);
     updateLocalStorage(data);
   }
 
   function onEndSubmit(data: FormValues) {
-    console.log("Ending trip with data:", data);
      updateLocalStorage(data);
   }
 
@@ -258,7 +274,7 @@ export function DriverForm() {
                   name="initialKm"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>KM Inicial</FormLabel>
+                      <FormLabel>Km Inicial</FormLabel>
                       <FormControl>
                         <Input type="number" placeholder="123456" {...field} value={field.value ?? ""} onChange={e => field.onChange(e.target.value === '' ? null : e.target.valueAsNumber)} />
                       </FormControl>
