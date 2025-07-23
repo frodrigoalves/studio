@@ -18,7 +18,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import {
   Dialog,
@@ -46,24 +45,27 @@ interface Record {
   endOdometerPhoto: string | null;
 }
 
+// This is now only used if localStorage is completely empty for the very first time.
 const initialRecords: Record[] = [
   { id: 1, date: "2024-05-20", driver: "João Silva", car: "Fiat Argo", plate: "A123", kmStart: 12345, kmEnd: 12445, status: "Finalizado", startOdometerPhoto: null, endOdometerPhoto: null },
   { id: 2, date: "2024-05-20", driver: "Maria Oliveira", car: "VW Gol", plate: "B456", kmStart: 54321, kmEnd: 54401, status: "Finalizado", startOdometerPhoto: null, endOdometerPhoto: null },
   { id: 3, date: "2024-05-21", driver: "Carlos Pereira", car: "Hyundai HB20", plate: "C789", kmStart: 87654, kmEnd: null, status: "Em Andamento", startOdometerPhoto: null, endOdometerPhoto: null },
-  { id: 4, date: "2024-05-21", driver: "João Silva", car: "Fiat Argo", plate: "A123", kmStart: 12500, kmEnd: 12600, status: "Finalizado", startOdometerPhoto: null, endOdometerPhoto: null },
-  { id: 5, date: "2024-05-22", driver: "Ana Costa", car: "Chevrolet Onix", plate: "D101", kmStart: 34567, kmEnd: 34667, status: "Finalizado", startOdometerPhoto: null, endOdometerPhoto: null },
-  { id: 6, date: "2024-05-23", driver: "Pedro Martins", car: "Ford Ka", plate: "E212", kmStart: 98765, kmEnd: null, status: "Em Andamento", startOdometerPhoto: null, endOdometerPhoto: null },
 ];
 
 const getStoredRecords = (): Record[] => {
-    if (typeof window === 'undefined') return initialRecords;
+    if (typeof window === 'undefined') return [];
     const stored = localStorage.getItem('tripRecords');
-    try {
-        const parsed = stored ? JSON.parse(stored) : initialRecords;
-        return Array.isArray(parsed) ? parsed : initialRecords;
-    } catch {
-        return initialRecords;
+    if (stored) {
+        try {
+            const parsed = JSON.parse(stored);
+            return Array.isArray(parsed) ? parsed : [];
+        } catch {
+            return [];
+        }
     }
+    // Only set initial records if local storage is empty
+    localStorage.setItem('tripRecords', JSON.stringify(initialRecords));
+    return initialRecords;
 };
 
 const setStoredRecords = (records: Record[]) => {
@@ -151,12 +153,6 @@ export default function RecordsPage() {
         setEditDialogOpen(false);
         setEditRecordData(null);
         toast({ title: "Sucesso!", description: "Registro atualizado com sucesso." });
-    }
-
-    const handleDeleteRecord = (id: number) => {
-        const updatedRecords = records.filter(record => record.id !== id);
-        setRecords(updatedRecords);
-        setStoredRecords(updatedRecords);
     }
 
     const openPhotosDialog = (record: Record) => {
@@ -292,37 +288,19 @@ export default function RecordsPage() {
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  <AlertDialog>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button aria-haspopup="true" size="icon" variant="ghost">
-                          <MoreHorizontal className="h-4 w-4" />
-                          <span className="sr-only">Toggle menu</span>
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                        <DropdownMenuItem onClick={() => openEditDialog(record)}>Editar</DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => openPhotosDialog(record)}>Ver Fotos</DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <AlertDialogTrigger asChild>
-                          <DropdownMenuItem className="text-destructive focus:text-destructive-foreground focus:bg-destructive">Excluir</DropdownMenuItem>
-                        </AlertDialogTrigger>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Essa ação não pode ser desfeita. Isso excluirá permanentemente o registro de viagem.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => handleDeleteRecord(record.id)} className="bg-destructive hover:bg-destructive/90">Excluir</AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button aria-haspopup="true" size="icon" variant="ghost">
+                        <MoreHorizontal className="h-4 w-4" />
+                        <span className="sr-only">Toggle menu</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                      <DropdownMenuItem onClick={() => openEditDialog(record)}>Editar</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => openPhotosDialog(record)}>Ver Fotos</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </TableCell>
               </TableRow>
             ))}
@@ -458,5 +436,3 @@ export default function RecordsPage() {
     </>
   );
 }
-
-    
