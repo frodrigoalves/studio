@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Settings, FileText, LogOut, Bus } from "lucide-react";
+import { LayoutDashboard, Settings, FileText, LogOut, Bus, Sparkles } from "lucide-react";
 
 export default function AdminLayout({
   children,
@@ -49,6 +49,14 @@ export default function AdminLayout({
                 <Link href="/admin/records">
                   <FileText />
                   Registros
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+               <SidebarMenuButton asChild>
+                <Link href="/admin/ai-reports">
+                  <Sparkles />
+                  Relatórios IA
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
