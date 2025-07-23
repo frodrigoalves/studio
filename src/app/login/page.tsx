@@ -2,12 +2,13 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Bus, Loader2 } from 'lucide-react';
+import { Bus, Loader2, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export default function LoginPage() {
@@ -88,6 +89,12 @@ export default function LoginPage() {
                         {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Entrar'}
                     </Button>
                 </form>
+                 <Button variant="link" className="w-full mt-4 text-muted-foreground" asChild>
+                    <Link href="/">
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Voltar para a tela de preenchimento
+                    </Link>
+                </Button>
             </CardContent>
         </Card>
       </div>
