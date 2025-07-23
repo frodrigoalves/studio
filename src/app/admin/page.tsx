@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Line, LineChart } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { Fuel, GaugeCircle, TrendingUp } from "lucide-react";
+import { GaugeCircle, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 // Mock Data
@@ -88,12 +88,12 @@ export default function AdminDashboard() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Custo de Combustível ({filter})</CardTitle>
-            <Fuel className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Alertas de Preenchimento</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-destructive" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">R$ 12,234.50</div>
-            <p className="text-xs text-muted-foreground">+18.3% do período anterior</p>
+            <div className="text-2xl font-bold">3 Alertas</div>
+            <p className="text-xs text-muted-foreground">Registros de viagem incompletos.</p>
           </CardContent>
         </Card>
       </div>
@@ -136,5 +136,3 @@ export default function AdminDashboard() {
     </div>
   );
 }
-
-    
