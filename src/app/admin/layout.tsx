@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Settings, FileText, LogOut, Car } from "lucide-react";
+import { LayoutDashboard, Settings, FileText, LogOut, Bus } from "lucide-react";
 
 export default function AdminLayout({
   children,
@@ -26,10 +26,10 @@ export default function AdminLayout({
         <SidebarHeader>
           <div className="flex items-center gap-3 p-2">
             <div className="bg-primary/10 text-primary rounded-lg p-2 border border-primary/20">
-              <Car className="w-8 h-8" />
+              <Bus className="w-8 h-8" />
             </div>
             <div className="group-data-[collapsible=icon]:hidden">
-              <h2 className="font-semibold text-lg">FleetTrack Go</h2>
+              <h2 className="font-semibold text-lg">TopBus</h2>
               <p className="text-sm text-muted-foreground">Painel Gestor</p>
             </div>
           </div>

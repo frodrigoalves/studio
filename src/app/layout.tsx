@@ -3,7 +3,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster"
 
 export const metadata: Metadata = {
-  title: 'FleetTrack Go',
+  title: 'TopBus',
   description: 'Manage your fleet with ease. Record trips, track mileage, and analyze data.',
 };
 
