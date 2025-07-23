@@ -58,12 +58,15 @@ const getStoredRecords = (): Record[] => {
     if (stored) {
         try {
             const parsed = JSON.parse(stored);
-            return Array.isArray(parsed) ? parsed : [];
+            // A simple check to see if it's likely our records array
+            if (Array.isArray(parsed) && (parsed.length === 0 || parsed[0].id)) {
+                 return parsed;
+            }
         } catch {
-            return [];
+             // If parsing fails, it's not our data, so we'll start fresh below.
         }
     }
-    // Only set initial records if local storage is empty
+    // Only set initial records if local storage is empty or contains invalid data
     localStorage.setItem('tripRecords', JSON.stringify(initialRecords));
     return initialRecords;
 };
@@ -363,7 +366,11 @@ export default function RecordsPage() {
     <Dialog open={isAuthDialogOpen} onOpenChange={setAuthDialogOpen}>
         <DialogContent className="sm:max-w-sm">
             <DialogHeader>
-                <DialogTitle className="flex items-center gap-2"><KeyRound /> Autorização Necessária</DialogTitle>
+                <DialogTitle>
+                    <div className="flex items-center gap-2">
+                        <KeyRound /> Autorização Necessária
+                    </div>
+                </DialogTitle>
                 <DialogDescription>
                    Para editar este registro, por favor, insira a senha da diretoria.
                 </DialogDescription>
