@@ -14,8 +14,8 @@ export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [uniqueNumber, setUniqueNumber] = useState('');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,7 +24,7 @@ export default function LoginPage() {
     // Mock login logic - in a real app, you'd validate credentials
     await new Promise(resolve => setTimeout(resolve, 1000));
 
-    if (email === 'admin@fleet.com' && password === 'admin') {
+    if (name === 'admin' && uniqueNumber === '12345') {
        toast({
         title: "Login bem-sucedido!",
         description: "Redirecionando para o painel do gestor.",
@@ -36,7 +36,7 @@ export default function LoginPage() {
        toast({
         variant: "destructive",
         title: "Credenciais inválidas",
-        description: "Por favor, verifique seu email e senha.",
+        description: "Por favor, verifique seu nome e número único.",
       });
       setIsLoading(false);
     }
@@ -62,25 +62,26 @@ export default function LoginPage() {
             <CardContent>
                 <form onSubmit={handleLogin} className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="email">Email</Label>
+                        <Label htmlFor="name">Nome</Label>
                         <Input 
-                            id="email" 
-                            type="email" 
-                            placeholder="gestor@email.com" 
+                            id="name" 
+                            type="text" 
+                            placeholder="Seu nome" 
                             required 
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
                             disabled={isLoading}
                         />
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="password">Senha</Label>
+                        <Label htmlFor="unique-number">Número Único</Label>
                         <Input 
-                            id="password" 
+                            id="unique-number" 
                             type="password" 
                             required 
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
+                            placeholder="Seu número único"
+                            value={uniqueNumber}
+                            onChange={(e) => setUniqueNumber(e.target.value)}
                             disabled={isLoading}
                         />
                     </div>
