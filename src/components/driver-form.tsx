@@ -44,8 +44,9 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-const initialStartValues = { chapa: "", name: "", car: "", initialKm: undefined, startOdometerPhoto: null };
-const initialEndValues = { chapa: "", name: "", car: "", finalKm: undefined, endOdometerPhoto: null };
+const initialStartValues = { chapa: "", name: "", car: "", initialKm: null, startOdometerPhoto: null };
+const initialEndValues = { chapa: "", name: "", car: "", finalKm: null, endOdometerPhoto: null };
+
 
 export function DriverForm() {
   const { toast } = useToast();
@@ -76,6 +77,20 @@ export function DriverForm() {
   
   const handleChapaChange = useCallback(async (chapa: string) => {
     if (chapa.length < 3) return;
+    
+    // For the end trip tab, check for an ongoing trip first
+    if (activeTab === 'end' && typeof window !== 'undefined') {
+        const stored = localStorage.getItem('tripRecords') || '[]';
+        const records = JSON.parse(stored);
+        const existingRecord = records.find((rec: any) => rec.plate === chapa && rec.status === "Em Andamento");
+
+        if (existingRecord) {
+            endForm.setValue("name", existingRecord.driver);
+            endForm.setValue("car", existingRecord.car);
+            return; // Don't call AI if we found a local record
+        }
+    }
+    
     startAiTransition(async () => {
       try {
         const result: PrepopulateFieldsOutput = await prepopulateFields({ chapa });
@@ -195,7 +210,7 @@ export function DriverForm() {
                     <FormItem>
                       <FormLabel>Chapa</FormLabel>
                       <FormControl>
-                        <Input placeholder="A123" {...field} onChange={(e) => {
+                        <Input placeholder="Sua matrícula" {...field} onChange={(e) => {
                             field.onChange(e);
                             debouncedChapaChange(e.target.value);
                         }} />
@@ -229,7 +244,7 @@ export function DriverForm() {
                         <FormLabel>Carro</FormLabel>
                         <FormControl>
                            <div className="relative">
-                            <Input placeholder="Modelo do carro" {...field} />
+                            <Input placeholder="Número do ônibus" {...field} />
                              {isAiLoading && <Loader2 className="absolute right-3 top-2.5 h-4 w-4 animate-spin text-muted-foreground" />}
                           </div>
                         </FormControl>
@@ -243,9 +258,9 @@ export function DriverForm() {
                   name="initialKm"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Km Inicial</FormLabel>
+                      <FormLabel>KM Inicial</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="123456" {...field} value={field.value ?? ""} onChange={e => field.onChange(e.target.valueAsNumber)} />
+                        <Input type="number" placeholder="123456" {...field} value={field.value ?? ""} onChange={e => field.onChange(e.target.value === '' ? null : e.target.valueAsNumber)} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -286,7 +301,7 @@ export function DriverForm() {
                     <FormItem>
                       <FormLabel>Chapa</FormLabel>
                       <FormControl>
-                        <Input placeholder="A123" {...field} onChange={(e) => {
+                        <Input placeholder="Sua matrícula" {...field} onChange={(e) => {
                             field.onChange(e);
                             debouncedChapaChange(e.target.value);
                         }}/>
@@ -303,7 +318,7 @@ export function DriverForm() {
                       <FormLabel>Nome do Motorista</FormLabel>
                       <FormControl>
                          <div className="relative">
-                           <Input {...field} readOnly className="bg-muted" placeholder="Preenchido automaticamente" />
+                           <Input {...field} readOnly className="bg-muted border-dashed" placeholder="Preenchido automaticamente" />
                             {isAiLoading && <Loader2 className="absolute right-3 top-2.5 h-4 w-4 animate-spin" />}
                          </div>
                       </FormControl>
@@ -318,7 +333,7 @@ export function DriverForm() {
                       <FormLabel>Carro</FormLabel>
                       <FormControl>
                          <div className="relative">
-                            <Input {...field} readOnly className="bg-muted" placeholder="Preenchido automaticamente"/>
+                            <Input {...field} readOnly className="bg-muted border-dashed" placeholder="Preenchido automaticamente"/>
                             {isAiLoading && <Loader2 className="absolute right-3 top-2.5 h-4 w-4 animate-spin" />}
                          </div>
                       </FormControl>
@@ -332,7 +347,7 @@ export function DriverForm() {
                     <FormItem>
                       <FormLabel>KM Final</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="123567" {...field} value={field.value ?? ""} onChange={e => field.onChange(e.target.valueAsNumber)} />
+                        <Input type="number" placeholder="123567" {...field} value={field.value ?? ""} onChange={e => field.onChange(e.target.value === '' ? null : e.target.valueAsNumber)} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
