@@ -52,8 +52,8 @@ const endTripSchema = z.object({
 type StartTripFormValues = z.infer<typeof startTripSchema>;
 type EndTripFormValues = z.infer<typeof endTripSchema>;
 
-const initialStartValues = { chapa: "", name: "", car: "", initialKm: undefined, odometerPhoto: null };
-const initialEndValues = { chapa: "", name: "Preenchido automaticamente", car: "Preenchido automaticamente", finalKm: undefined, odometerPhoto: null };
+const initialStartValues = { chapa: "", name: "", car: "", initialKm: "" as const, odometerPhoto: null };
+const initialEndValues = { chapa: "", name: "Preenchido automaticamente", car: "Preenchido automaticamente", finalKm: "" as const, odometerPhoto: null };
 
 
 export function DriverForm() {
@@ -184,9 +184,9 @@ export function DriverForm() {
                   name="initialKm"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>KM Inicial</FormLabel>
+                      <FormLabel>Km Inicial</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="123456" {...field} value={field.value ?? ""} />
+                        <Input type="number" placeholder="123456" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -274,7 +274,7 @@ export function DriverForm() {
                     <FormItem>
                       <FormLabel>KM Final</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="123567" {...field} value={field.value ?? ""} />
+                        <Input type="number" placeholder="123567" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
