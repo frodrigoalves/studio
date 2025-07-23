@@ -11,6 +11,7 @@ import {
   DialogDescription,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Separator } from '@/components/ui/separator';
 
 export default function Home() {
   return (
@@ -59,6 +60,14 @@ export default function Home() {
                   <p className="text-muted-foreground">
                    Seu registro será enviado e você pode iniciar uma nova viagem.
                   </p>
+                </div>
+                <Separator />
+                 <div className="space-y-1">
+                  <h4 className="font-semibold">Observações:</h4>
+                  <ul className="list-disc list-inside text-muted-foreground space-y-1">
+                    <li><span className="font-semibold">Chapa:</span> É o seu número de matrícula na empresa.</li>
+                    <li><span className="font-semibold">Carro:</span> É o número do ônibus que você está dirigindo.</li>
+                  </ul>
                 </div>
               </div>
             </DialogContent>
