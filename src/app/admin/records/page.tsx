@@ -6,12 +6,12 @@ import { MoreHorizontal, PlusCircle, FileUp } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 const records = [
-  { id: 1, date: "2024-05-20", driver: "João Silva", car: "Fiat Argo", plate: "ABC-1234", kmStart: 12345, kmEnd: 12445, status: "Finalizado" },
-  { id: 2, date: "2024-05-20", driver: "Maria Oliveira", car: "VW Gol", plate: "DEF-5678", kmStart: 54321, kmEnd: 54401, status: "Finalizado" },
-  { id: 3, date: "2024-05-21", driver: "Carlos Pereira", car: "Hyundai HB20", plate: "GHI-9012", kmStart: 87654, kmEnd: null, status: "Em Andamento" },
-  { id: 4, date: "2024-05-21", driver: "João Silva", car: "Fiat Argo", plate: "ABC-1234", kmStart: 12500, kmEnd: 12600, status: "Finalizado" },
-  { id: 5, date: "2024-05-22", driver: "Ana Costa", car: "Chevrolet Onix", plate: "JKL-3456", kmStart: 34567, kmEnd: 34667, status: "Finalizado" },
-  { id: 6, date: "2024-05-23", driver: "Pedro Martins", car: "Ford Ka", plate: "MNO-7890", kmStart: 98765, kmEnd: null, status: "Em Andamento" },
+  { id: 1, date: "2024-05-20", driver: "João Silva", car: "Fiat Argo", plate: "A123", kmStart: 12345, kmEnd: 12445, status: "Finalizado" },
+  { id: 2, date: "2024-05-20", driver: "Maria Oliveira", car: "VW Gol", plate: "B456", kmStart: 54321, kmEnd: 54401, status: "Finalizado" },
+  { id: 3, date: "2024-05-21", driver: "Carlos Pereira", car: "Hyundai HB20", plate: "C789", kmStart: 87654, kmEnd: null, status: "Em Andamento" },
+  { id: 4, date: "2024-05-21", driver: "João Silva", car: "Fiat Argo", plate: "A123", kmStart: 12500, kmEnd: 12600, status: "Finalizado" },
+  { id: 5, date: "2024-05-22", driver: "Ana Costa", car: "Chevrolet Onix", plate: "D101", kmStart: 34567, kmEnd: 34667, status: "Finalizado" },
+  { id: 6, date: "2024-05-23", driver: "Pedro Martins", car: "Ford Ka", plate: "E212", kmStart: 98765, kmEnd: null, status: "Em Andamento" },
 ];
 
 export default function RecordsPage() {
@@ -42,7 +42,7 @@ export default function RecordsPage() {
               <TableHead>Data</TableHead>
               <TableHead>Motorista</TableHead>
               <TableHead>Veículo</TableHead>
-              <TableHead>Matrícula</TableHead>
+              <TableHead>Chapa</TableHead>
               <TableHead className="text-right">KM Início</TableHead>
               <TableHead className="text-right">KM Fim</TableHead>
               <TableHead className="text-center">Status</TableHead>

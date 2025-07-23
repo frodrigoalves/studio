@@ -34,7 +34,7 @@ function debounce<T extends (...args: any[]) => void>(func: T, wait: number) {
 
 
 const startTripSchema = z.object({
-  licensePlate: z.string().min(1, "Matrícula é obrigatória."),
+  chapa: z.string().min(1, "Chapa é obrigatória."),
   name: z.string().min(1, "Nome é obrigatório."),
   car: z.string().min(1, "Carro é obrigatório."),
   initialKm: z.coerce.number().min(1, "KM Inicial é obrigatório."),
@@ -42,7 +42,7 @@ const startTripSchema = z.object({
 });
 
 const endTripSchema = z.object({
-  licensePlate: z.string().min(1, "Matrícula é obrigatória."),
+  chapa: z.string().min(1, "Chapa é obrigatória."),
   name: z.string(),
   car: z.string(),
   finalKm: z.coerce.number().min(1, "KM Final é obrigatório."),
@@ -59,19 +59,19 @@ export function DriverForm() {
 
   const startForm = useForm<StartTripFormValues>({
     resolver: zodResolver(startTripSchema),
-    defaultValues: { licensePlate: "", name: "", car: "", initialKm: undefined, odometerPhoto: null },
+    defaultValues: { chapa: "", name: "", car: "", initialKm: undefined, odometerPhoto: null },
   });
 
   const endForm = useForm<EndTripFormValues>({
     resolver: zodResolver(endTripSchema),
-    defaultValues: { licensePlate: "", name: "Preenchido automaticamente", car: "Preenchido automaticamente", finalKm: undefined, odometerPhoto: null },
+    defaultValues: { chapa: "", name: "Preenchido automaticamente", car: "Preenchido automaticamente", finalKm: undefined, odometerPhoto: null },
   });
 
-  const handleLicensePlateChange = useCallback(async (licensePlate: string) => {
-    if (licensePlate.length < 3) return;
+  const handleChapaChange = useCallback(async (chapa: string) => {
+    if (chapa.length < 3) return;
     startAiTransition(async () => {
       try {
-        const result: PrepopulateFieldsOutput = await prepopulateFields({ licensePlate });
+        const result: PrepopulateFieldsOutput = await prepopulateFields({ chapa });
         if (result.name && result.car) {
           if (activeTab === "start") {
             startForm.setValue("name", result.name);
@@ -92,7 +92,7 @@ export function DriverForm() {
     });
   }, [activeTab, startForm, endForm, toast]);
 
-  const debouncedLicensePlateChange = useCallback(debounce(handleLicensePlateChange, 500), [handleLicensePlateChange]);
+  const debouncedChapaChange = useCallback(debounce(handleChapaChange, 500), [handleChapaChange]);
 
   async function onStartSubmit(data: StartTripFormValues) {
     console.log("Starting trip with data:", data);
@@ -102,7 +102,7 @@ export function DriverForm() {
       variant: "default",
       className: "bg-accent text-accent-foreground",
     });
-    startForm.reset({ licensePlate: "", name: "", car: "", initialKm: undefined, odometerPhoto: null });
+    startForm.reset({ chapa: "", name: "", car: "", initialKm: undefined, odometerPhoto: null });
   }
 
   async function onEndSubmit(data: EndTripFormValues) {
@@ -111,7 +111,7 @@ export function DriverForm() {
       title: "Viagem finalizada com sucesso!",
       description: "Seus dados foram atualizados.",
     });
-    endForm.reset({ licensePlate: "", name: "Preenchido automaticamente", car: "Preenchido automaticamente", finalKm: undefined, odometerPhoto: null });
+    endForm.reset({ chapa: "", name: "Preenchido automaticamente", car: "Preenchido automaticamente", finalKm: undefined, odometerPhoto: null });
   }
 
   return (
@@ -127,14 +127,14 @@ export function DriverForm() {
               <form onSubmit={startForm.handleSubmit(onStartSubmit)} className="space-y-6 px-2">
                 <FormField
                   control={startForm.control}
-                  name="licensePlate"
+                  name="chapa"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Matrícula</FormLabel>
+                      <FormLabel>Chapa</FormLabel>
                       <FormControl>
-                        <Input placeholder="ABC-1234" {...field} onChange={(e) => {
+                        <Input placeholder="A123" {...field} onChange={(e) => {
                             field.onChange(e);
-                            debouncedLicensePlateChange(e.target.value);
+                            debouncedChapaChange(e.target.value);
                         }} />
                       </FormControl>
                       <FormMessage />
@@ -219,14 +219,14 @@ export function DriverForm() {
               <form onSubmit={endForm.handleSubmit(onEndSubmit)} className="space-y-6 px-2">
                 <FormField
                   control={endForm.control}
-                  name="licensePlate"
+                  name="chapa"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Matrícula</FormLabel>
+                      <FormLabel>Chapa</FormLabel>
                       <FormControl>
-                        <Input placeholder="ABC-1234" {...field} onChange={(e) => {
+                        <Input placeholder="A123" {...field} onChange={(e) => {
                             field.onChange(e);
-                            debouncedLicensePlateChange(e.target.value);
+                            debouncedChapaChange(e.target.value);
                         }}/>
                       </FormControl>
                       <FormMessage />

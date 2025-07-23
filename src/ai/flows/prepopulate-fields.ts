@@ -12,7 +12,7 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const PrepopulateFieldsInputSchema = z.object({
-  licensePlate: z.string().describe('The license plate of the vehicle.'),
+  chapa: z.string().describe('A chapa do veículo.'),
 });
 export type PrepopulateFieldsInput = z.infer<typeof PrepopulateFieldsInputSchema>;
 
@@ -30,7 +30,7 @@ const prompt = ai.definePrompt({
   name: 'prepopulateFieldsPrompt',
   input: {schema: PrepopulateFieldsInputSchema},
   output: {schema: PrepopulateFieldsOutputSchema},
-  prompt: `Given the license plate "{{licensePlate}}", return the driver's name and car model that are most commonly associated with it based on historical records. If no information is available, return empty strings for both name and car.`,
+  prompt: `Dada a chapa "{{chapa}}", retorne o nome do motorista e o modelo do carro que são mais comumente associados a ela com base em registros históricos. Se nenhuma informação estiver disponível, retorne strings vazias para nome e carro.`,
 });
 
 const prepopulateFieldsFlow = ai.defineFlow(
