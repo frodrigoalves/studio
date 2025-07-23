@@ -21,15 +21,14 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    // Mock login logic - in a real app, you'd validate credentials
+    // Mock login logic
     await new Promise(resolve => setTimeout(resolve, 1000));
 
-    if (name === 'admin' && uniqueNumber === '12345') {
+    if (name.toLowerCase() === 'admin' && uniqueNumber === '12345') {
        toast({
         title: "Login bem-sucedido!",
         description: "Redirecionando para o painel do gestor.",
-        variant: "default",
-        className: "bg-accent text-accent-foreground",
+        className: "bg-green-100 text-green-800",
       });
       router.push('/admin');
     } else {

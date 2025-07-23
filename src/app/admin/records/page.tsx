@@ -8,7 +8,18 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { MoreHorizontal, PlusCircle, FileUp, Camera, AlertCircle } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import {
   Dialog,
   DialogContent,
@@ -46,7 +57,12 @@ const initialRecords: Record[] = [
 const getStoredRecords = (): Record[] => {
     if (typeof window === 'undefined') return initialRecords;
     const stored = localStorage.getItem('tripRecords');
-    return stored ? JSON.parse(stored) : initialRecords;
+    try {
+        const parsed = stored ? JSON.parse(stored) : initialRecords;
+        return Array.isArray(parsed) ? parsed : initialRecords;
+    } catch {
+        return initialRecords;
+    }
 };
 
 const setStoredRecords = (records: Record[]) => {
@@ -106,6 +122,12 @@ export default function RecordsPage() {
         kmStart: null,
         kmEnd: null,
       });
+    }
+
+    const handleDeleteRecord = (id: number) => {
+        const updatedRecords = records.filter(record => record.id !== id);
+        setRecords(updatedRecords);
+        setStoredRecords(updatedRecords);
     }
 
     const openPhotosDialog = (record: Record) => {
@@ -210,11 +232,12 @@ export default function RecordsPage() {
                 <TableCell className="text-right">{record.kmStart ?? "—"}</TableCell>
                 <TableCell className="text-right">{record.kmEnd ?? "—"}</TableCell>
                 <TableCell className="text-center">
-                  <Badge variant={record.status === "Finalizado" ? "default" : "outline"} className={record.status === "Finalizado" ? "bg-accent/80 text-accent-foreground" : ""}>
+                  <Badge variant={record.status === "Finalizado" ? "default" : "outline"} className={record.status === "Finalizado" ? "bg-green-100 text-green-800" : ""}>
                     {record.status}
                   </Badge>
                 </TableCell>
                 <TableCell>
+                  <AlertDialog>
                    <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button aria-haspopup="true" size="icon" variant="ghost">
@@ -226,9 +249,25 @@ export default function RecordsPage() {
                       <DropdownMenuLabel>Ações</DropdownMenuLabel>
                       <DropdownMenuItem>Editar</DropdownMenuItem>
                       <DropdownMenuItem onClick={() => openPhotosDialog(record)}>Ver Fotos</DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive focus:text-destructive-foreground focus:bg-destructive">Excluir</DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <AlertDialogTrigger asChild>
+                        <DropdownMenuItem className="text-destructive focus:text-destructive-foreground focus:bg-destructive">Excluir</DropdownMenuItem>
+                      </AlertDialogTrigger>
                     </DropdownMenuContent>
                   </DropdownMenu>
+                   <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Essa ação não pode ser desfeita. Isso excluirá permanentemente o registro de viagem.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleDeleteRecord(record.id)} className="bg-destructive hover:bg-destructive/90">Excluir</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </TableCell>
               </TableRow>
             ))}
