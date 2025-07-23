@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useTransition, useCallback } from "react";
+import { useState, useTransition, useCallback, useRef } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -42,20 +42,28 @@ const fileToBase64 = (file: File): Promise<string> => {
     });
 };
 
-const formSchema = z.object({
+const startFormSchema = z.object({
   chapa: z.string().min(1, "Chapa é obrigatória."),
   name: z.string().min(1, "Nome é obrigatório."),
   car: z.string().min(1, "Carro é obrigatório."),
-  initialKm: z.coerce.number().min(1, "Km Inicial é obrigatório.").optional().nullable(),
-  finalKm: z.coerce.number().min(1, "Km Final é obrigatório.").optional().nullable(),
-  startOdometerPhoto: z.any().optional().nullable(),
-  endOdometerPhoto: z.any().optional().nullable(),
+  initialKm: z.coerce.number({ required_error: "Km Inicial é obrigatório."}).min(1, "Km Inicial é obrigatório."),
+  startOdometerPhoto: z.any().refine(file => file, "Foto é obrigatória."),
 });
 
-type FormValues = z.infer<typeof formSchema>;
+const endFormSchema = z.object({
+  chapa: z.string().min(1, "Chapa é obrigatória."),
+  name: z.string().min(1, "Nome é obrigatório."),
+  car: z.string().min(1, "Carro é obrigatório."),
+  finalKm: z.coerce.number({ required_error: "Km Final é obrigatório."}).min(1, "Km Final é obrigatório."),
+  endOdometerPhoto: z.any().refine(file => file, "Foto é obrigatória."),
+});
 
-const initialStartValues = { chapa: "", name: "", car: "", initialKm: null, startOdometerPhoto: null };
-const initialEndValues = { chapa: "", name: "", car: "", finalKm: null, endOdometerPhoto: null };
+
+type StartFormValues = z.infer<typeof startFormSchema>;
+type EndFormValues = z.infer<typeof endFormSchema>;
+
+const initialStartValues: StartFormValues = { chapa: "", name: "", car: "", initialKm: 0, startOdometerPhoto: null };
+const initialEndValues: EndFormValues = { chapa: "", name: "", car: "", finalKm: 0, endOdometerPhoto: null };
 
 
 export function DriverForm() {
@@ -63,31 +71,21 @@ export function DriverForm() {
   const [activeTab, setActiveTab] = useState("start");
   const [isAiLoading, startAiTransition] = useTransition();
 
-  const startForm = useForm<FormValues>({
-    resolver: zodResolver(formSchema.pick({ chapa: true, name: true, car: true, initialKm: true, startOdometerPhoto: true }).refine(data => data.initialKm, {
-        message: "Km Inicial é obrigatório.",
-        path: ["initialKm"],
-    }).refine(data => data.startOdometerPhoto, {
-        message: "Foto é obrigatória.",
-        path: ["startOdometerPhoto"],
-    })),
+  const startForm = useForm<StartFormValues>({
+    resolver: zodResolver(startFormSchema),
     defaultValues: initialStartValues,
   });
 
-  const endForm = useForm<FormValues>({
-    resolver: zodResolver(formSchema.pick({ chapa: true, name:true, car:true, finalKm: true, endOdometerPhoto: true }).refine(data => data.finalKm, {
-        message: "Km Final é obrigatório.",
-        path: ["finalKm"],
-    }).refine(data => data.endOdometerPhoto, {
-        message: "Foto é obrigatória.",
-        path: ["endOdometerPhoto"],
-    })),
+  const endForm = useForm<EndFormValues>({
+    resolver: zodResolver(endFormSchema),
     defaultValues: initialEndValues,
   });
   
   const handleChapaChange = useCallback(async (chapa: string) => {
     if (chapa.length < 3) return;
     
+    const form = activeTab === 'start' ? startForm : endForm;
+
     if (activeTab === 'end' && typeof window !== 'undefined') {
         const stored = localStorage.getItem('tripRecords') || '[]';
         const records = JSON.parse(stored);
@@ -104,13 +102,8 @@ export function DriverForm() {
       try {
         const result: PrepopulateFieldsOutput = await prepopulateFields({ chapa });
         if (result.name && result.car) {
-          if (activeTab === "start") {
-            startForm.setValue("name", result.name);
-            startForm.setValue("car", result.car);
-          } else {
-            endForm.setValue("name", result.name);
-            endForm.setValue("car", result.car);
-          }
+          form.setValue("name", result.name);
+          form.setValue("car", result.car);
         }
       } catch (error) {
         console.error("Failed to prepopulate fields:", error);
@@ -124,8 +117,11 @@ export function DriverForm() {
   }, [activeTab, startForm, endForm, toast]);
 
   const debouncedChapaChange = useCallback(debounce(handleChapaChange, 500), [handleChapaChange]);
+  
+  const startFileInputRef = useRef<HTMLInputElement>(null);
+  const endFileInputRef = useRef<HTMLInputElement>(null);
 
-  const updateLocalStorage = async (data: Partial<FormValues>) => {
+  const updateLocalStorage = async (data: StartFormValues | EndFormValues) => {
     if (typeof window === 'undefined') return;
     try {
       const stored = localStorage.getItem('tripRecords') || '[]';
@@ -134,6 +130,7 @@ export function DriverForm() {
       const existingRecordIndex = records.findIndex((rec: any) => rec.plate === data.chapa && rec.status === "Em Andamento");
 
       if (activeTab === 'start') {
+        const startData = data as StartFormValues;
         if(existingRecordIndex > -1){
             toast({
                 variant: "destructive",
@@ -143,15 +140,15 @@ export function DriverForm() {
             return;
         }
 
-        const photoBase64 = data.startOdometerPhoto ? await fileToBase64(data.startOdometerPhoto) : null;
+        const photoBase64 = startData.startOdometerPhoto ? await fileToBase64(startData.startOdometerPhoto) : null;
 
         const newRecord = {
           id: Date.now(),
           date: new Date().toISOString().split('T')[0],
-          driver: data.name,
-          car: data.car,
-          plate: data.chapa,
-          kmStart: data.initialKm,
+          driver: startData.name,
+          car: startData.car,
+          plate: startData.chapa,
+          kmStart: startData.initialKm,
           kmEnd: null,
           status: "Em Andamento",
           startOdometerPhoto: photoBase64,
@@ -164,8 +161,13 @@ export function DriverForm() {
           variant: "default",
           className: "bg-accent text-accent-foreground",
         });
-        startForm.reset(initialStartValues);
+        startForm.reset();
+        if (startFileInputRef.current) {
+            startFileInputRef.current.value = "";
+        }
+
       } else { // end trip
+        const endData = data as EndFormValues;
         if (existingRecordIndex === -1) {
             toast({
                 variant: "destructive",
@@ -175,16 +177,19 @@ export function DriverForm() {
             return;
         }
 
-        const photoBase64 = data.endOdometerPhoto ? await fileToBase64(data.endOdometerPhoto) : null;
+        const photoBase64 = endData.endOdometerPhoto ? await fileToBase64(endData.endOdometerPhoto) : null;
 
-        records[existingRecordIndex].kmEnd = data.finalKm;
+        records[existingRecordIndex].kmEnd = endData.finalKm;
         records[existingRecordIndex].status = "Finalizado";
         records[existingRecordIndex].endOdometerPhoto = photoBase64;
         toast({
           title: "Viagem finalizada com sucesso!",
           description: "Seus dados foram atualizados.",
         });
-        endForm.reset(initialEndValues);
+        endForm.reset();
+         if (endFileInputRef.current) {
+            endFileInputRef.current.value = "";
+        }
       }
 
       localStorage.setItem('tripRecords', JSON.stringify(records));
@@ -200,11 +205,11 @@ export function DriverForm() {
   }
 
 
-  function onStartSubmit(data: FormValues) {
+  function onStartSubmit(data: StartFormValues) {
     updateLocalStorage(data);
   }
 
-  function onEndSubmit(data: FormValues) {
+  function onEndSubmit(data: EndFormValues) {
      updateLocalStorage(data);
   }
 
@@ -276,7 +281,7 @@ export function DriverForm() {
                     <FormItem>
                       <FormLabel>Km Inicial</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="123456" {...field} value={field.value ?? ""} onChange={e => field.onChange(e.target.value === '' ? null : e.target.valueAsNumber)} />
+                        <Input type="number" placeholder="123456" {...field} onChange={e => field.onChange(e.target.valueAsNumber)} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -291,6 +296,8 @@ export function DriverForm() {
                       <FormControl>
                         <div className="relative">
                           <Input type="file" accept="image/*" capture="camera" className="pr-12"
+                            {...rest}
+                            ref={startFileInputRef}
                             onChange={(e) => onChange(e.target.files ? e.target.files[0] : null)}
                           />
                           <Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
@@ -326,36 +333,40 @@ export function DriverForm() {
                     </FormItem>
                   )}
                 />
-                <FormField
-                  control={endForm.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nome do Motorista</FormLabel>
-                      <FormControl>
-                         <div className="relative">
-                           <Input {...field} readOnly className="bg-muted border-dashed" placeholder="Preenchido automaticamente" />
-                            {isAiLoading && <Loader2 className="absolute right-3 top-2.5 h-4 w-4 animate-spin" />}
-                         </div>
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={endForm.control}
-                  name="car"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Carro</FormLabel>
-                      <FormControl>
-                         <div className="relative">
-                            <Input {...field} readOnly className="bg-muted border-dashed" placeholder="Preenchido automaticamente"/>
-                            {isAiLoading && <Loader2 className="absolute right-3 top-2.5 h-4 w-4 animate-spin" />}
-                         </div>
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={endForm.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nome do Motorista</FormLabel>
+                          <FormControl>
+                             <div className="relative">
+                               <Input {...field} readOnly className="bg-muted border-dashed" placeholder="Preenchido automaticamente" />
+                                {isAiLoading && <Loader2 className="absolute right-3 top-2.5 h-4 w-4 animate-spin" />}
+                             </div>
+                          </FormControl>
+                           <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={endForm.control}
+                      name="car"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Carro</FormLabel>
+                          <FormControl>
+                             <div className="relative">
+                                <Input {...field} readOnly className="bg-muted border-dashed" placeholder="Preenchido automaticamente"/>
+                                {isAiLoading && <Loader2 className="absolute right-3 top-2.5 h-4 w-4 animate-spin" />}
+                             </div>
+                          </FormControl>
+                           <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                </div>
                 <FormField
                   control={endForm.control}
                   name="finalKm"
@@ -363,7 +374,7 @@ export function DriverForm() {
                     <FormItem>
                       <FormLabel>KM Final</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="123567" {...field} value={field.value ?? ""} onChange={e => field.onChange(e.target.value === '' ? null : e.target.valueAsNumber)} />
+                        <Input type="number" placeholder="123567" {...field} onChange={e => field.onChange(e.target.valueAsNumber)} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -377,7 +388,9 @@ export function DriverForm() {
                       <FormLabel>Foto do Odômetro (Fim)</FormLabel>
                       <FormControl>
                         <div className="relative">
-                          <Input type="file" accept="image/*" capture="camera" className="pr-12" 
+                          <Input type="file" accept="image/*" capture="camera" className="pr-12"
+                           {...rest}
+                           ref={endFileInputRef}
                            onChange={(e) => onChange(e.target.files ? e.target.files[0] : null)}
                           />
                           <Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
@@ -399,3 +412,5 @@ export function DriverForm() {
     </Card>
   );
 }
+
+    
