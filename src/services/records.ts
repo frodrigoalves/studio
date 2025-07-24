@@ -2,7 +2,7 @@
 'use server';
 
 import { db } from '@/lib/firebase';
-import { collection, addDoc, getDocs, doc, updateDoc, query, where, getDoc, orderBy, limit, DocumentData } from 'firebase/firestore';
+import { collection, addDoc, getDocs, doc, updateDoc, query, where, getDoc, orderBy, limit } from 'firebase/firestore';
 
 export interface Record {
   id: string;
@@ -18,7 +18,7 @@ export interface Record {
 }
 
 export type RecordAddPayload = Omit<Record, 'id'>;
-export type RecordUpdatePayload = Partial<Omit<Record, 'id'>>;
+export type RecordUpdatePayload = Partial<Omit<Record, 'id' | 'driver' | 'car' | 'plate' | 'date' | 'kmStart' | 'startOdometerPhoto'>>;
 
 export async function addRecord(record: RecordAddPayload): Promise<Record> {
   const dataToSave = {
@@ -35,10 +35,6 @@ export async function updateRecord(id: string, data: RecordUpdatePayload): Promi
     const recordRef = doc(db, "tripRecords", id);
     const dataToUpdate: { [key: string]: any } = { ...data };
 
-    // Ensure numeric fields are correctly formatted before sending to Firestore
-    if (dataToUpdate.kmStart !== undefined) {
-        dataToUpdate.kmStart = dataToUpdate.kmStart ? Number(dataToUpdate.kmStart) : null;
-    }
     if (dataToUpdate.kmEnd !== undefined) {
         dataToUpdate.kmEnd = dataToUpdate.kmEnd ? Number(dataToUpdate.kmEnd) : null;
     }
