@@ -211,21 +211,21 @@ export default function RecordsPage() {
     <>
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
                 <CardTitle>Registros de Viagens</CardTitle>
                 <CardDescription>Visualize e gerencie todos os registros de hodômetro.</CardDescription>
             </div>
-            <div className="flex gap-2">
-                <Button variant="outline" onClick={handleExport}>
+            <div className="flex gap-2 w-full sm:w-auto">
+                <Button variant="outline" onClick={handleExport} className="w-1/2 sm:w-auto">
                     <FileUp className="mr-2 h-4 w-4" />
                     Exportar
                 </Button>
                 <Dialog open={isAddDialogOpen} onOpenChange={setAddDialogOpen}>
                     <DialogTrigger asChild>
-                        <Button>
+                        <Button className="w-1/2 sm:w-auto">
                             <PlusCircle className="mr-2 h-4 w-4" />
-                            Adicionar Registro
+                            Adicionar
                         </Button>
                     </DialogTrigger>
                     <DialogContent className="sm:max-w-2xl">
@@ -236,7 +236,7 @@ export default function RecordsPage() {
                             </DialogDescription>
                         </DialogHeader>
                         <div className="grid gap-4 py-4">
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="driver">Motorista</Label>
                                     <Input id="driver" value={newRecord.driver} onChange={(e) => setNewRecord({...newRecord, driver: e.target.value})} />
@@ -246,7 +246,7 @@ export default function RecordsPage() {
                                     <Input id="plate" value={newRecord.plate} onChange={(e) => setNewRecord({...newRecord, plate: e.target.value})} />
                                 </div>
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                <div className="space-y-2">
                                     <Label htmlFor="car">Veículo</Label>
                                     <Input id="car" value={newRecord.car} onChange={(e) => setNewRecord({...newRecord, car: e.target.value})} />
@@ -256,7 +256,7 @@ export default function RecordsPage() {
                                     <Input id="date" type="date" value={newRecord.date} onChange={(e) => setNewRecord({...newRecord, date: e.target.value})} />
                                 </div>
                             </div>
-                             <div className="grid grid-cols-2 gap-4">
+                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                <div className="space-y-2">
                                     <Label htmlFor="kmStart">KM Início</Label>
                                     <Input id="kmStart" type="number" value={newRecord.kmStart ?? ''} onChange={(e) => setNewRecord({...newRecord, kmStart: e.target.value === '' ? null : e.target.valueAsNumber})} />
@@ -266,7 +266,7 @@ export default function RecordsPage() {
                                     <Input id="kmEnd" type="number" value={newRecord.kmEnd ?? ''} onChange={(e) => setNewRecord({...newRecord, kmEnd: e.target.value === '' ? null : e.target.valueAsNumber})} />
                                 </div>
                             </div>
-                             <div className="grid grid-cols-2 gap-4">
+                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                <div className="space-y-2">
                                     <Label htmlFor="startOdometerPhoto">Foto Odômetro (Início)</Label>
                                     <Input id="startOdometerPhoto" type="file" accept="image/*" onChange={(e) => setNewRecord({...newRecord, startOdometerPhoto: e.target.files ? e.target.files[0] : null})} />
@@ -293,12 +293,12 @@ export default function RecordsPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Data</TableHead>
+              <TableHead className="hidden sm:table-cell">Data</TableHead>
               <TableHead>Motorista</TableHead>
-              <TableHead>Veículo</TableHead>
+              <TableHead className="hidden md:table-cell">Veículo</TableHead>
               <TableHead>Chapa</TableHead>
-              <TableHead className="text-right">KM Início</TableHead>
-              <TableHead className="text-right">KM Fim</TableHead>
+              <TableHead className="text-right hidden lg:table-cell">KM Início</TableHead>
+              <TableHead className="text-right hidden lg:table-cell">KM Fim</TableHead>
               <TableHead className="text-center">Status</TableHead>
               <TableHead>
                 <span className="sr-only">Ações</span>
@@ -314,14 +314,14 @@ export default function RecordsPage() {
                 </TableRow>
             ) : records.map((record) => (
               <TableRow key={record.id}>
-                <TableCell>{new Date(record.date).toLocaleDateString('pt-BR', { timeZone: 'UTC'})}</TableCell>
+                <TableCell className="hidden sm:table-cell">{new Date(record.date).toLocaleDateString('pt-BR', { timeZone: 'UTC'})}</TableCell>
                 <TableCell className="font-medium">{record.driver}</TableCell>
-                <TableCell>{record.car}</TableCell>
+                <TableCell className="hidden md:table-cell">{record.car}</TableCell>
                 <TableCell>
                   <Badge variant="secondary">{record.plate}</Badge>
                 </TableCell>
-                <TableCell className="text-right">{record.kmStart ?? "—"}</TableCell>
-                <TableCell className="text-right">{record.kmEnd ?? "—"}</TableCell>
+                <TableCell className="text-right hidden lg:table-cell">{record.kmStart ?? "—"}</TableCell>
+                <TableCell className="text-right hidden lg:table-cell">{record.kmEnd ?? "—"}</TableCell>
                 <TableCell className="text-center">
                   <Badge variant={record.status === "Finalizado" ? "default" : "outline"} className={record.status === "Finalizado" ? "bg-green-100 text-green-800" : ""}>
                     {record.status}
@@ -438,7 +438,7 @@ export default function RecordsPage() {
             </DialogHeader>
             {editRecordData && (
                 <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="edit-driver">Motorista</Label>
                             <Input id="edit-driver" value={editRecordData.driver} onChange={(e) => setEditRecordData({...editRecordData, driver: e.target.value})} />
@@ -448,7 +448,7 @@ export default function RecordsPage() {
                             <Input id="edit-plate" value={editRecordData.plate} onChange={(e) => setEditRecordData({...editRecordData, plate: e.target.value})} />
                         </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                        <div className="space-y-2">
                             <Label htmlFor="edit-car">Veículo</Label>
                             <Input id="edit-car" value={editRecordData.car} onChange={(e) => setEditRecordData({...editRecordData, car: e.target.value})} />
@@ -458,7 +458,7 @@ export default function RecordsPage() {
                             <Input id="edit-date" type="date" value={editRecordData.date} onChange={(e) => setEditRecordData({...editRecordData, date: e.target.value})} />
                         </div>
                     </div>
-                     <div className="grid grid-cols-2 gap-4">
+                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                        <div className="space-y-2">
                             <Label htmlFor="edit-kmStart">KM Início</Label>
                             <Input id="edit-kmStart" type="number" value={editRecordData.kmStart ?? ''} onChange={(e) => setEditRecordData({...editRecordData, kmStart: e.target.value === '' ? null : Number(e.target.value)})} />
@@ -482,7 +482,3 @@ export default function RecordsPage() {
     </>
   );
 }
-
-
-    
-    

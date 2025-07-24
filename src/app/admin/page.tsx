@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Sparkles, Wand2, FileText, Upload, Lightbulb, ListChecks, BarChart, Archive, BrainCircuit, GaugeCircle, AlertTriangle, Fuel, DollarSign, LineChart as LineChartIcon, BarChart2 } from "lucide-react";
+import { Loader2, Wand2, FileText, Upload, Lightbulb, ListChecks, BarChart, Archive, BrainCircuit, GaugeCircle, AlertTriangle, Fuel, DollarSign, LineChart as LineChartIcon, BarChart2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getRecords, type Record } from "@/services/records";
 import { getDieselPrices, type DieselPrice } from "@/services/settings";
@@ -380,7 +380,7 @@ export default function AdminDashboard() {
     <div className="max-w-6xl mx-auto space-y-8">
         <div className="text-center space-y-2">
             <div className="inline-block bg-primary/10 text-primary rounded-full p-4 border-2 border-primary/20">
-                <Sparkles className="w-10 h-10" />
+                <BrainCircuit className="w-8 h-8" />
             </div>
             <h1 className="text-3xl font-bold">Central de Inteligência</h1>
             <p className="text-muted-foreground">Analise, gere relatórios e obtenha insights com IA para otimizar a operação.</p>

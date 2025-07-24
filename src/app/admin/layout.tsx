@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Settings, FileText, LogOut, Bus, Sparkles, Loader2 } from "lucide-react";
+import { Settings, FileText, LogOut, BrainCircuit, Loader2, AppWindow } from "lucide-react";
 
 
 interface User {
@@ -69,7 +69,7 @@ export default function AdminLayout({
         <SidebarHeader>
           <div className="flex items-center gap-3 p-2">
             <div className="bg-primary/10 text-primary rounded-lg p-2 border border-primary/20">
-              <Bus className="w-8 h-8" />
+              <AppWindow className="w-6 h-6" />
             </div>
             <div className="group-data-[collapsible=icon]:hidden">
               <h2 className="font-semibold text-lg">TopBus</h2>
@@ -82,7 +82,7 @@ export default function AdminLayout({
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
                 <Link href="/admin">
-                  <Sparkles />
+                  <BrainCircuit />
                   Central de IA
                 </Link>
               </SidebarMenuButton>
@@ -120,22 +120,19 @@ export default function AdminLayout({
           </div>
         </SidebarFooter>
       </Sidebar>
-      <SidebarInset className="flex flex-col">
+      <div className="flex flex-col flex-1">
         <header className="p-4 border-b flex items-center gap-4 sticky top-0 bg-background/80 backdrop-blur-sm z-10">
             <SidebarTrigger />
             <h1 className="text-xl font-semibold">Painel de Gestão</h1>
         </header>
         <main className="p-4 lg:p-6 flex-1">{children}</main>
         <footer className="p-4 text-center text-xs text-muted-foreground">
-            Institutional
-            <br />
-            MVP developed by Rodrigo Alves
-            <br />
+            <div>Institutional MVP developed by Rodrigo Alves</div>
             <a href="https://rodrigosinguldev.netlify.app" target="_blank" rel="noopener noreferrer" className="underline hover:text-primary">
                 View Portfolio
             </a>
         </footer>
-      </SidebarInset>
+      </div>
     </SidebarProvider>
   );
 }
