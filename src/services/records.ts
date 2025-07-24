@@ -1,8 +1,11 @@
 
 'use server';
 
-import { db } from '@/lib/firebase';
+import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, getDocs, doc, updateDoc, query, where, getDoc, orderBy, limit } from 'firebase/firestore';
+import { ref, uploadString, getDownloadURL } from 'firebase/storage';
+import { v4 as uuidv4 } from 'uuid';
+
 
 export interface Record {
   id: string;
@@ -20,13 +23,34 @@ export interface Record {
 export type RecordAddPayload = Omit<Record, 'id'>;
 export type RecordUpdatePayload = Partial<Omit<Record, 'id' | 'driver' | 'car' | 'plate' | 'kmStart' | 'startOdometerPhoto' | 'date'>>;
 
+async function uploadPhoto(photoBase64: string | null, recordId: string, type: 'start' | 'end'): Promise<string | null> {
+    if (!photoBase64) return null;
+
+    const storageRef = ref(storage, `odometer_photos/${recordId}-${type}-${uuidv4()}.jpg`);
+    
+    // A foto já está em base64 com o prefixo 'data:image/jpeg;base64,'
+    // O uploadString espera a string base64 pura, então removemos o prefixo.
+    const base64String = photoBase64.split(',')[1];
+    
+    await uploadString(storageRef, base64String, 'base64');
+    const downloadURL = await getDownloadURL(storageRef);
+    return downloadURL;
+}
+
 
 export async function addRecord(record: RecordAddPayload): Promise<Record> {
+  
+  const tempDocRef = doc(collection(db, "tripRecords"));
+  
+  const startOdometerPhotoUrl = await uploadPhoto(record.startOdometerPhoto, tempDocRef.id, 'start');
+
   const dataToSave = {
       ...record,
       kmStart: record.kmStart ? Number(record.kmStart) : null,
       kmEnd: record.kmEnd ? Number(record.kmEnd) : null,
       date: new Date(record.date).toISOString().split('T')[0],
+      startOdometerPhoto: startOdometerPhotoUrl,
+      endOdometerPhoto: null // End photo is always null on creation
   };
 
   if(isNaN(dataToSave.kmStart!)) dataToSave.kmStart = null;
@@ -38,13 +62,23 @@ export async function addRecord(record: RecordAddPayload): Promise<Record> {
 }
 
 export async function updateRecord(id: string, data: RecordUpdatePayload): Promise<void> {
+    
+    const endOdometerPhotoUrl = await uploadPhoto(data.endOdometerPhoto || null, id, 'end');
+    
     const recordRef = doc(db, "tripRecords", id);
     const dataToUpdate: { [key: string]: any } = { ...data };
+
+    if (endOdometerPhotoUrl) {
+        dataToUpdate.endOdometerPhoto = endOdometerPhotoUrl;
+    }
 
     if (data.kmEnd !== undefined) {
         const kmEndNumber = Number(data.kmEnd);
         dataToUpdate.kmEnd = isNaN(kmEndNumber) ? null : kmEndNumber;
     }
+
+    // Remove a propriedade da foto em base64 para não salvar no firestore
+    delete dataToUpdate.endOdometerPhotoFile;
 
     await updateDoc(recordRef, dataToUpdate);
 }
