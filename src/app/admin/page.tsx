@@ -1,29 +1,34 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Wand2, FileText, Upload, Lightbulb, ListChecks, BarChart, Archive, BrainCircuit, GaugeCircle, AlertTriangle, Fuel, DollarSign, LineChart as LineChartIcon, BarChart2 } from "lucide-react";
+import { Loader2, Wand2, FileText, Upload, Lightbulb, ListChecks, BarChart, Archive, BrainCircuit, GaugeCircle, AlertTriangle, Fuel, DollarSign, LineChart as LineChartIcon, BarChart2, Calendar as CalendarIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getRecords, type Record } from "@/services/records";
 import { getDieselPrices, type DieselPrice } from "@/services/settings";
 import { generateReport, type ReportOutput } from "@/ai/flows/report-flow";
 import { analyseSheet, type SheetAnalysisInput, type SheetAnalysisOutput } from "@/ai/flows/sheet-analysis-flow";
+import { generatePresentationSummary, type PresentationInput, type PresentationOutput } from "@/ai/flows/presentation-flow";
 import { Input } from "@/components/ui/input";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Bar, BarChart as BarChartComponent, Line, LineChart, XAxis, YAxis, CartesianGrid } from "recharts";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { Bar, BarChart as BarChartComponent, Line, LineChart, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip } from "recharts";
 import { ChartContainer, ChartTooltipContent, ChartTooltip } from "@/components/ui/chart";
-import { subDays, subWeeks, subMonths, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, format, parseISO } from 'date-fns';
+import { addDays, subDays, subWeeks, subMonths, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import * as XLSX from 'xlsx';
+import { DateRange } from "react-day-picker";
+import { cn } from "@/lib/utils";
+
 
 type Period = "daily" | "weekly" | "monthly";
 type AnalysisType = 'hr' | 'maintenance';
-type FilterType = "semanal" | "quinzenal" | "mensal";
 const AVERAGE_KM_PER_LITER = 2.5;
 
 const chartConfig = {
@@ -46,43 +51,6 @@ const fileToDataURI = (file: File): Promise<string> => {
     });
 };
 
-const fileToText = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-            try {
-                const data = e.target?.result;
-                if (file.type.includes('spreadsheet') || file.type.includes('excel') || file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    const sheetName = workbook.SheetNames[0];
-                    const worksheet = workbook.Sheets[sheetName];
-                    const csvText = XLSX.utils.sheet_to_csv(worksheet);
-                    resolve(`data:text/csv;base64,${btoa(csvText)}`);
-                } else if (file.type === 'text/csv' || file.name.endsWith('.csv')) {
-                    const text = await new Promise<string>((res) => {
-                        const textReader = new FileReader();
-                        textReader.onload = (ev) => res(ev.target?.result as string);
-                        textReader.readAsText(file);
-                    });
-                    resolve(`data:text/csv;base64,${btoa(text)}`);
-                } else {
-                    fileToDataURI(file).then(resolve).catch(reject);
-                }
-            } catch (err) {
-                reject(err);
-            }
-        };
-        reader.onerror = reject;
-
-        if (file.type.includes('spreadsheet') || file.type.includes('excel') || file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
-            reader.readAsArrayBuffer(file);
-        } else {
-            reader.readAsText(file);
-        }
-    });
-};
-
-
 export default function AdminDashboard() {
     const { toast } = useToast();
     
@@ -91,7 +59,10 @@ export default function AdminDashboard() {
     const [isLoading, setIsLoading] = useState(true);
 
     // Dashboard state
-    const [filter, setFilter] = useState<FilterType>("mensal");
+    const [dateRange, setDateRange] = useState<DateRange | undefined>({
+        from: startOfMonth(new Date()),
+        to: endOfMonth(new Date()),
+    });
     const [records, setRecords] = useState<Record[]>([]);
     const [dieselPrices, setDieselPrices] = useState<DieselPrice[]>([]);
 
@@ -109,6 +80,29 @@ export default function AdminDashboard() {
     // Presentation Repository state
     const [repositoryContent, setRepositoryContent] = useState('');
     const [repositoryFile, setRepositoryFile] = useState<File | null>(null);
+    const [isPresentationLoading, setIsPresentationLoading] = useState(false);
+    const [presentationResult, setPresentationResult] = useState<PresentationOutput | null>(null);
+
+    const fetchAndSetData = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const [allRecords, allPrices] = await Promise.all([
+                getRecords(),
+                getDieselPrices()
+            ]);
+            setRecords(allRecords);
+            setDieselPrices(allPrices);
+        } catch (error) {
+            console.error(error);
+            toast({
+                variant: 'destructive',
+                title: 'Erro ao carregar dados',
+                description: 'Não foi possível buscar os registros para o dashboard.'
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    }, [toast]);
     
     useEffect(() => {
         const storedUser = localStorage.getItem('user');
@@ -116,30 +110,8 @@ export default function AdminDashboard() {
             const userData = JSON.parse(storedUser);
             setUserRole(userData.role);
         }
-
-        const fetchAndSetData = async () => {
-            setIsLoading(true);
-            try {
-                const [allRecords, allPrices] = await Promise.all([
-                    getRecords(),
-                    getDieselPrices()
-                ]);
-                setRecords(allRecords);
-                setDieselPrices(allPrices);
-            } catch (error) {
-                console.error(error);
-                toast({
-                    variant: 'destructive',
-                    title: 'Erro ao carregar dados',
-                    description: 'Não foi possível buscar os registros para o dashboard.'
-                });
-            } finally {
-                setIsLoading(false);
-            }
-        };
         fetchAndSetData();
-
-    }, [toast]);
+    }, [fetchAndSetData]);
 
     const dashboardData = useMemo(() => {
         const latestPrice = dieselPrices.length > 0 ? parseFloat(dieselPrices[0].price) : 0;
@@ -154,50 +126,17 @@ export default function AdminDashboard() {
             latestDieselPrice: latestPrice
         };
 
-        const now = new Date();
-        let startDate: Date;
-        let endDate: Date = endOfDay(now);
-        let previousStartDate: Date;
-        let previousEndDate: Date;
-        
-        switch(filter) {
-            case 'semanal':
-                startDate = startOfWeek(now, { weekStartsOn: 1 });
-                endDate = endOfWeek(now, { weekStartsOn: 1 });
-                previousStartDate = startOfWeek(subWeeks(now, 1), { weekStartsOn: 1 });
-                previousEndDate = endOfWeek(subWeeks(now, 1), { weekStartsOn: 1 });
-                break;
-            case 'quinzenal':
-                startDate = startOfDay(subDays(now, 14));
-                previousStartDate = startOfDay(subDays(now, 28));
-                previousEndDate = endOfDay(subDays(now, 15));
-                break;
-            case 'mensal':
-                startDate = startOfMonth(now);
-                previousStartDate = startOfMonth(subMonths(now, 1));
-                previousEndDate = endOfMonth(subMonths(now, 1));
-                break;
-        }
+        const { from: startDate, to: endDate } = dateRange || {};
 
         const filteredRecords = records.filter(r => {
+            if (!startDate || !endDate) return true;
             try {
                 const recordDate = parseISO(r.date);
-                return recordDate >= startDate && recordDate <= endDate;
-            } catch { return false; }
-        });
-
-        const previousRecords = records.filter(r => {
-            try {
-                const recordDate = parseISO(r.date);
-                return recordDate >= previousStartDate && recordDate <= previousEndDate;
+                return recordDate >= startOfDay(startDate) && recordDate <= endOfDay(endDate);
             } catch { return false; }
         });
         
         const totalKm = filteredRecords
-            .filter(r => r.status === 'Finalizado' && r.kmEnd && r.kmStart)
-            .reduce((sum, r) => sum + (r.kmEnd! - r.kmStart!), 0);
-
-        const totalKmPrevious = previousRecords
             .filter(r => r.status === 'Finalizado' && r.kmEnd && r.kmStart)
             .reduce((sum, r) => sum + (r.kmEnd! - r.kmStart!), 0);
             
@@ -206,55 +145,28 @@ export default function AdminDashboard() {
         const totalCost = (totalKm / AVERAGE_KM_PER_LITER) * latestPrice;
 
         const performanceData = (() => {
-            switch(filter) {
-                case 'semanal':
-                    return Array.from({ length: 7 }).map((_, i) => {
-                        const day = startOfWeek(now, { weekStartsOn: 1 });
-                        day.setDate(day.getDate() + i);
-                        const dayString = format(day, 'EEE', { locale: ptBR });
-                        const total = records
-                            .filter(r => {
-                                if (r.status !== 'Finalizado' || !r.kmEnd || !r.kmStart) return false;
-                                const recordDate = parseISO(r.date);
-                                const start = startOfWeek(now, { weekStartsOn: 1 });
-                                const end = endOfWeek(now, { weekStartsOn: 1 });
-                                return recordDate >= start && recordDate <= end && format(recordDate, 'EEE', { locale: ptBR }) === dayString;
-                            })
-                            .reduce((sum, r) => sum + (r.kmEnd! - r.kmStart!), 0);
-                        return { name: dayString, total: total };
-                    });
-                case 'quinzenal':
-                     return [
-                        {
-                          name: "Semana Anterior",
-                          total: records.filter(r => {
-                              if (r.status !== 'Finalizado' || !r.kmEnd || !r.kmStart) return false;
-                              const recordDate = parseISO(r.date);
-                              const start = startOfWeek(subWeeks(now, 1), { locale: ptBR, weekStartsOn: 1 });
-                              const end = endOfWeek(subWeeks(now, 1), { locale: ptBR, weekStartsOn: 1 });
-                              return recordDate >= start && recordDate <= end;
-                          }).reduce((sum, r) => sum + (r.kmEnd! - r.kmStart!), 0)
-                        },
-                        {
-                          name: "Semana Atual",
-                          total: records.filter(r => {
-                               if (r.status !== 'Finalizado' || !r.kmEnd || !r.kmStart) return false;
-                               const recordDate = parseISO(r.date);
-                               const start = startOfWeek(now, { locale: ptBR, weekStartsOn: 1 });
-                               const end = endOfWeek(now, { locale: ptBR, weekStartsOn: 1 });
-                               return recordDate >= start && recordDate <= end;
-                          }).reduce((sum, r) => sum + (r.kmEnd! - r.kmStart!), 0)
-                        }
-                    ];
-                case 'mensal':
-                    return Array.from({ length: 6 }).map((_, i) => {
-                        const month = subMonths(now, 5 - i);
-                        const monthString = format(month, 'MMM', { locale: ptBR });
-                        const total = records
-                            .filter(r => r.status === 'Finalizado' && r.kmEnd && r.kmStart && format(parseISO(r.date), 'MMM', { locale: ptBR }) === monthString)
-                            .reduce((sum, r) => sum + (r.kmEnd! - r.kmStart!), 0);
-                        return { name: monthString, total: total };
-                    });
+            if (!startDate || !endDate) return [];
+            const diffDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+            
+            if (diffDays <= 31) { // Daily view
+                 return Array.from({ length: diffDays + 1 }).map((_, i) => {
+                    const day = addDays(startDate, i);
+                    const dayString = format(day, 'dd/MM');
+                    const total = filteredRecords
+                        .filter(r => r.status === 'Finalizado' && r.kmEnd && r.kmStart && format(parseISO(r.date), 'dd/MM') === dayString)
+                        .reduce((sum, r) => sum + (r.kmEnd! - r.kmStart!), 0);
+                    return { name: dayString, total };
+                });
+            } else { // Monthly view
+                const monthMap = new Map<string, number>();
+                filteredRecords.forEach(r => {
+                    if (r.status === 'Finalizado' && r.kmEnd && r.kmStart) {
+                        const monthString = format(parseISO(r.date), 'MMM/yy', { locale: ptBR });
+                        const currentTotal = monthMap.get(monthString) || 0;
+                        monthMap.set(monthString, currentTotal + (r.kmEnd - r.kmStart));
+                    }
+                });
+                return Array.from(monthMap.entries()).map(([name, total]) => ({ name, total })).sort((a,b) => new Date(a.name).getTime() - new Date(b.name).getTime());
             }
         })();
         
@@ -275,16 +187,9 @@ export default function AdminDashboard() {
             .slice(0, 5);
 
 
-        return { totalKm, totalKmPrevious, alerts, performanceData, topVehicles, totalCost, latestDieselPrice: latestPrice };
+        return { totalKm, alerts, performanceData, topVehicles, totalCost, latestDieselPrice: latestPrice, totalKmPrevious: 0 };
 
-    }, [records, filter, dieselPrices]);
-
-    const kmPercentageChange = dashboardData.totalKmPrevious > 0 
-      ? ((dashboardData.totalKm - dashboardData.totalKmPrevious) / dashboardData.totalKmPrevious) * 100
-      : dashboardData.totalKm > 0 ? 100 : 0;
-      
-    const xAxisKey = filter === 'semanal' ? 'name' : filter === 'quinzenal' ? 'name' : 'name';
-
+    }, [records, dateRange, dieselPrices]);
 
     const handleGenerateFleetReport = async () => {
         setIsFleetLoading(true);
@@ -365,7 +270,46 @@ export default function AdminDashboard() {
         } finally {
           setIsSheetLoading(false);
         }
-      };
+    };
+
+    const handleGeneratePresentation = async () => {
+        if (!repositoryContent && !repositoryFile) {
+            toast({
+                variant: 'destructive',
+                title: 'Nenhum conteúdo fornecido',
+                description: 'Por favor, adicione anotações ou um arquivo para gerar o resumo.',
+            });
+            return;
+        }
+
+        setIsPresentationLoading(true);
+        setPresentationResult(null);
+
+        try {
+            let fileDataUri: string | undefined = undefined;
+            if (repositoryFile) {
+                fileDataUri = await fileToDataURI(repositoryFile);
+            }
+
+            const input: PresentationInput = {
+                repositoryContent: repositoryContent || undefined,
+                fileDataUri: fileDataUri,
+            };
+
+            const result = await generatePresentationSummary(input);
+            setPresentationResult(result);
+
+        } catch (error) {
+            console.error('Failed to generate presentation', error);
+            toast({
+                variant: 'destructive',
+                title: 'Erro na Geração',
+                description: 'A IA não conseguiu processar o conteúdo. Tente novamente.',
+            });
+        } finally {
+            setIsPresentationLoading(false);
+        }
+    };
 
 
   if (isLoading) {
@@ -396,28 +340,60 @@ export default function AdminDashboard() {
                 <AccordionContent>
                     <div className="space-y-6 pt-2">
                         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                            <div className="flex gap-2">
-                                <Button variant={filter === 'semanal' ? 'default' : 'outline'} onClick={() => setFilter('semanal')}>Semanal</Button>
-                                <Button variant={filter === 'quinzenal' ? 'default' : 'outline'} onClick={() => setFilter('quinzenal')}>Quinzenal</Button>
-                                <Button variant={filter === 'mensal' ? 'default' : 'outline'} onClick={() => setFilter('mensal')}>Mensal</Button>
+                             <div className="flex items-center gap-2">
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            id="date"
+                                            variant={"outline"}
+                                            className={cn(
+                                                "w-[260px] justify-start text-left font-normal",
+                                                !dateRange && "text-muted-foreground"
+                                            )}
+                                        >
+                                            <CalendarIcon className="mr-2 h-4 w-4" />
+                                            {dateRange?.from ? (
+                                                dateRange.to ? (
+                                                    <>
+                                                        {format(dateRange.from, "LLL dd, y")} -{" "}
+                                                        {format(dateRange.to, "LLL dd, y")}
+                                                    </>
+                                                ) : (
+                                                    format(dateRange.from, "LLL dd, y")
+                                                )
+                                            ) : (
+                                                <span>Selecione um período</span>
+                                            )}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                        <Calendar
+                                            initialFocus
+                                            mode="range"
+                                            defaultMonth={dateRange?.from}
+                                            selected={dateRange}
+                                            onSelect={setDateRange}
+                                            numberOfMonths={2}
+                                            locale={ptBR}
+                                        />
+                                    </PopoverContent>
+                                </Popover>
                             </div>
                         </div>
                         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                             <Card>
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <h3 className="text-sm font-medium">KM Total ({filter})</h3>
+                                    <h3 className="text-sm font-medium">KM Total</h3>
                                     <GaugeCircle className="h-4 w-4 text-muted-foreground" />
                                 </CardHeader>
                                 <CardContent>
                                     <div className="text-2xl font-bold">{dashboardData.totalKm.toLocaleString('pt-BR')} km</div>
-                                    <p className={`text-xs ${kmPercentageChange >= 0 ? 'text-green-600' : 'text-destructive'}`}>
-                                        {kmPercentageChange >= 0 ? '+' : ''}{kmPercentageChange.toFixed(1)}% do período anterior
-                                    </p>
+                                    <p className="text-xs text-muted-foreground">KM total rodado no período.</p>
                                 </CardContent>
                             </Card>
                             <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <h3 className="text-sm font-medium">Custo Total ({filter})</h3>
+                                <h3 className="text-sm font-medium">Custo Total</h3>
                                 <DollarSign className="h-4 w-4 text-muted-foreground" />
                             </CardHeader>
                             <CardContent>
@@ -456,9 +432,9 @@ export default function AdminDashboard() {
                                 <ChartContainer config={chartConfig} className="h-[250px] w-full">
                                 <LineChart data={dashboardData.performanceData} margin={{ left: 12, right: 12 }}>
                                     <CartesianGrid vertical={false} />
-                                    <XAxis dataKey={xAxisKey} tickLine={false} axisLine={false} tickMargin={8} />
+                                    <XAxis dataKey="name" tickLine={false} axisLine={false} tickMargin={8} />
                                     <YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => `${value / 1000}k`} />
-                                    <ChartTooltip content={<ChartTooltipContent indicator="dot" />} />
+                                    <RechartsTooltip content={<ChartTooltipContent indicator="dot" />} />
                                     <Line dataKey="total" type="monotone" stroke="var(--color-total)" strokeWidth={2} dot={true} name="KM" />
                                 </LineChart>
                                 </ChartContainer>
@@ -475,7 +451,7 @@ export default function AdminDashboard() {
                                         <CartesianGrid horizontal={false} />
                                         <YAxis dataKey="name" type="category" tickLine={false} axisLine={false} tickMargin={8} width={80} />
                                         <XAxis type="number" hide />
-                                        <ChartTooltip content={<ChartTooltipContent indicator="dot" />} />
+                                        <RechartsTooltip content={<ChartTooltipContent indicator="dot" />} />
                                         <Bar dataKey="km" radius={5} name="KM" fill="var(--color-km)" />
                                     </BarChartComponent>
                                 </ChartContainer>
@@ -664,29 +640,59 @@ export default function AdminDashboard() {
                                                 className="h-48 mt-2"
                                                 value={repositoryContent}
                                                 onChange={(e) => setRepositoryContent(e.target.value)}
+                                                disabled={isPresentationLoading}
                                             />
                                         </div>
                                         <div>
-                                            <Label htmlFor="repository-upload">Upload de Arquivos</Label>
+                                            <Label htmlFor="repository-upload">Upload de Arquivos de Apoio</Label>
                                              <div className="relative mt-2">
                                                 <Input
                                                     id="repository-upload"
                                                     type="file"
                                                     onChange={handleRepositoryFileChange}
                                                     className="pr-12"
+                                                    disabled={isPresentationLoading}
                                                 />
                                                 <Upload className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
                                             </div>
                                             {repositoryFile && <p className="text-sm text-muted-foreground mt-2">Arquivo selecionado: {repositoryFile.name}</p>}
                                         </div>
+                                         <Button onClick={handleGeneratePresentation} disabled={isPresentationLoading || (!repositoryContent && !repositoryFile)} className="w-full">
+                                            {isPresentationLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}
+                                            {isPresentationLoading ? 'Gerando Resumo...' : 'Gerar Resumo da Apresentação com IA'}
+                                        </Button>
                                     </div>
                                 </CardContent>
-                                <CardFooter className="flex justify-end">
-                                    <Button disabled>
-                                        <BrainCircuit className="mr-2 h-4 w-4" />
-                                        Gerar Resumo da Apresentação (Em Breve)
-                                    </Button>
-                                </CardFooter>
+                                {presentationResult && (
+                                     <Card className="mt-6 bg-muted/20 mx-6 mb-6">
+                                        <CardHeader>
+                                            <CardTitle>{presentationResult.title}</CardTitle>
+                                            <CardDescription>Abaixo o resumo gerado pela IA para sua apresentação.</CardDescription>
+                                        </CardHeader>
+                                        <CardContent className="space-y-6">
+                                            <div className="space-y-2">
+                                                <h3 className="font-semibold text-lg"><ListChecks /> Resumo Executivo</h3>
+                                                <Textarea readOnly value={presentationResult.summary} className="h-24 bg-background" />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <h3 className="font-semibold text-lg"><BarChart2 /> Pontos de Discussão</h3>
+                                                 <ul className="list-disc list-inside space-y-1 bg-background p-4 rounded-md">
+                                                    {presentationResult.talkingPoints.map((point, index) => (
+                                                        <li key={index}>{point}</li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <h3 className="font-semibold text-lg"><Lightbulb /> Próximos Passos</h3>
+                                                <ul className="list-disc list-inside space-y-1 bg-background p-4 rounded-md">
+                                                    {presentationResult.nextSteps.map((step, index) => (
+                                                        <li key={index}>{step}</li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                )}
                         </Card>
                         </AccordionContent>
                     </AccordionItem>
