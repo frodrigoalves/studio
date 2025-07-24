@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Um agente de IA para análise de relatórios de frota.
@@ -21,7 +22,7 @@ export type ReportInput = z.infer<typeof ReportInputSchema>;
 
 const ReportOutputSchema = z.object({
   summary: z.string().describe("Um resumo executivo da performance da frota no período, com as principais métricas (KM total, custo total, consumo médio)."),
-  trends: z.string().describe("Uma análise de tendências observadas nos dados, como variações de custo, desempenho de veículos ou motoristas."),
+  trends: z.string().describe("Uma análise de anomalias, destacando de forma clara e visível os motoristas, carros e rotas que apresentaram o maior consumo ou o pior desempenho (menor KM/L)."),
   recommendations: z.string().describe("Recomendações práticas e acionáveis para otimizar custos, melhorar a eficiência e resolver problemas identificados."),
 });
 export type ReportOutput = z.infer<typeof ReportOutputSchema>;
@@ -59,9 +60,9 @@ const prompt = ai.definePrompt({
 
     **Instruções para Guilherme:**
 
-    1.  **Resumo Geral:** Apresente um resumo conciso com as métricas essenciais: KM total rodado, custo total estimado com combustível (baseado no preço mais recente e um consumo médio de 2.5 KM/L), e o consumo médio geral da frota.
-    2.  **Análise de Anomalias (Ponto Principal):** Esta é a seção mais importante. Identifique e liste de forma clara e visível os motoristas, carros e rotas (se inferível) que apresentaram o **maior consumo** ou o pior desempenho (menor KM/L). Use marcadores ou uma lista para destacar os pontos mais críticos.
-    3.  **Recomendações e Pontos de Investigação:** Com base nas anomalias, sugira de 2 a 3 ações ou pontos de investigação para o Guilherme. Por exemplo: "Verificar o carro X que apresentou consumo 20% acima da média" ou "Analisar a rota do motorista Y para entender a causa do baixo desempenho".
+    1.  **Resumo Geral (summary):** Apresente um resumo conciso com as métricas essenciais: KM total rodado, custo total estimado com combustível (baseado no preço mais recente e um consumo médio de 2.5 KM/L), e o consumo médio geral da frota.
+    2.  **Análise de Anomalias (trends):** Esta é a seção mais importante. Identifique e liste de forma clara e visível os motoristas, carros e rotas (se inferível) que apresentaram o **maior consumo** ou o pior desempenho (menor KM/L). Use marcadores ou uma lista para destacar os pontos mais críticos.
+    3.  **Recomendações e Pontos de Investigação (recommendations):** Com base nas anomalias, sugira de 2 a 3 ações ou pontos de investigação para o Guilherme. Por exemplo: "Verificar o carro X que apresentou consumo 20% acima da média" ou "Analisar a rota do motorista Y para entender a causa do baixo desempenho".
 
     Seja um parceiro proativo para o Guilherme, ajudando-o a encontrar os problemas que precisam de atenção imediata.
   `,
@@ -82,4 +83,3 @@ const reportFlow = ai.defineFlow(
     return output!;
   }
 );
-

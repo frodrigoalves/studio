@@ -60,34 +60,7 @@ const maintenancePrompt = `
 
 
 export async function analyseSheet(input: SheetAnalysisInput): Promise<SheetAnalysisOutput> {
-  // A implementação completa do fluxo da IA virá aqui.
-  // Por enquanto, vamos simular uma resposta com base no tipo de análise.
-
-  const title = input.analysisType === 'hr' ? 'Análise de Recursos Humanos' : 'Análise de Manutenção';
-  
-  // Simula a chamada da IA
-  await new Promise(resolve => setTimeout(resolve, 1000));
-
-  return {
-    title,
-    summary: `Este é um resumo gerado pela IA sobre a análise de ${input.analysisType === 'hr' ? 'RH (atestados)' : 'Manutenção'}. A planilha com ${input.sheetContent.split('\n').length} linhas foi processada.`,
-    keyFindings: [
-      {
-        finding: "Ponto de Atenção #1 (Simulado)",
-        details: "Detalhes sobre a primeira anomalia ou tendência identificada pela IA.",
-        implication: "Impacto que isso causa na operação da TopBus."
-      },
-      {
-        finding: "Ponto de Atenção #2 (Simulado)",
-        details: "Detalhes sobre a segunda anomalia ou tendência identificada pela IA.",
-        implication: "Impacto financeiro ou operacional relacionado."
-      }
-    ],
-    recommendations: [
-      "Primeira recomendação acionável baseada nos dados.",
-      "Segunda recomendação para otimização ou investigação."
-    ]
-  };
+  return sheetAnalysisFlow(input);
 }
 
 // O código abaixo define o fluxo Genkit, mas a lógica de chamada ainda não está conectada à UI.
@@ -121,7 +94,12 @@ const sheetAnalysisFlow = ai.defineFlow(
     outputSchema: SheetAnalysisOutputSchema,
   },
   async (input) => {
-    const { output } = await analysisPrompt(input);
+    // Adiciona o título dinamicamente antes de chamar a IA
+    const analysisWithTitle = {
+        ...input,
+        title: input.analysisType === 'hr' ? 'Análise de Atestados Médicos (RH)' : 'Análise de Manutenção de Frota',
+    };
+    const { output } = await analysisPrompt(analysisWithTitle);
     return output!;
   }
 );

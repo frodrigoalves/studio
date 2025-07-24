@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Settings, FileText, LogOut, Bus, Sparkles, Loader2, Sheet } from "lucide-react";
+import { LayoutDashboard, Settings, FileText, LogOut, Bus, Sparkles, Loader2 } from "lucide-react";
 
 
 interface User {
@@ -95,19 +95,11 @@ export default function AdminLayout({
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
-             <SidebarMenuItem>
-               <SidebarMenuButton asChild>
-                <Link href="/admin/sheet-analysis">
-                  <Sheet />
-                  Análise de Planilhas
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
             <SidebarMenuItem>
                <SidebarMenuButton asChild>
                 <Link href="/admin/ai-reports">
                   <Sparkles />
-                  Relatórios IA
+                  Central de IA
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
