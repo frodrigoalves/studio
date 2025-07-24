@@ -135,13 +135,14 @@ export function DriverForm() {
         }
 
         const photoBase64 = data.endOdometerPhoto ? await fileToBase64(data.endOdometerPhoto) : null;
+        
+        const dataToUpdate = {
+          kmEnd: data.finalKm,
+          status: "Finalizado" as const,
+          endOdometerPhoto: photoBase64,
+        };
 
-        await updateRecord(existingRecord.id, {
-            ...existingRecord,
-            kmEnd: data.finalKm,
-            status: "Finalizado",
-            endOdometerPhoto: photoBase64,
-        });
+        await updateRecord(existingRecord.id, dataToUpdate);
         
         toast({
           title: "Viagem finalizada com sucesso!",
