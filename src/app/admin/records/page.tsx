@@ -1,13 +1,13 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { MoreHorizontal, PlusCircle, FileUp, Camera, AlertCircle, KeyRound, Loader2 } from "lucide-react";
+import { MoreHorizontal, PlusCircle, FileUp, Camera, AlertCircle, KeyRound, Loader2, Upload } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import {
   Dialog,
@@ -23,6 +23,20 @@ import { Label } from "@/components/ui/label";
 import { useToast } from '@/hooks/use-toast';
 import { getRecords, addRecord, updateRecord, type Record } from '@/services/records';
 
+const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = (error) => reject(error);
+    });
+};
+
+type NewRecordState = Omit<Record, 'id' | 'status' | 'startOdometerPhoto' | 'endOdometerPhoto'> & {
+    startOdometerPhoto: File | null;
+    endOdometerPhoto: File | null;
+};
+
 export default function RecordsPage() {
     const { toast } = useToast();
     const [records, setRecords] = useState<Record[]>([]);
@@ -34,15 +48,20 @@ export default function RecordsPage() {
     const [selectedRecord, setSelectedRecord] = useState<Record | null>(null);
     const [authPassword, setAuthPassword] = useState('');
     const [isAuthorizing, setIsAuthorizing] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
     
-    const [newRecord, setNewRecord] = useState<Omit<Record, 'id' | 'status' | 'startOdometerPhoto' | 'endOdometerPhoto'>>({
+    const initialNewRecordState: NewRecordState = {
         date: new Date().toISOString().split('T')[0],
         driver: '',
         car: '',
         plate: '',
         kmStart: null,
         kmEnd: null,
-    });
+        startOdometerPhoto: null,
+        endOdometerPhoto: null,
+    };
+
+    const [newRecord, setNewRecord] = useState<NewRecordState>(initialNewRecordState);
     
     const [editRecordData, setEditRecordData] = useState<Record | null>(null);
 
@@ -68,30 +87,30 @@ export default function RecordsPage() {
     }, []);
 
     const handleAddRecord = async () => {
-      const newRecordPayload = {
-        ...newRecord,
-        kmStart: newRecord.kmStart ? Number(newRecord.kmStart) : null,
-        kmEnd: newRecord.kmEnd ? Number(newRecord.kmEnd) : null,
-        status: newRecord.kmEnd ? "Finalizado" : "Em Andamento" as "Finalizado" | "Em Andamento",
-        startOdometerPhoto: null,
-        endOdometerPhoto: null,
-      };
-      
+      setIsSaving(true);
       try {
+        const startPhotoBase64 = newRecord.startOdometerPhoto ? await fileToBase64(newRecord.startOdometerPhoto) : null;
+        const endPhotoBase64 = newRecord.endOdometerPhoto ? await fileToBase64(newRecord.endOdometerPhoto) : null;
+
+        const newRecordPayload = {
+          ...newRecord,
+          kmStart: newRecord.kmStart ? Number(newRecord.kmStart) : null,
+          kmEnd: newRecord.kmEnd ? Number(newRecord.kmEnd) : null,
+          status: newRecord.kmEnd ? "Finalizado" : "Em Andamento" as "Finalizado" | "Em Andamento",
+          startOdometerPhoto: startPhotoBase64,
+          endOdometerPhoto: endPhotoBase64,
+        };
+      
         await addRecord(newRecordPayload);
         setAddDialogOpen(false);
-        setNewRecord({
-          date: new Date().toISOString().split('T')[0],
-          driver: '',
-          car: '',
-          plate: '',
-          kmStart: null,
-          kmEnd: null,
-        });
-        fetchRecords(); // Refresh data
+        setNewRecord(initialNewRecordState);
+        fetchRecords();
         toast({ title: "Sucesso!", description: "Registro adicionado." });
       } catch (error) {
+        console.error("Failed to add record", error);
         toast({ variant: 'destructive', title: "Erro", description: "Não foi possível adicionar o registro." });
+      } finally {
+        setIsSaving(false);
       }
     }
     
@@ -168,11 +187,11 @@ export default function RecordsPage() {
                             Adicionar Registro
                         </Button>
                     </DialogTrigger>
-                    <DialogContent className="sm:max-w-[480px]">
+                    <DialogContent className="sm:max-w-2xl">
                         <DialogHeader>
                             <DialogTitle>Adicionar Novo Registro</DialogTitle>
                             <DialogDescription>
-                                Preencha os detalhes da viagem manualmente. Esta opção não inclui upload de fotos.
+                                Preencha os detalhes da viagem manualmente, incluindo as fotos do odômetro.
                             </DialogDescription>
                         </DialogHeader>
                         <div className="grid gap-4 py-4">
@@ -206,10 +225,23 @@ export default function RecordsPage() {
                                     <Input id="kmEnd" type="number" value={newRecord.kmEnd ?? ''} onChange={(e) => setNewRecord({...newRecord, kmEnd: e.target.valueAsNumber})} />
                                 </div>
                             </div>
+                             <div className="grid grid-cols-2 gap-4">
+                               <div className="space-y-2">
+                                    <Label htmlFor="startOdometerPhoto">Foto Odômetro (Início)</Label>
+                                    <Input id="startOdometerPhoto" type="file" accept="image/*" onChange={(e) => setNewRecord({...newRecord, startOdometerPhoto: e.target.files ? e.target.files[0] : null})} />
+                                </div>
+                               <div className="space-y-2">
+                                    <Label htmlFor="endOdometerPhoto">Foto Odômetro (Fim)</Label>
+                                    <Input id="endOdometerPhoto" type="file" accept="image/*" onChange={(e) => setNewRecord({...newRecord, endOdometerPhoto: e.target.files ? e.target.files[0] : null})} />
+                                </div>
+                            </div>
                         </div>
                         <DialogFooter>
                             <Button variant="outline" onClick={() => setAddDialogOpen(false)}>Cancelar</Button>
-                            <Button onClick={handleAddRecord}>Salvar Registro</Button>
+                            <Button onClick={handleAddRecord} disabled={isSaving}>
+                                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                {isSaving ? "Salvando..." : "Salvar Registro"}
+                            </Button>
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>

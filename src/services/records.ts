@@ -17,20 +17,16 @@ export interface Record {
   endOdometerPhoto: string | null;
 }
 
-export type RecordUpdatePayload = {
-    kmEnd?: number | null;
-    status?: "Finalizado" | "Em Andamento";
-    endOdometerPhoto?: string | null;
-    [key: string]: any; 
-}
+export type RecordUpdatePayload = Partial<Omit<Record, 'id'>>;
 
 
 export async function addRecord(record: Omit<Record, 'id'>): Promise<Record> {
   const docRef = await addDoc(collection(db, "tripRecords"), record);
-  return { id: docRef.id, ...record };
+  const docSnap = await getDoc(docRef);
+  return { id: docSnap.id, ...(docSnap.data() as Omit<Record, 'id'>) };
 }
 
-export async function updateRecord(id: string, record: Partial<Record>): Promise<{ id: string }> {
+export async function updateRecord(id: string, record: RecordUpdatePayload): Promise<{ id: string }> {
     const recordRef = doc(db, "tripRecords", id);
     await updateDoc(recordRef, record);
     return { id };
@@ -47,7 +43,8 @@ export async function getRecordByPlateAndStatus(plate: string, status: "Em Andam
     const q = query(
         collection(db, "tripRecords"), 
         where("plate", "==", plate), 
-        where("status", "==", status)
+        where("status", "==", status),
+        limit(1)
     );
     const querySnapshot = await getDocs(q);
     if (querySnapshot.empty) {
