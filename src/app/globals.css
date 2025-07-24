@@ -13,8 +13,8 @@
     --popover: 0 0% 100%;
     --popover-foreground: 223 39% 11%;
 
-    --primary: 217 91% 60%; /* A good, accessible blue */
-    --primary-foreground: 0 0% 100%;
+    --primary: 214 96% 75%; /* #77B5FE - Soft Blue */
+    --primary-foreground: 223 39% 11%;
 
     --secondary: 220 13% 91%;
     --secondary-foreground: 224 71% 4%;
@@ -22,7 +22,7 @@
     --muted: 220 13% 91%;
     --muted-foreground: 220 9% 46%;
 
-    --accent: 120 73% 75%; /* #90EE90 */
+    --accent: 120 73% 75%; /* #90EE90 - Light Green */
     --accent-foreground: 223 39% 11%;
 
     --destructive: 0 84.2% 60.2%;
@@ -30,7 +30,7 @@
 
     --border: 220 13% 89%;
     --input: 220 13% 89%;
-    --ring: 217 91% 60%;
+    --ring: 214 96% 75%;
 
     --radius: 0.5rem;
   }
