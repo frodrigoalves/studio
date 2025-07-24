@@ -2,7 +2,7 @@
 'use server';
 
 import { db } from '@/lib/firebase';
-import { collection, addDoc, getDocs, doc, updateDoc, query, where, getDoc, orderBy, DocumentData, limit } from 'firebase/firestore';
+import { collection, addDoc, getDocs, doc, updateDoc, query, where, getDoc, orderBy, limit, DocumentData } from 'firebase/firestore';
 
 export interface Record {
   id: string;
@@ -17,12 +17,10 @@ export interface Record {
   endOdometerPhoto: string | null;
 }
 
-export type RecordUpdatePayload = Partial<Omit<Record, 'id'>>;
 export type RecordAddPayload = Omit<Record, 'id'>;
-
+export type RecordUpdatePayload = Partial<Omit<Record, 'id'>>;
 
 export async function addRecord(record: RecordAddPayload): Promise<Record> {
-  // Ensure numeric fields are correctly formatted before sending to Firestore
   const dataToSave = {
       ...record,
       kmStart: record.kmStart ? Number(record.kmStart) : null,
@@ -33,18 +31,19 @@ export async function addRecord(record: RecordAddPayload): Promise<Record> {
   return { id: docSnap.id, ...(docSnap.data() as Omit<Record, 'id'>) };
 }
 
-export async function updateRecord(id: string, record: RecordUpdatePayload): Promise<{ id: string }> {
+export async function updateRecord(id: string, data: RecordUpdatePayload): Promise<void> {
     const recordRef = doc(db, "tripRecords", id);
+    const dataToUpdate: { [key: string]: any } = { ...data };
+
     // Ensure numeric fields are correctly formatted before sending to Firestore
-    const dataToUpdate: RecordUpdatePayload = { ...record };
     if (dataToUpdate.kmStart !== undefined) {
         dataToUpdate.kmStart = dataToUpdate.kmStart ? Number(dataToUpdate.kmStart) : null;
     }
     if (dataToUpdate.kmEnd !== undefined) {
         dataToUpdate.kmEnd = dataToUpdate.kmEnd ? Number(dataToUpdate.kmEnd) : null;
     }
+
     await updateDoc(recordRef, dataToUpdate);
-    return { id };
 }
 
 
@@ -59,6 +58,7 @@ export async function getRecordByPlateAndStatus(plate: string, status: "Em Andam
         collection(db, "tripRecords"), 
         where("plate", "==", plate), 
         where("status", "==", status),
+        orderBy("date", "desc"),
         limit(1)
     );
     const querySnapshot = await getDocs(q);
