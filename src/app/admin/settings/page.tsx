@@ -15,6 +15,7 @@ export default function SettingsPage() {
     const { toast } = useToast();
     const [prices, setPrices] = useState<DieselPrice[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [isSaving, setIsSaving] = useState(false);
     const [newPrice, setNewPrice] = useState('');
     const [newDate, setNewDate] = useState(new Date().toISOString().split('T')[0]);
 
@@ -41,19 +42,22 @@ export default function SettingsPage() {
 
     const handleSavePrice = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!newPrice || !newDate) {
+        const priceValue = parseFloat(newPrice);
+
+        if (!newPrice || !newDate || isNaN(priceValue) || priceValue <= 0) {
             toast({
                 variant: 'destructive',
-                title: "Erro",
-                description: "Por favor, preencha o preço e a data."
+                title: "Dados Inválidos",
+                description: "Por favor, preencha o preço e a data corretamente."
             });
             return;
         }
-
+        
+        setIsSaving(true);
         try {
             await saveDieselPrice({
                 date: newDate,
-                price: parseFloat(newPrice).toFixed(2),
+                price: priceValue.toFixed(2),
             });
             
             setNewPrice('');
@@ -67,9 +71,11 @@ export default function SettingsPage() {
         } catch (error) {
              toast({
                 variant: 'destructive',
-                title: "Erro",
-                description: "Não foi possível salvar o novo preço."
+                title: "Erro ao Salvar",
+                description: "Não foi possível salvar o novo preço. Tente novamente."
             });
+        } finally {
+            setIsSaving(false);
         }
     };
 
@@ -91,6 +97,7 @@ export default function SettingsPage() {
                                 placeholder="5.50" 
                                 value={newPrice}
                                 onChange={(e) => setNewPrice(e.target.value)}
+                                disabled={isSaving}
                             />
                         </div>
                          <div className="space-y-2">
@@ -100,11 +107,16 @@ export default function SettingsPage() {
                                 type="date" 
                                 value={newDate}
                                 onChange={(e) => setNewDate(e.target.value)}
+                                disabled={isSaving}
                             />
                         </div>
-                        <Button type="submit" className="w-full">
-                            <Save className="mr-2 h-4 w-4" />
-                            Salvar Preço
+                        <Button type="submit" className="w-full" disabled={isSaving}>
+                            {isSaving ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                                <Save className="mr-2 h-4 w-4" />
+                            )}
+                            {isSaving ? "Salvando..." : "Salvar Preço"}
                         </Button>
                     </form>
                 </CardContent>
@@ -132,7 +144,7 @@ export default function SettingsPage() {
                             ) : prices.map(item => (
                                 <TableRow key={item.id}>
                                     <TableCell>{new Date(item.date).toLocaleDateString('pt-BR', { timeZone: 'UTC'})}</TableCell>
-                                    <TableCell className="text-right font-mono">{item.price}</TableCell>
+                                    <TableCell className="text-right font-mono">{Number(item.price).toFixed(2)}</TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>
