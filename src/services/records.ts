@@ -26,6 +26,7 @@ export async function addRecord(record: RecordAddPayload): Promise<Record> {
       ...record,
       kmStart: record.kmStart ? Number(record.kmStart) : null,
       kmEnd: record.kmEnd ? Number(record.kmEnd) : null,
+      date: new Date(record.date).toISOString().split('T')[0],
   };
 
   if(isNaN(dataToSave.kmStart!)) dataToSave.kmStart = null;

@@ -63,6 +63,7 @@ export default function AdminDashboard() {
 
     const now = new Date();
     let startDate: Date;
+    let endDate: Date = endOfDay(now);
     let previousStartDate: Date;
     let previousEndDate: Date;
     
@@ -87,7 +88,7 @@ export default function AdminDashboard() {
     const filteredRecords = records.filter(r => {
         try {
             const recordDate = parseISO(r.date);
-            return recordDate >= startDate;
+            return recordDate >= startDate && recordDate <= endDate;
         } catch { return false; }
     });
 
@@ -127,8 +128,8 @@ export default function AdminDashboard() {
                       total: records.filter(r => {
                           if (r.status !== 'Finalizado' || !r.kmEnd || !r.kmStart) return false;
                           const recordDate = parseISO(r.date);
-                          const start = startOfWeek(subWeeks(now, 1), { locale: ptBR });
-                          const end = endOfWeek(subWeeks(now, 1), { locale: ptBR });
+                          const start = startOfWeek(subWeeks(now, 1), { locale: ptBR, weekStartsOn: 1 });
+                          const end = endOfWeek(subWeeks(now, 1), { locale: ptBR, weekStartsOn: 1 });
                           return recordDate >= start && recordDate <= end;
                       }).reduce((sum, r) => sum + (r.kmEnd! - r.kmStart!), 0)
                     },
@@ -137,8 +138,8 @@ export default function AdminDashboard() {
                       total: records.filter(r => {
                            if (r.status !== 'Finalizado' || !r.kmEnd || !r.kmStart) return false;
                            const recordDate = parseISO(r.date);
-                           const start = startOfWeek(now, { locale: ptBR });
-                           const end = endOfWeek(now, { locale: ptBR });
+                           const start = startOfWeek(now, { locale: ptBR, weekStartsOn: 1 });
+                           const end = endOfWeek(now, { locale: ptBR, weekStartsOn: 1 });
                            return recordDate >= start && recordDate <= end;
                       }).reduce((sum, r) => sum + (r.kmEnd! - r.kmStart!), 0)
                     }
