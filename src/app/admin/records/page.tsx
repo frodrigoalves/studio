@@ -22,6 +22,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from '@/hooks/use-toast';
 import { getRecords, addRecord, updateRecord, type Record, type RecordAddPayload } from '@/services/records';
+import Papa from 'papaparse';
 
 const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -168,6 +169,44 @@ export default function RecordsPage() {
         }
     };
 
+    const handleExport = () => {
+      if (records.length === 0) {
+          toast({
+              title: "Nenhum dado para exportar",
+              description: "A tabela de registros está vazia.",
+          });
+          return;
+      }
+  
+      const dataToExport = records.map(r => ({
+          'Data': new Date(r.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' }),
+          'Motorista': r.driver,
+          'Veículo': r.car,
+          'Chapa': r.plate,
+          'KM Início': r.kmStart,
+          'KM Fim': r.kmEnd,
+          'KM Total': (r.kmEnd && r.kmStart) ? r.kmEnd - r.kmStart : 0,
+          'Status': r.status,
+          'URL Foto Início': r.startOdometerPhoto,
+          'URL Foto Fim': r.endOdometerPhoto
+      }));
+  
+      const csv = Papa.unparse(dataToExport);
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', 'registros_viagens.csv');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast({
+          title: "Exportação Concluída",
+          description: "O arquivo CSV foi baixado com sucesso."
+      });
+  };
+
   return (
     <>
     <Card>
@@ -178,7 +217,7 @@ export default function RecordsPage() {
                 <CardDescription>Visualize e gerencie todos os registros de hodômetro.</CardDescription>
             </div>
             <div className="flex gap-2">
-                <Button variant="outline">
+                <Button variant="outline" onClick={handleExport}>
                     <FileUp className="mr-2 h-4 w-4" />
                     Exportar
                 </Button>
