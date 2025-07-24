@@ -11,7 +11,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 
-export const SheetAnalysisInputSchema = z.object({
+const SheetAnalysisInputSchema = z.object({
   sheetContent: z.string().describe('O conteúdo completo da planilha em formato CSV.'),
   analysisType: z.enum(['hr', 'maintenance']).describe('O tipo de análise a ser realizada: "hr" para Recursos Humanos ou "maintenance" para Manutenção.'),
   tripRecords: z.array(z.any()).optional().describe('Uma lista opcional de registros de viagem para correlação de dados.')
@@ -19,7 +19,7 @@ export const SheetAnalysisInputSchema = z.object({
 export type SheetAnalysisInput = z.infer<typeof SheetAnalysisInputSchema>;
 
 
-export const SheetAnalysisOutputSchema = z.object({
+const SheetAnalysisOutputSchema = z.object({
   title: z.string().describe("Um título geral para a análise gerada."),
   summary: z.string().describe('Um resumo executivo dos principais pontos encontrados na planilha.'),
   keyFindings: z.array(z.object({
