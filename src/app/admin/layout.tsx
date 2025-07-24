@@ -4,8 +4,6 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useAuthState } from 'react-firebase-hooks/auth';
-import { auth } from '@/lib/firebase';
 import {
   SidebarProvider,
   Sidebar,
@@ -18,10 +16,14 @@ import {
   SidebarTrigger,
   SidebarFooter,
 } from "@/components/ui/sidebar";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { LayoutDashboard, Settings, FileText, LogOut, Bus, Sparkles, Loader2 } from "lucide-react";
 
+
+interface User {
+  name: string;
+}
 
 export default function AdminLayout({
   children,
@@ -29,24 +31,26 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const pathname = usePathname();
-  const [user, loading, error] = useAuthState(auth);
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
-    if (!loading && !user && pathname !== '/login') {
+    // Verificação de autenticação no lado do cliente usando localStorage
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    } else {
       router.push('/login');
     }
-     if (error) {
-      console.error("Authentication error:", error);
-      router.push('/login');
-    }
-  }, [user, loading, router, pathname, error]);
+    setLoading(false);
+  }, [router]);
   
   const handleLogout = async () => {
     setIsLoggingOut(true);
-    await auth.signOut();
-    // The useEffect hook will handle the redirection to /login
+    localStorage.removeItem('user');
+    await new Promise(resolve => setTimeout(resolve, 500)); // Simula logout
+    router.push('/login');
     setIsLoggingOut(false);
   };
   
@@ -112,12 +116,11 @@ export default function AdminLayout({
         <SidebarFooter>
           <div className="flex items-center gap-3 p-2 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center">
             <Avatar className="h-9 w-9">
-              <AvatarImage src={user?.photoURL ?? undefined} alt={user?.displayName ?? 'Admin'} />
-              <AvatarFallback>{user?.displayName?.charAt(0) ?? 'A'}</AvatarFallback>
+              <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
             </Avatar>
              <div className="group-data-[collapsible=icon]:hidden">
-              <p className="font-semibold truncate">{user?.displayName ?? 'Admin'}</p>
-              <p className="text-xs text-muted-foreground truncate">{user?.email ?? 'admin@fleet.com'}</p>
+              <p className="font-semibold truncate">{user.name}</p>
+              <p className="text-xs text-muted-foreground truncate">Administrador</p>
             </div>
             <Button variant="ghost" size="icon" className="ml-auto group-data-[collapsible=icon]:hidden" onClick={handleLogout} disabled={isLoggingOut}>
               {isLoggingOut ? <Loader2 className="animate-spin" /> : <LogOut />}
