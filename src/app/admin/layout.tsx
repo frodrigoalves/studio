@@ -82,8 +82,8 @@ export default function AdminLayout({
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
                 <Link href="/admin">
-                  <LayoutDashboard />
-                  Dashboard
+                  <Sparkles />
+                  Central de IA
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -92,14 +92,6 @@ export default function AdminLayout({
                 <Link href="/admin/records">
                   <FileText />
                   Registros
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-               <SidebarMenuButton asChild>
-                <Link href="/admin/ai-reports">
-                  <Sparkles />
-                  Central de IA
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
