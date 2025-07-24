@@ -40,8 +40,6 @@ const startFormSchema = z.object({
 
 const endFormSchema = z.object({
   chapa: z.string().min(1, "Chapa é obrigatória."),
-  name: z.string().min(1, "Nome é obrigatório."),
-  car: z.string().min(1, "Carro é obrigatório."),
   finalKm: z.coerce.number({ required_error: "Km Final é obrigatório."}).min(1, "Km Final é obrigatório."),
   endOdometerPhoto: z.any().refine(file => file, "Foto é obrigatória."),
 });
@@ -51,7 +49,7 @@ type StartFormValues = z.infer<typeof startFormSchema>;
 type EndFormValues = z.infer<typeof endFormSchema>;
 
 const initialStartValues: Omit<StartFormValues, 'initialKm'> & { initialKm: string | number } = { chapa: "", name: "", car: "", initialKm: '', startOdometerPhoto: null };
-const initialEndValues: Omit<EndFormValues, 'finalKm'> & { finalKm: string | number } = { chapa: "", name: "", car: "", finalKm: '', endOdometerPhoto: null };
+const initialEndValues: Omit<EndFormValues, 'finalKm'> & { finalKm: string | number } = { chapa: "", finalKm: '', endOdometerPhoto: null };
 
 
 export function DriverForm() {
@@ -140,8 +138,6 @@ export function DriverForm() {
             kmEnd: data.finalKm,
             status: "Finalizado",
             endOdometerPhoto: photoBase64,
-            driver: data.name, // Also update name and car if changed
-            car: data.car,
         });
         
         toast({
@@ -276,38 +272,6 @@ export function DriverForm() {
                     </FormItem>
                   )}
                 />
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <FormField
-                      control={endForm.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Nome do Motorista</FormLabel>
-                          <FormControl>
-                             <div className="relative">
-                               <Input placeholder="Seu nome" {...field} />
-                             </div>
-                          </FormControl>
-                           <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={endForm.control}
-                      name="car"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Carro</FormLabel>
-                          <FormControl>
-                             <div className="relative">
-                                <Input placeholder="Número do ônibus" {...field} />
-                             </div>
-                          </FormControl>
-                           <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                </div>
                 <FormField
                   control={endForm.control}
                   name="finalKm"
