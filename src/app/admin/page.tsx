@@ -5,11 +5,12 @@ import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Line, LineChart, Tooltip } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { GaugeCircle, AlertTriangle, Loader2 } from "lucide-react";
+import { GaugeCircle, AlertTriangle, Loader2, Fuel, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { subDays, subWeeks, subMonths, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { getRecords, type Record } from "@/services/records";
+import { getDieselPrices, type DieselPrice } from "@/services/settings";
 import { useToast } from "@/hooks/use-toast";
 
 
@@ -25,19 +26,25 @@ const chartConfig = {
 };
 
 type FilterType = "semanal" | "quinzenal" | "mensal";
+const AVERAGE_KM_PER_LITER = 2.5; // Consumo médio de um ônibus
 
 export default function AdminDashboard() {
   const { toast } = useToast();
   const [filter, setFilter] = useState<FilterType>("mensal");
   const [records, setRecords] = useState<Record[]>([]);
+  const [dieselPrices, setDieselPrices] = useState<DieselPrice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchAndSetRecords = async () => {
+    const fetchAndSetData = async () => {
         setIsLoading(true);
         try {
-            const allRecords = await getRecords();
+            const [allRecords, allPrices] = await Promise.all([
+                getRecords(),
+                getDieselPrices()
+            ]);
             setRecords(allRecords);
+            setDieselPrices(allPrices);
         } catch (error) {
             console.error(error);
             toast({
@@ -49,16 +56,21 @@ export default function AdminDashboard() {
             setIsLoading(false);
         }
     };
-    fetchAndSetRecords();
+    fetchAndSetData();
   }, [toast]);
 
   const dashboardData = useMemo(() => {
+    
+    const latestPrice = dieselPrices.length > 0 ? parseFloat(dieselPrices[0].price) : 0;
+    
     if(records.length === 0) return {
         totalKm: 0,
         totalKmPrevious: 0,
         alerts: 0,
         performanceData: [],
         topVehicles: [],
+        totalCost: 0,
+        latestDieselPrice: latestPrice
     };
 
     const now = new Date();
@@ -70,6 +82,7 @@ export default function AdminDashboard() {
     switch(filter) {
         case 'semanal':
             startDate = startOfWeek(now, { weekStartsOn: 1 });
+            endDate = endOfWeek(now, { weekStartsOn: 1 });
             previousStartDate = startOfWeek(subWeeks(now, 1), { weekStartsOn: 1 });
             previousEndDate = endOfWeek(subWeeks(now, 1), { weekStartsOn: 1 });
             break;
@@ -108,6 +121,8 @@ export default function AdminDashboard() {
         .reduce((sum, r) => sum + (r.kmEnd! - r.kmStart!), 0);
         
     const alerts = records.filter(r => r.status === "Em Andamento").length;
+    
+    const totalCost = (totalKm / AVERAGE_KM_PER_LITER) * latestPrice;
 
     const performanceData = (() => {
         switch(filter) {
@@ -116,8 +131,14 @@ export default function AdminDashboard() {
                     const day = startOfWeek(now, { weekStartsOn: 1 });
                     day.setDate(day.getDate() + i);
                     const dayString = format(day, 'EEE', { locale: ptBR });
-                    const total = filteredRecords
-                        .filter(r => r.status === 'Finalizado' && format(parseISO(r.date), 'EEE', { locale: ptBR }) === dayString && r.kmEnd && r.kmStart)
+                    const total = records
+                        .filter(r => {
+                            if (r.status !== 'Finalizado' || !r.kmEnd || !r.kmStart) return false;
+                            const recordDate = parseISO(r.date);
+                            const start = startOfWeek(now, { weekStartsOn: 1 });
+                            const end = endOfWeek(now, { weekStartsOn: 1 });
+                            return recordDate >= start && recordDate <= end && format(recordDate, 'EEE', { locale: ptBR }) === dayString;
+                        })
                         .reduce((sum, r) => sum + (r.kmEnd! - r.kmStart!), 0);
                     return { name: dayString, total: total };
                 });
@@ -173,9 +194,9 @@ export default function AdminDashboard() {
         .slice(0, 5);
 
 
-    return { totalKm, totalKmPrevious, alerts, performanceData, topVehicles };
+    return { totalKm, totalKmPrevious, alerts, performanceData, topVehicles, totalCost, latestDieselPrice: latestPrice };
 
-  }, [records, filter]);
+  }, [records, filter, dieselPrices]);
   
   const kmPercentageChange = dashboardData.totalKmPrevious > 0 
       ? ((dashboardData.totalKm - dashboardData.totalKmPrevious) / dashboardData.totalKmPrevious) * 100
@@ -201,7 +222,7 @@ export default function AdminDashboard() {
             <Button variant={filter === 'mensal' ? 'default' : 'outline'} onClick={() => setFilter('mensal')}>Mensal</Button>
         </div>
       </div>
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <h3 className="text-sm font-medium">KM Total ({filter})</h3>
@@ -212,6 +233,26 @@ export default function AdminDashboard() {
             <p className={`text-xs ${kmPercentageChange >= 0 ? 'text-green-600' : 'text-destructive'}`}>
                 {kmPercentageChange >= 0 ? '+' : ''}{kmPercentageChange.toFixed(1)}% do período anterior
             </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <h3 className="text-sm font-medium">Custo Total ({filter})</h3>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">R$ {dashboardData.totalCost.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+             <p className="text-xs text-muted-foreground">Custo com combustível no período.</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <h3 className="text-sm font-medium">Preço do Diesel</h3>
+            <Fuel className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">R$ {dashboardData.latestDieselPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+            <p className="text-xs text-muted-foreground">Último valor salvo.</p>
           </CardContent>
         </Card>
         <Card>
@@ -264,3 +305,5 @@ export default function AdminDashboard() {
     </div>
   );
 }
+
+    
