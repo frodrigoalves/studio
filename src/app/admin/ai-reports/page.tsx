@@ -15,7 +15,7 @@ import { generateReport, type ReportOutput } from "@/ai/flows/report-flow";
 import { analyseSheet, type SheetAnalysisInput, type SheetAnalysisOutput } from "@/ai/flows/sheet-analysis-flow";
 import { Input } from "@/components/ui/input";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Bar, Line, LineChart, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
+import { Bar, BarChart, Line, LineChart, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
 import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
 import { subDays, subWeeks, subMonths, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -426,13 +426,13 @@ export default function AiReportsPage() {
                   </CardHeader>
                   <CardContent>
                      <ChartContainer config={chartConfig} className="h-[250px] w-full">
-                        <BarChart2 data={dashboardData.topVehicles} layout="vertical" margin={{ left: 10 }}>
+                        <BarChart data={dashboardData.topVehicles} layout="vertical" margin={{ left: 10 }}>
                             <CartesianGrid horizontal={false} />
                             <YAxis dataKey="name" type="category" tickLine={false} axisLine={false} tickMargin={8} width={80} />
                             <XAxis type="number" hide />
                             <Tooltip content={<ChartTooltipContent indicator="dot" />} />
                             <Bar dataKey="km" radius={5} name="KM" fill="var(--color-km)" />
-                        </BarChart2>
+                        </BarChart>
                     </ChartContainer>
                   </CardContent>
                 </Card>
@@ -638,4 +638,3 @@ export default function AiReportsPage() {
     </div>
   );
 }
-
