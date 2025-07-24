@@ -19,7 +19,6 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { prepopulateFields, type PrepopulateFieldsOutput } from "@/ai/flows/prepopulate-fields";
 import { addRecord, getRecordByPlateAndStatus, updateRecord } from "@/services/records";
 
 function debounce<T extends (...args: any[]) => void>(func: T, wait: number) {
@@ -70,7 +69,7 @@ const initialEndValues: Omit<EndFormValues, 'finalKm'> & { finalKm: string | num
 export function DriverForm() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("start");
-  const [isAiLoading, startAiTransition] = useTransition();
+  const [isFindingRecord, setIsFindingRecord] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const startForm = useForm<StartFormValues>({
@@ -86,33 +85,16 @@ export function DriverForm() {
   const handleChapaChange = useCallback(async (chapa: string) => {
     if (chapa.length < 3) return;
     
-    const form = activeTab === 'start' ? startForm : endForm;
-
-    startAiTransition(async () => {
-      if (activeTab === 'end') {
-          const existingRecord = await getRecordByPlateAndStatus(chapa, "Em Andamento");
-          if (existingRecord) {
-              endForm.setValue("name", existingRecord.driver);
-              endForm.setValue("car", existingRecord.car);
-              return;
-          }
-      }
-      try {
-        const result: PrepopulateFieldsOutput = await prepopulateFields({ chapa });
-        if (result.name && result.car) {
-          form.setValue("name", result.name);
-          form.setValue("car", result.car);
+    if (activeTab === 'end') {
+        setIsFindingRecord(true);
+        const existingRecord = await getRecordByPlateAndStatus(chapa, "Em Andamento");
+        if (existingRecord) {
+            endForm.setValue("name", existingRecord.driver);
+            endForm.setValue("car", existingRecord.car);
         }
-      } catch (error) {
-        console.error("Failed to prepopulate fields:", error);
-        toast({
-            variant: "destructive",
-            title: "Erro de IA",
-            description: "Não foi possível preencher os campos automaticamente.",
-        })
-      }
-    });
-  }, [activeTab, startForm, endForm, toast]);
+        setIsFindingRecord(false);
+    }
+  }, [activeTab, endForm]);
 
   const debouncedChapaChange = useCallback(debounce(handleChapaChange, 500), [handleChapaChange]);
   
@@ -225,10 +207,7 @@ export function DriverForm() {
                     <FormItem>
                       <FormLabel>Chapa</FormLabel>
                       <FormControl>
-                        <Input placeholder="Sua matrícula" {...field} onChange={(e) => {
-                            field.onChange(e);
-                            debouncedChapaChange(e.target.value);
-                        }} />
+                        <Input placeholder="Sua matrícula" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -244,7 +223,6 @@ export function DriverForm() {
                         <FormControl>
                            <div className="relative">
                             <Input placeholder="Seu nome" {...field} />
-                            {isAiLoading && <Loader2 className="absolute right-3 top-2.5 h-4 w-4 animate-spin text-muted-foreground" />}
                           </div>
                         </FormControl>
                         <FormMessage />
@@ -260,7 +238,6 @@ export function DriverForm() {
                         <FormControl>
                            <div className="relative">
                             <Input placeholder="Número do ônibus" {...field} />
-                             {isAiLoading && <Loader2 className="absolute right-3 top-2.5 h-4 w-4 animate-spin text-muted-foreground" />}
                           </div>
                         </FormControl>
                         <FormMessage />
@@ -337,7 +314,7 @@ export function DriverForm() {
                           <FormControl>
                              <div className="relative">
                                <Input {...field} readOnly className="bg-muted border-dashed" placeholder="Preenchido automaticamente" />
-                                {isAiLoading && <Loader2 className="absolute right-3 top-2.5 h-4 w-4 animate-spin" />}
+                                {isFindingRecord && <Loader2 className="absolute right-3 top-2.5 h-4 w-4 animate-spin" />}
                              </div>
                           </FormControl>
                            <FormMessage />
@@ -353,7 +330,7 @@ export function DriverForm() {
                           <FormControl>
                              <div className="relative">
                                 <Input {...field} readOnly className="bg-muted border-dashed" placeholder="Preenchido automaticamente"/>
-                                {isAiLoading && <Loader2 className="absolute right-3 top-2.5 h-4 w-4 animate-spin" />}
+                                {isFindingRecord && <Loader2 className="absolute right-3 top-2.5 h-4 w-4 animate-spin" />}
                              </div>
                           </FormControl>
                            <FormMessage />
@@ -406,5 +383,3 @@ export function DriverForm() {
     </Card>
   );
 }
-
-    
