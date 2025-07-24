@@ -272,18 +272,7 @@ export default function AiReportsPage() {
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         if (event.target.files) {
-            const selectedFile = event.target.files[0];
-            if (selectedFile.type !== 'text/csv') {
-                toast({
-                    variant: 'destructive',
-                    title: 'Formato Inválido',
-                    description: 'Por favor, envie apenas arquivos no formato CSV.'
-                });
-                setFile(null);
-                event.target.value = ''; // Reset file input
-                return;
-            }
-            setFile(selectedFile);
+            setFile(event.target.files[0]);
         }
     };
 
@@ -292,7 +281,7 @@ export default function AiReportsPage() {
           toast({
             variant: 'destructive',
             title: 'Nenhum arquivo selecionado',
-            description: 'Por favor, faça o upload de uma planilha para análise.',
+            description: 'Por favor, faça o upload de um arquivo para análise.',
           });
           return;
         }
@@ -303,17 +292,17 @@ export default function AiReportsPage() {
         try {
           const reader = new FileReader();
           reader.onload = async (e) => {
-            const sheetContent = e.target?.result as string;
+            const fileDataUri = e.target?.result as string;
             
             const analysisInput: SheetAnalysisInput = {
-              sheetContent,
+              fileDataUri,
               analysisType,
             };
             
             const result = await analyseSheet(analysisInput);
             setSheetAnalysisResult(result);
           };
-          reader.readAsText(file);
+          reader.readAsDataURL(file);
     
         } catch (error) {
           console.error('Failed to analyze sheet', error);
@@ -321,7 +310,7 @@ export default function AiReportsPage() {
             variant: 'destructive',
             title: 'Erro na Análise',
             description:
-              'A IA não conseguiu processar a planilha. Verifique o arquivo e tente novamente.',
+              'A IA não conseguiu processar o arquivo. Verifique o formato e tente novamente.',
           });
         } finally {
           setIsSheetLoading(false);
@@ -508,15 +497,15 @@ export default function AiReportsPage() {
                     <AccordionItem value="item-2">
                         <AccordionTrigger className="text-xl font-semibold">
                             <div className="flex items-center gap-2">
-                                <Upload /> Análise de Planilhas
+                                <Upload /> Análise de Documentos
                             </div>
                         </AccordionTrigger>
                         <AccordionContent>
                             <Card className="shadow-lg mt-2">
                                 <CardHeader>
-                                    <CardTitle>Análise Inteligente de Planilhas</CardTitle>
+                                    <CardTitle>Análise Inteligente de Documentos (OCR)</CardTitle>
                                     <CardDescription>
-                                        Faça o upload de planilhas de RH (atestados) ou Manutenção para que a IA identifique anomalias e tendências.
+                                        Faça o upload de planilhas, PDFs ou imagens de RH (atestados) ou Manutenção para que a IA identifique anomalias e tendências.
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-4">
@@ -538,12 +527,11 @@ export default function AiReportsPage() {
                                         </Select>
                                         </div>
                                         <div className="space-y-2">
-                                        <Label htmlFor="sheet-upload">Planilha (somente .csv)</Label>
+                                        <Label htmlFor="sheet-upload">Arquivo do Documento</Label>
                                         <div className="relative">
                                             <Input
                                                 id="sheet-upload"
                                                 type="file"
-                                                accept=".csv"
                                                 onChange={handleFileChange}
                                                 disabled={isSheetLoading}
                                                 className="pr-12"
@@ -558,7 +546,7 @@ export default function AiReportsPage() {
                                         className="w-full"
                                     >
                                         {isSheetLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
-                                        {isSheetLoading ? 'Analisando Planilha...' : 'Analisar Planilha com IA'}
+                                        {isSheetLoading ? 'Analisando Documento...' : 'Analisar com IA'}
                                     </Button>
 
                                     {sheetAnalysisResult && (
