@@ -218,33 +218,8 @@ export default function AiReportsPage() {
                      <Card className="shadow-lg mt-2">
                         <CardHeader>
                             <CardTitle>Análise Inteligente de Planilhas</CardTitle>
-                            <CardDescription className="flex justify-between items-center">
-                                <span>Faça o upload de planilhas de RH (atestados) ou Manutenção para que a IA identifique anomalias e tendências.</span>
-                                <Dialog>
-                                    <DialogTrigger asChild>
-                                        <Button variant="ghost" size="sm"><HelpCircle className="mr-2 h-4 w-4" />Ajuda</Button>
-                                    </DialogTrigger>
-                                    <DialogContent>
-                                        <DialogHeader>
-                                            <DialogTitle>FAQ - Análise de Planilhas</DialogTitle>
-                                            <DialogDescription>Dicas para obter os melhores resultados com a IA.</DialogDescription>
-                                        </DialogHeader>
-                                        <div className="space-y-4 text-sm">
-                                            <div>
-                                                <h4 className="font-semibold">Como a IA lê as planilhas?</h4>
-                                                <p className="text-muted-foreground">A IA é treinada para focar nos dados concretos. Ela tentará identificar automaticamente a linha do cabeçalho (com os títulos das colunas) e ignorar o resto para analisar apenas os dados brutos.</p>
-                                            </div>
-                                            <div>
-                                                <h4 className="font-semibold">Qual o melhor formato?</h4>
-                                                <p className="text-muted-foreground">Use arquivos `.csv`. Para melhores resultados, garanta que a primeira linha da sua planilha contenha os títulos das colunas (ex: "Motorista", "Placa", "Data Atestado", "CID", "Tipo Reparo", "Dias Parado").</p>
-                                            </div>
-                                             <div>
-                                                <h4 className="font-semibold">E se a planilha tiver um layout complexo?</h4>
-                                                <p className="text-muted-foreground">Se a IA tiver dificuldade, ela tentará aprender o layout. Após a primeira análise, ela se lembrará do formato para futuras análises do mesmo tipo (RH/Manutenção). Se o problema persistir, simplifique a planilha deixando apenas os dados e cabeçalhos essenciais.</p>
-                                            </div>
-                                        </div>
-                                    </DialogContent>
-                                </Dialog>
+                            <CardDescription>
+                                Faça o upload de planilhas de RH (atestados) ou Manutenção para que a IA identifique anomalias e tendências.
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
