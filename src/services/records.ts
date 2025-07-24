@@ -18,7 +18,7 @@ export interface Record {
 }
 
 export type RecordAddPayload = Omit<Record, 'id'>;
-export type RecordUpdatePayload = Partial<Omit<Record, 'id' | 'driver' | 'car' | 'plate' | 'date' | 'kmStart' | 'startOdometerPhoto'>>;
+export type RecordUpdatePayload = Partial<Omit<Record, 'id'>>;
 
 export async function addRecord(record: RecordAddPayload): Promise<Record> {
   const dataToSave = {
@@ -26,6 +26,10 @@ export async function addRecord(record: RecordAddPayload): Promise<Record> {
       kmStart: record.kmStart ? Number(record.kmStart) : null,
       kmEnd: record.kmEnd ? Number(record.kmEnd) : null,
   };
+
+  if(isNaN(dataToSave.kmStart!)) dataToSave.kmStart = null;
+  if(isNaN(dataToSave.kmEnd!)) dataToSave.kmEnd = null;
+
   const docRef = await addDoc(collection(db, "tripRecords"), dataToSave);
   const docSnap = await getDoc(docRef);
   return { id: docSnap.id, ...(docSnap.data() as Omit<Record, 'id'>) };
@@ -37,6 +41,12 @@ export async function updateRecord(id: string, data: RecordUpdatePayload): Promi
 
     if (dataToUpdate.kmEnd !== undefined) {
         dataToUpdate.kmEnd = dataToUpdate.kmEnd ? Number(dataToUpdate.kmEnd) : null;
+         if(isNaN(dataToUpdate.kmEnd!)) dataToUpdate.kmEnd = null;
+    }
+    
+    if (dataToUpdate.kmStart !== undefined) {
+        dataToUpdate.kmStart = dataToUpdate.kmStart ? Number(dataToUpdate.kmStart) : null;
+        if(isNaN(dataToUpdate.kmStart!)) dataToUpdate.kmStart = null;
     }
 
     await updateDoc(recordRef, dataToUpdate);
