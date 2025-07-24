@@ -120,12 +120,21 @@ export default function AdminLayout({
           </div>
         </SidebarFooter>
       </Sidebar>
-      <SidebarInset>
+      <SidebarInset className="flex flex-col">
         <header className="p-4 border-b flex items-center gap-4 sticky top-0 bg-background/80 backdrop-blur-sm z-10">
             <SidebarTrigger />
             <h1 className="text-xl font-semibold">Painel de Gestão</h1>
         </header>
-        <main className="p-4 lg:p-6">{children}</main>
+        <main className="p-4 lg:p-6 flex-1">{children}</main>
+        <footer className="p-4 text-center text-xs text-muted-foreground">
+            Institutional
+            <br />
+            MVP developed by Rodrigo Alves
+            <br />
+            <a href="https://rodrigosinguldev.netlify.app" target="_blank" rel="noopener noreferrer" className="underline hover:text-primary">
+                View Portfolio
+            </a>
+        </footer>
       </SidebarInset>
     </SidebarProvider>
   );
