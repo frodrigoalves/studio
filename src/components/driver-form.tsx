@@ -137,8 +137,8 @@ export function DriverForm() {
         const photoBase64 = data.endOdometerPhoto ? await fileToBase64(data.endOdometerPhoto) : null;
         
         const dataToUpdate: RecordUpdatePayload = {
-          kmEnd: data.finalKm,
           status: "Finalizado",
+          kmEnd: data.finalKm,
           endOdometerPhoto: photoBase64,
         };
 
@@ -166,10 +166,10 @@ export function DriverForm() {
 
   return (
     <Card className={cn(
-        "shadow-2xl shadow-primary/10 transition-all duration-300",
+        "shadow-2xl shadow-primary/10 transition-all duration-300 border-2",
         activeTab === 'start' 
-            ? "border-green-500/50 shadow-green-500/20" 
-            : "border-destructive/50 shadow-destructive/20"
+            ? "border-green-500/80 shadow-green-500/20" 
+            : "border-destructive/80 shadow-destructive/20"
     )}>
       <CardContent className="p-2 sm:p-4">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -258,7 +258,7 @@ export function DriverForm() {
                     </FormItem>
                   )}
                 />
-                <Button type="submit" className="w-full" disabled={isSubmitting}>
+                <Button type="submit" className="w-full bg-green-600 hover:bg-green-700" disabled={isSubmitting}>
                   {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
                   Registrar Início
                 </Button>

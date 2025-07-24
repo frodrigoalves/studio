@@ -30,7 +30,7 @@ export async function addRecord(record: Omit<Record, 'id'>): Promise<Record> {
   return { id: docRef.id, ...record };
 }
 
-export async function updateRecord(id: string, record: RecordUpdatePayload): Promise<{ id: string }> {
+export async function updateRecord(id: string, record: Partial<Record>): Promise<{ id: string }> {
     const recordRef = doc(db, "tripRecords", id);
     await updateDoc(recordRef, record);
     return { id };
@@ -47,13 +47,12 @@ export async function getRecordByPlateAndStatus(plate: string, status: "Em Andam
     const q = query(
         collection(db, "tripRecords"), 
         where("plate", "==", plate), 
-        where("status", "==", status),
-        limit(1)
+        where("status", "==", status)
     );
     const querySnapshot = await getDocs(q);
     if (querySnapshot.empty) {
         return null;
     }
-    const doc = querySnapshot.docs[0];
-    return { id: doc.id, ...doc.data() } as Record;
+    const docSnap = querySnapshot.docs[0];
+    return { id: docSnap.id, ...docSnap.data() } as Record;
 }
