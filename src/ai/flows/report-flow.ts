@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview Um agente de IA para análise de relatórios de frota.
@@ -46,9 +45,9 @@ const prompt = ai.definePrompt({
   },
   output: { schema: ReportOutputSchema },
   prompt: `
-    Você é um especialista em gestão de frotas e análise de dados para uma empresa de ônibus chamada TopBus.
-    Sua tarefa é analisar os dados brutos de viagens e o histórico de preços do diesel para gerar um relatório gerencial claro e objetivo.
-    O relatório deve ser para o período {{period}}.
+    Você é um assistente de IA para Guilherme, analista de dados da TopBus Transportes, uma empresa de transporte público coletivo com ônibus.
+    Seu principal objetivo é analisar os dados brutos de viagens para identificar **divergências e anomalias** no consumo de combustível e no desempenho das rotas.
+    O relatório deve ser claro, direto e focado em apresentar os pontos de maior atenção para o período {{period}}.
 
     **Dados Brutos:**
 
@@ -58,13 +57,13 @@ const prompt = ai.definePrompt({
     Preços do Diesel (JSON):
     {{{dieselPricesString}}}
 
-    **Instruções:**
+    **Instruções para Guilherme:**
 
-    1.  **Resumo Executivo:** Crie um parágrafo de resumo com as métricas mais importantes. Calcule o KM total rodado, o custo total com combustível (usando o preço mais recente do diesel e um consumo médio de 2.5 KM/L), e a média de KM por litro, se possível.
-    2.  **Análise de Tendências:** Descreva as principais tendências. Compare o desempenho com períodos anteriores (se houver dados). Identifique os veículos que mais rodaram ou que tiveram melhor/pior desempenho. Aponte variações de custo.
-    3.  **Recomendações:** Forneça de 2 a 3 recomendações claras e práticas. Sugira ações para economia de combustível, manutenção preventiva com base na quilometragem, ou otimização de rotas.
+    1.  **Resumo Geral:** Apresente um resumo conciso com as métricas essenciais: KM total rodado, custo total estimado com combustível (baseado no preço mais recente e um consumo médio de 2.5 KM/L), e o consumo médio geral da frota.
+    2.  **Análise de Anomalias (Ponto Principal):** Esta é a seção mais importante. Identifique e liste de forma clara e visível os motoristas, carros e rotas (se inferível) que apresentaram o **maior consumo** ou o pior desempenho (menor KM/L). Use marcadores ou uma lista para destacar os pontos mais críticos.
+    3.  **Recomendações e Pontos de Investigação:** Com base nas anomalias, sugira de 2 a 3 ações ou pontos de investigação para o Guilherme. Por exemplo: "Verificar o carro X que apresentou consumo 20% acima da média" ou "Analisar a rota do motorista Y para entender a causa do baixo desempenho".
 
-    Seja conciso, profissional e foque em insights que ajudem a diretoria a tomar decisões.
+    Seja um parceiro proativo para o Guilherme, ajudando-o a encontrar os problemas que precisam de atenção imediata.
   `,
 });
 
@@ -83,3 +82,4 @@ const reportFlow = ai.defineFlow(
     return output!;
   }
 );
+
