@@ -22,7 +22,7 @@ export async function addRecord(record: Omit<Record, 'id'>): Promise<Record> {
   return { id: docRef.id, ...record };
 }
 
-export async function updateRecord(id: string, record: Partial<Omit<Record, 'id' | 'driver' | 'car' | 'plate' | 'kmStart' | 'startOdometerPhoto' | 'date'>>): Promise<void> {
+export async function updateRecord(id: string, record: Partial<Omit<Record, 'id'>>): Promise<void> {
     const recordRef = doc(db, "tripRecords", id);
     await updateDoc(recordRef, record);
 }
