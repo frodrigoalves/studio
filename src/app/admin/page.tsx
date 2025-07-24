@@ -314,7 +314,7 @@ export default function AdminDashboard() {
             <div className="inline-block bg-primary/10 text-primary rounded-full p-4 border-2 border-primary/20">
                 <BrainCircuit className="w-8 h-8" />
             </div>
-            <h1 className="text-3xl font-bold">Central de Inteligência</h1>
+            <h1 className="text-3xl font-bold">Business Intelligence</h1>
             <p className="text-muted-foreground">Analise, gere relatórios e obtenha insights com IA para otimizar a operação.</p>
         </div>
 
@@ -417,15 +417,15 @@ export default function AdminDashboard() {
                                 <CardDescription>Total de quilômetros rodados no período.</CardDescription>
                             </CardHeader>
                             <CardContent className="pl-2">
-                                <ChartContainer className="h-[250px] w-full">
+                                <ResponsiveContainer width="100%" height={250}>
                                     <LineChart data={dashboardData.performanceData} margin={{ left: 12, right: 12 }}>
                                         <CartesianGrid vertical={false} />
                                         <XAxis dataKey="name" tickLine={false} axisLine={false} tickMargin={8} />
                                         <YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => `${value / 1000}k`} />
-                                        <ChartTooltip content={<ChartTooltipContent indicator="dot" />} />
+                                        <RechartsTooltip content={<ChartTooltipContent indicator="dot" />} />
                                         <Line dataKey="total" type="monotone" stroke="hsl(var(--primary))" strokeWidth={2} dot={true} name="KM" />
                                     </LineChart>
-                                </ChartContainer>
+                                </ResponsiveContainer>
                             </CardContent>
                             </Card>
                             <Card className="lg:col-span-3">
@@ -434,15 +434,15 @@ export default function AdminDashboard() {
                                 <CardDescription>Veículos que mais rodaram no período.</CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <ChartContainer className="h-[250px] w-full">
+                                <ResponsiveContainer width="100%" height={250}>
                                     <BarChartComponent data={dashboardData.topVehicles} layout="vertical" margin={{ left: 10 }}>
                                         <CartesianGrid horizontal={false} />
                                         <YAxis dataKey="name" type="category" tickLine={false} axisLine={false} tickMargin={8} width={80} />
                                         <XAxis type="number" hide />
-                                        <ChartTooltip content={<ChartTooltipContent indicator="dot" />} />
+                                        <RechartsTooltip content={<ChartTooltipContent indicator="dot" />} />
                                         <Bar dataKey="km" radius={5} name="KM" fill="hsl(var(--primary))" />
                                     </BarChartComponent>
-                                </ChartContainer>
+                                </ResponsiveContainer>
                             </CardContent>
                             </Card>
                         </div>
@@ -690,5 +690,3 @@ export default function AdminDashboard() {
     </div>
   );
 }
-
-    

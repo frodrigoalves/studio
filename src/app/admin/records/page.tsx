@@ -299,6 +299,7 @@ export default function RecordsPage() {
               <TableHead>Chapa</TableHead>
               <TableHead className="text-right hidden lg:table-cell">KM Início</TableHead>
               <TableHead className="text-right hidden lg:table-cell">KM Fim</TableHead>
+              <TableHead className="text-right">KM Total</TableHead>
               <TableHead className="text-center">Status</TableHead>
               <TableHead>
                 <span className="sr-only">Ações</span>
@@ -308,7 +309,7 @@ export default function RecordsPage() {
           <TableBody>
             {isLoading ? (
                 <TableRow>
-                    <TableCell colSpan={8} className="text-center">
+                    <TableCell colSpan={9} className="text-center">
                         <Loader2 className="mx-auto h-8 w-8 animate-spin" />
                     </TableCell>
                 </TableRow>
@@ -322,6 +323,9 @@ export default function RecordsPage() {
                 </TableCell>
                 <TableCell className="text-right hidden lg:table-cell">{record.kmStart ?? "—"}</TableCell>
                 <TableCell className="text-right hidden lg:table-cell">{record.kmEnd ?? "—"}</TableCell>
+                <TableCell className="text-right font-medium">
+                    {(record.kmEnd && record.kmStart) ? `${record.kmEnd - record.kmStart} km` : "—"}
+                </TableCell>
                 <TableCell className="text-center">
                   <Badge variant={record.status === "Finalizado" ? "default" : "outline"} className={record.status === "Finalizado" ? "bg-green-100 text-green-800" : ""}>
                     {record.status}
