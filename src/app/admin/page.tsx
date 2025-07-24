@@ -18,11 +18,10 @@ import { Input } from "@/components/ui/input";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { Bar, BarChart as BarChartComponent, Line, LineChart, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip } from "recharts";
+import { Bar, BarChart as BarChartComponent, Line, LineChart, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from "recharts";
 import { ChartContainer, ChartTooltipContent, ChartTooltip } from "@/components/ui/chart";
 import { addDays, subDays, subWeeks, subMonths, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import * as XLSX from 'xlsx';
 import { DateRange } from "react-day-picker";
 import { cn } from "@/lib/utils";
 
@@ -30,17 +29,6 @@ import { cn } from "@/lib/utils";
 type Period = "daily" | "weekly" | "monthly";
 type AnalysisType = 'hr' | 'maintenance';
 const AVERAGE_KM_PER_LITER = 2.5;
-
-const chartConfig = {
-    km: {
-      label: "KM",
-      color: "hsl(var(--primary))",
-    },
-    total: {
-      label: "Total KM",
-      color: "hsl(var(--primary))",
-    },
-};
 
 const fileToDataURI = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -163,7 +151,7 @@ export default function AdminDashboard() {
                     if (r.status === 'Finalizado' && r.kmEnd && r.kmStart) {
                         const monthString = format(parseISO(r.date), 'MMM/yy', { locale: ptBR });
                         const currentTotal = monthMap.get(monthString) || 0;
-                        monthMap.set(monthString, currentTotal + (r.kmEnd - r.kmStart));
+                        monthMap.set(monthString, currentTotal + (r.kmEnd! - r.kmStart!));
                     }
                 });
                 return Array.from(monthMap.entries()).map(([name, total]) => ({ name, total })).sort((a,b) => new Date(a.name).getTime() - new Date(b.name).getTime());
@@ -182,7 +170,7 @@ export default function AdminDashboard() {
             }, {} as Record<string, number>);
 
         const topVehicles = Object.entries(vehicleKm)
-            .map(([name, km]) => ({ name, km, fill: `var(--color-km)`}))
+            .map(([name, km]) => ({ name, km, fill: "var(--color-primary)"}))
             .sort((a, b) => b.km - a.km)
             .slice(0, 5);
 
@@ -429,14 +417,14 @@ export default function AdminDashboard() {
                                 <CardDescription>Total de quilômetros rodados no período.</CardDescription>
                             </CardHeader>
                             <CardContent className="pl-2">
-                                <ChartContainer config={chartConfig} className="h-[250px] w-full">
-                                <LineChart data={dashboardData.performanceData} margin={{ left: 12, right: 12 }}>
-                                    <CartesianGrid vertical={false} />
-                                    <XAxis dataKey="name" tickLine={false} axisLine={false} tickMargin={8} />
-                                    <YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => `${value / 1000}k`} />
-                                    <RechartsTooltip content={<ChartTooltipContent indicator="dot" />} />
-                                    <Line dataKey="total" type="monotone" stroke="var(--color-total)" strokeWidth={2} dot={true} name="KM" />
-                                </LineChart>
+                                <ChartContainer className="h-[250px] w-full">
+                                    <LineChart data={dashboardData.performanceData} margin={{ left: 12, right: 12 }}>
+                                        <CartesianGrid vertical={false} />
+                                        <XAxis dataKey="name" tickLine={false} axisLine={false} tickMargin={8} />
+                                        <YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => `${value / 1000}k`} />
+                                        <ChartTooltip content={<ChartTooltipContent indicator="dot" />} />
+                                        <Line dataKey="total" type="monotone" stroke="hsl(var(--primary))" strokeWidth={2} dot={true} name="KM" />
+                                    </LineChart>
                                 </ChartContainer>
                             </CardContent>
                             </Card>
@@ -446,13 +434,13 @@ export default function AdminDashboard() {
                                 <CardDescription>Veículos que mais rodaram no período.</CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <ChartContainer config={chartConfig} className="h-[250px] w-full">
+                                <ChartContainer className="h-[250px] w-full">
                                     <BarChartComponent data={dashboardData.topVehicles} layout="vertical" margin={{ left: 10 }}>
                                         <CartesianGrid horizontal={false} />
                                         <YAxis dataKey="name" type="category" tickLine={false} axisLine={false} tickMargin={8} width={80} />
                                         <XAxis type="number" hide />
-                                        <RechartsTooltip content={<ChartTooltipContent indicator="dot" />} />
-                                        <Bar dataKey="km" radius={5} name="KM" fill="var(--color-km)" />
+                                        <ChartTooltip content={<ChartTooltipContent indicator="dot" />} />
+                                        <Bar dataKey="km" radius={5} name="KM" fill="hsl(var(--primary))" />
                                     </BarChartComponent>
                                 </ChartContainer>
                             </CardContent>
@@ -702,3 +690,5 @@ export default function AdminDashboard() {
     </div>
   );
 }
+
+    
