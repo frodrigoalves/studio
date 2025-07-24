@@ -149,8 +149,6 @@ export function DriverForm() {
         toast({
           title: "Viagem iniciada com sucesso!",
           description: "Seus dados foram salvos.",
-          variant: "default",
-          className: "bg-accent text-accent-foreground",
         });
         startForm.reset(initialStartValues);
         if (startFileInputRef.current) {
@@ -303,7 +301,7 @@ export function DriverForm() {
                     </FormItem>
                   )}
                 />
-                <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={isSubmitting}>
+                <Button type="submit" className="w-full" disabled={isSubmitting}>
                   {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
                   Registrar Início
                 </Button>
@@ -408,3 +406,5 @@ export function DriverForm() {
     </Card>
   );
 }
+
+    
