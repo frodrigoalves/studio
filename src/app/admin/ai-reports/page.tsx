@@ -3,11 +3,11 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Sparkles, Wand2, FileText, Upload, Lightbulb, ListChecks, BarChart2 } from "lucide-react";
+import { Loader2, Sparkles, Wand2, FileText, Upload, Lightbulb, ListChecks, BarChart2, HelpCircle, Archive, BrainCircuit } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getRecords } from "@/services/records";
 import { getDieselPrices } from "@/services/settings";
@@ -15,6 +15,7 @@ import { generateReport, type ReportOutput } from "@/ai/flows/report-flow";
 import { analyseSheet, type SheetAnalysisInput, type SheetAnalysisOutput } from "@/ai/flows/sheet-analysis-flow";
 import { Input } from "@/components/ui/input";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 
 type Period = "daily" | "weekly" | "monthly";
@@ -33,6 +34,11 @@ export default function AiReportsPage() {
     const [file, setFile] = useState<File | null>(null);
     const [isSheetLoading, setIsSheetLoading] = useState(false);
     const [sheetAnalysisResult, setSheetAnalysisResult] = useState<SheetAnalysisOutput | null>(null);
+
+    // State for Presentation Repository
+    const [repositoryContent, setRepositoryContent] = useState('');
+    const [isRepoLoading, setIsRepoLoading] = useState(false);
+    const [repoAnalysis, setRepoAnalysis] = useState<string | null>(null);
 
 
     const handleGenerateFleetReport = async () => {
@@ -110,7 +116,6 @@ export default function AiReportsPage() {
             const analysisInput: SheetAnalysisInput = {
               sheetContent,
               analysisType,
-              // tripRecords: await getRecords(), // Adicionar opção para cruzamento de dados no futuro
             };
             
             const result = await analyseSheet(analysisInput);
@@ -139,7 +144,7 @@ export default function AiReportsPage() {
                 <Sparkles className="w-10 h-10" />
             </div>
             <h1 className="text-3xl font-bold">Central de Inteligência</h1>
-            <p className="text-muted-foreground">Gere análises de frota ou faça upload de planilhas para obter insights com IA.</p>
+            <p className="text-muted-foreground">Gere análises de frota, planilhas ou use o repositório para obter insights com IA.</p>
         </div>
 
         <Accordion type="single" collapsible className="w-full" defaultValue="item-1">
@@ -213,8 +218,33 @@ export default function AiReportsPage() {
                      <Card className="shadow-lg mt-2">
                         <CardHeader>
                             <CardTitle>Análise Inteligente de Planilhas</CardTitle>
-                            <CardDescription>
-                                Faça o upload de planilhas de RH (atestados) ou Manutenção para que a IA identifique anomalias e tendências.
+                            <CardDescription className="flex justify-between items-center">
+                                <span>Faça o upload de planilhas de RH (atestados) ou Manutenção para que a IA identifique anomalias e tendências.</span>
+                                <Dialog>
+                                    <DialogTrigger asChild>
+                                        <Button variant="ghost" size="sm"><HelpCircle className="mr-2 h-4 w-4" />Ajuda</Button>
+                                    </DialogTrigger>
+                                    <DialogContent>
+                                        <DialogHeader>
+                                            <DialogTitle>FAQ - Análise de Planilhas</DialogTitle>
+                                            <DialogDescription>Dicas para obter os melhores resultados com a IA.</DialogDescription>
+                                        </DialogHeader>
+                                        <div className="space-y-4 text-sm">
+                                            <div>
+                                                <h4 className="font-semibold">Como a IA lê as planilhas?</h4>
+                                                <p className="text-muted-foreground">A IA é treinada para focar nos dados concretos. Ela tentará identificar automaticamente a linha do cabeçalho (com os títulos das colunas) e ignorar o resto para analisar apenas os dados brutos.</p>
+                                            </div>
+                                            <div>
+                                                <h4 className="font-semibold">Qual o melhor formato?</h4>
+                                                <p className="text-muted-foreground">Use arquivos `.csv`. Para melhores resultados, garanta que a primeira linha da sua planilha contenha os títulos das colunas (ex: "Motorista", "Placa", "Data Atestado", "CID", "Tipo Reparo", "Dias Parado").</p>
+                                            </div>
+                                             <div>
+                                                <h4 className="font-semibold">E se a planilha tiver um layout complexo?</h4>
+                                                <p className="text-muted-foreground">Se a IA tiver dificuldade, ela tentará aprender o layout. Após a primeira análise, ela se lembrará do formato para futuras análises do mesmo tipo (RH/Manutenção). Se o problema persistir, simplifique a planilha deixando apenas os dados e cabeçalhos essenciais.</p>
+                                            </div>
+                                        </div>
+                                    </DialogContent>
+                                </Dialog>
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
@@ -255,11 +285,7 @@ export default function AiReportsPage() {
                                 disabled={isSheetLoading || !file}
                                 className="w-full"
                             >
-                                {isSheetLoading ? (
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                ) : (
-                                <Wand2 className="mr-2 h-4 w-4" />
-                                )}
+                                {isSheetLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
                                 {isSheetLoading ? 'Analisando Planilha...' : 'Analisar Planilha com IA'}
                             </Button>
 
@@ -267,9 +293,7 @@ export default function AiReportsPage() {
                                 <Card className="mt-6 bg-muted/20">
                                     <CardHeader>
                                         <CardTitle>{sheetAnalysisResult.title}</CardTitle>
-                                        <CardDescription>
-                                            Abaixo estão os insights gerados pela IA com base no arquivo enviado.
-                                        </CardDescription>
+                                        <CardDescription>Abaixo estão os insights gerados pela IA com base no arquivo enviado.</CardDescription>
                                     </CardHeader>
                                     <CardContent className="space-y-6">
                                         <div className="space-y-2">
@@ -302,6 +326,39 @@ export default function AiReportsPage() {
                         </CardContent>
                     </Card>
                  </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="item-3">
+                 <AccordionTrigger className="text-xl font-semibold">
+                    <div className="flex items-center gap-2">
+                        <Archive /> Repositório da Apresentação
+                    </div>
+                </AccordionTrigger>
+                <AccordionContent>
+                   <Card className="shadow-lg mt-2">
+                        <CardHeader>
+                            <CardTitle>Assistente de Apresentação Semanal</CardTitle>
+                            <CardDescription>Cole aqui dados, links e rascunhos. A IA usará este repositório como contexto para gerar resumos e análises para sua reunião.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-4">
+                                <Label htmlFor="repository-content">Conteúdo do Repositório</Label>
+                                <Textarea
+                                    id="repository-content"
+                                    placeholder="Cole aqui o conteúdo bruto, links para documentos, anotações da última reunião ou qualquer dado que a IA deva considerar para a apresentação..."
+                                    className="h-48"
+                                    value={repositoryContent}
+                                    onChange={(e) => setRepositoryContent(e.target.value)}
+                                />
+                            </div>
+                        </CardContent>
+                        <CardFooter className="flex justify-end">
+                             <Button disabled>
+                                <BrainCircuit className="mr-2 h-4 w-4" />
+                                Gerar Resumo da Apresentação (Em Breve)
+                            </Button>
+                        </CardFooter>
+                   </Card>
+                </AccordionContent>
             </AccordionItem>
         </Accordion>
     </div>

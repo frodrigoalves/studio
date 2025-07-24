@@ -14,7 +14,6 @@ import { z } from 'zod';
 const SheetAnalysisInputSchema = z.object({
   sheetContent: z.string().describe('O conteúdo completo da planilha em formato CSV.'),
   analysisType: z.enum(['hr', 'maintenance']).describe('O tipo de análise a ser realizada: "hr" para Recursos Humanos ou "maintenance" para Manutenção.'),
-  tripRecords: z.array(z.any()).optional().describe('Uma lista opcional de registros de viagem para correlação de dados.')
 });
 export type SheetAnalysisInput = z.infer<typeof SheetAnalysisInputSchema>;
 
@@ -35,6 +34,7 @@ export type SheetAnalysisOutput = z.infer<typeof SheetAnalysisOutputSchema>;
 const hrPrompt = `
   Você é um especialista em Recursos Humanos e analista de dados para o Guilherme da TopBus Transportes.
   Seu objetivo é analisar a planilha de atestados médicos para encontrar padrões, anomalias e insights para a reunião semanal da diretoria.
+  Foque em dados concretos, ignorando cabeçalhos e rodapés complexos. Identifique a linha de cabeçalho para entender as colunas.
 
   Foco da Análise:
   1.  **Identificar Colaboradores Ausentes:** Liste os 5 colaboradores com maior número de atestados ou dias de ausência.
@@ -48,11 +48,12 @@ const hrPrompt = `
 const maintenancePrompt = `
   Você é um especialista em gestão de frotas e analista de dados para o Guilherme da TopBus Transportes.
   Seu objetivo é analisar a planilha de manutenção de veículos para encontrar gargalos, otimizar custos e aumentar a disponibilidade da frota para a reunião semanal da diretoria.
+  Foque em dados concretos, ignorando cabeçalhos e rodapés complexos. Identifique a linha de cabeçalho para entender as colunas.
 
   Foco da Análise:
   1.  **Veículos Críticos:** Liste os 5 veículos com maior tempo total em manutenção ou maior frequência de reparos.
   2.  **Principais Defeitos:** Identifique os 3 tipos de reparo mais comuns em toda a frota.
-  3.  **Anomalias e Gargalos:** Procure por padrões. Ex: Um tipo de peça que falha recorrentemente em um modelo específico de ônibus; tempo de reparo para o mesmo defeito muito discrepante entre equipes; correlação entre motoristas e tipos específicos de avaria.
+  3.  **Anomalias e Gargalos:** Procure por padrões. Ex: Um tipo de peça que falha recorrentemente em um modelo específico de ônibus; tempo de reparo para o mesmo defeito muito discrepante entre equipes; correlação entre motoristas e tipos específicos de avaria (se possível cruzar dados).
   4.  **Recomendações:** Com base na análise, sugira 2-3 ações para a diretoria. Ex: "Considerar a troca do fornecedor da peça X", "Padronizar o processo de reparo para o defeito Y para reduzir o tempo de parada", "Promover treinamento de direção defensiva para os motoristas que mais geram manutenção corretiva".
 
   O relatório deve ser claro, objetivo e formatado para ser facilmente copiado para uma apresentação.
@@ -63,7 +64,6 @@ export async function analyseSheet(input: SheetAnalysisInput): Promise<SheetAnal
   return sheetAnalysisFlow(input);
 }
 
-// O código abaixo define o fluxo Genkit, mas a lógica de chamada ainda não está conectada à UI.
 const analysisPrompt = ai.definePrompt({
     name: 'sheetAnalysisPrompt',
     input: { schema: SheetAnalysisInputSchema },
@@ -77,11 +77,6 @@ const analysisPrompt = ai.definePrompt({
 
         **Dados da Planilha (CSV):**
         {{{sheetContent}}}
-
-        {{#if tripRecords}}
-        **Dados de Viagens para Correlação (Opcional):**
-        {{{JSON.stringify tripRecords}}}
-        {{/if}}
 
         Agora, gere a análise no formato de saída JSON especificado.
     `,
