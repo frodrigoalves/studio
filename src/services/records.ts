@@ -2,7 +2,7 @@
 'use server';
 
 import { db } from '@/lib/firebase';
-import { collection, addDoc, getDocs, doc, updateDoc, query, where, getDoc, orderBy } from 'firebase/firestore';
+import { collection, addDoc, getDocs, doc, updateDoc, query, where, getDoc, orderBy, DocumentData } from 'firebase/firestore';
 
 export interface Record {
   id: string;
@@ -22,7 +22,7 @@ export async function addRecord(record: Omit<Record, 'id'>): Promise<Record> {
   return { id: docRef.id, ...record };
 }
 
-export async function updateRecord(id: string, record: Partial<Omit<Record, 'id'>>): Promise<void> {
+export async function updateRecord(id: string, record: DocumentData): Promise<void> {
     const recordRef = doc(db, "tripRecords", id);
     await updateDoc(recordRef, record);
 }
