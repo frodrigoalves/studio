@@ -105,7 +105,7 @@ export default function RecordsPage() {
         setAddDialogOpen(false);
         setNewRecord(initialNewRecordState);
         fetchRecords();
-        toast({ title: "Sucesso!", description: "Registro adicionado." });
+        toast({ title: "Sucesso!", description: "Registro adicionado com sucesso." });
       } catch (error) {
         console.error("Failed to add record", error);
         toast({ variant: 'destructive', title: "Erro", description: "Não foi possível adicionar o registro." });
@@ -438,3 +438,6 @@ export default function RecordsPage() {
     </>
   );
 }
+
+
+    
