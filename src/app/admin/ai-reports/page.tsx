@@ -1,13 +1,13 @@
 
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Sparkles, Wand2, FileText, Upload, Lightbulb, ListChecks, BarChart2, HelpCircle, Archive, BrainCircuit } from "lucide-react";
+import { Loader2, Sparkles, Wand2, FileText, Upload, Lightbulb, ListChecks, BarChart2, Archive, BrainCircuit } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getRecords } from "@/services/records";
 import { getDieselPrices } from "@/services/settings";
@@ -15,8 +15,6 @@ import { generateReport, type ReportOutput } from "@/ai/flows/report-flow";
 import { analyseSheet, type SheetAnalysisInput, type SheetAnalysisOutput } from "@/ai/flows/sheet-analysis-flow";
 import { Input } from "@/components/ui/input";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-
 
 type Period = "daily" | "weekly" | "monthly";
 type AnalysisType = 'hr' | 'maintenance';
@@ -24,6 +22,9 @@ type AnalysisType = 'hr' | 'maintenance';
 export default function AiReportsPage() {
     const { toast } = useToast();
     
+    // State for User Role
+    const [userRole, setUserRole] = useState<string | null>(null);
+
     // State for Fleet Report
     const [fleetPeriod, setFleetPeriod] = useState<Period>("weekly");
     const [isFleetLoading, setIsFleetLoading] = useState(false);
@@ -39,7 +40,14 @@ export default function AiReportsPage() {
     const [repositoryContent, setRepositoryContent] = useState('');
     const [isRepoLoading, setIsRepoLoading] = useState(false);
     const [repoAnalysis, setRepoAnalysis] = useState<string | null>(null);
-
+    
+    useEffect(() => {
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+            const userData = JSON.parse(storedUser);
+            setUserRole(userData.role);
+        }
+    }, []);
 
     const handleGenerateFleetReport = async () => {
         setIsFleetLoading(true);
@@ -208,133 +216,138 @@ export default function AiReportsPage() {
                     </Card>
                 </AccordionContent>
             </AccordionItem>
-            <AccordionItem value="item-2">
-                <AccordionTrigger className="text-xl font-semibold">
-                    <div className="flex items-center gap-2">
-                        <Upload /> Análise de Planilhas
-                    </div>
-                </AccordionTrigger>
-                 <AccordionContent>
-                     <Card className="shadow-lg mt-2">
-                        <CardHeader>
-                            <CardTitle>Análise Inteligente de Planilhas</CardTitle>
-                            <CardDescription>
-                                Faça o upload de planilhas de RH (atestados) ou Manutenção para que a IA identifique anomalias e tendências.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="grid sm:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                <Label htmlFor="analysis-type">Tipo de Análise</Label>
-                                <Select
-                                    value={analysisType}
-                                    onValueChange={(value: AnalysisType) => setAnalysisType(value)}
-                                    disabled={isSheetLoading}
-                                >
-                                    <SelectTrigger id="analysis-type">
-                                    <SelectValue placeholder="Selecione o tipo" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                    <SelectItem value="hr">Recursos Humanos (Atestados)</SelectItem>
-                                    <SelectItem value="maintenance">Manutenção de Veículos</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                </div>
-                                <div className="space-y-2">
-                                <Label htmlFor="sheet-upload">Planilha (somente .csv)</Label>
-                                <div className="relative">
-                                    <Input
-                                        id="sheet-upload"
-                                        type="file"
-                                        accept=".csv"
-                                        onChange={handleFileChange}
-                                        disabled={isSheetLoading}
-                                        className="pr-12"
-                                    />
-                                    <Upload className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
-                                </div>
-                                </div>
+            
+            {userRole === 'analyst' && (
+                <>
+                    <AccordionItem value="item-2">
+                        <AccordionTrigger className="text-xl font-semibold">
+                            <div className="flex items-center gap-2">
+                                <Upload /> Análise de Planilhas
                             </div>
-                            <Button
-                                onClick={handleGenerateSheetAnalysis}
-                                disabled={isSheetLoading || !file}
-                                className="w-full"
-                            >
-                                {isSheetLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
-                                {isSheetLoading ? 'Analisando Planilha...' : 'Analisar Planilha com IA'}
-                            </Button>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                            <Card className="shadow-lg mt-2">
+                                <CardHeader>
+                                    <CardTitle>Análise Inteligente de Planilhas</CardTitle>
+                                    <CardDescription>
+                                        Faça o upload de planilhas de RH (atestados) ou Manutenção para que a IA identifique anomalias e tendências.
+                                    </CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <div className="grid sm:grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                        <Label htmlFor="analysis-type">Tipo de Análise</Label>
+                                        <Select
+                                            value={analysisType}
+                                            onValueChange={(value: AnalysisType) => setAnalysisType(value)}
+                                            disabled={isSheetLoading}
+                                        >
+                                            <SelectTrigger id="analysis-type">
+                                            <SelectValue placeholder="Selecione o tipo" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                            <SelectItem value="hr">Recursos Humanos (Atestados)</SelectItem>
+                                            <SelectItem value="maintenance">Manutenção de Veículos</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        </div>
+                                        <div className="space-y-2">
+                                        <Label htmlFor="sheet-upload">Planilha (somente .csv)</Label>
+                                        <div className="relative">
+                                            <Input
+                                                id="sheet-upload"
+                                                type="file"
+                                                accept=".csv"
+                                                onChange={handleFileChange}
+                                                disabled={isSheetLoading}
+                                                className="pr-12"
+                                            />
+                                            <Upload className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                                        </div>
+                                        </div>
+                                    </div>
+                                    <Button
+                                        onClick={handleGenerateSheetAnalysis}
+                                        disabled={isSheetLoading || !file}
+                                        className="w-full"
+                                    >
+                                        {isSheetLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
+                                        {isSheetLoading ? 'Analisando Planilha...' : 'Analisar Planilha com IA'}
+                                    </Button>
 
-                            {sheetAnalysisResult && (
-                                <Card className="mt-6 bg-muted/20">
-                                    <CardHeader>
-                                        <CardTitle>{sheetAnalysisResult.title}</CardTitle>
-                                        <CardDescription>Abaixo estão os insights gerados pela IA com base no arquivo enviado.</CardDescription>
-                                    </CardHeader>
-                                    <CardContent className="space-y-6">
-                                        <div className="space-y-2">
-                                            <h3 className="font-semibold text-lg"><ListChecks /> Resumo Executivo</h3>
-                                            <Textarea readOnly value={sheetAnalysisResult.summary} className="h-24 bg-background" />
-                                        </div>
-                                         <div className="space-y-2">
-                                            <h3 className="font-semibold text-lg"><BarChart2 /> Principais Descobertas</h3>
-                                            <div className="space-y-4">
-                                                {sheetAnalysisResult.keyFindings.map((finding, index) => (
-                                                    <div key={index} className="p-4 border rounded-lg bg-background/50">
-                                                        <h4 className="font-semibold">{finding.finding}</h4>
-                                                        <p className="text-sm text-muted-foreground mt-1"><span className="font-semibold">Detalhes:</span> {finding.details}</p>
-                                                        <p className="text-sm text-muted-foreground mt-1"><span className="font-semibold">Impacto:</span> {finding.implication}</p>
+                                    {sheetAnalysisResult && (
+                                        <Card className="mt-6 bg-muted/20">
+                                            <CardHeader>
+                                                <CardTitle>{sheetAnalysisResult.title}</CardTitle>
+                                                <CardDescription>Abaixo estão os insights gerados pela IA com base no arquivo enviado.</CardDescription>
+                                            </CardHeader>
+                                            <CardContent className="space-y-6">
+                                                <div className="space-y-2">
+                                                    <h3 className="font-semibold text-lg"><ListChecks /> Resumo Executivo</h3>
+                                                    <Textarea readOnly value={sheetAnalysisResult.summary} className="h-24 bg-background" />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <h3 className="font-semibold text-lg"><BarChart2 /> Principais Descobertas</h3>
+                                                    <div className="space-y-4">
+                                                        {sheetAnalysisResult.keyFindings.map((finding, index) => (
+                                                            <div key={index} className="p-4 border rounded-lg bg-background/50">
+                                                                <h4 className="font-semibold">{finding.finding}</h4>
+                                                                <p className="text-sm text-muted-foreground mt-1"><span className="font-semibold">Detalhes:</span> {finding.details}</p>
+                                                                <p className="text-sm text-muted-foreground mt-1"><span className="font-semibold">Impacto:</span> {finding.implication}</p>
+                                                            </div>
+                                                        ))}
                                                     </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <h3 className="font-semibold text-lg"><Lightbulb /> Recomendações</h3>
-                                            <ul className="list-disc list-inside space-y-1 bg-background p-4 rounded-md">
-                                                {sheetAnalysisResult.recommendations.map((rec, index) => (
-                                                    <li key={index}>{rec}</li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            )}
-                        </CardContent>
-                    </Card>
-                 </AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="item-3">
-                 <AccordionTrigger className="text-xl font-semibold">
-                    <div className="flex items-center gap-2">
-                        <Archive /> Repositório da Apresentação
-                    </div>
-                </AccordionTrigger>
-                <AccordionContent>
-                   <Card className="shadow-lg mt-2">
-                        <CardHeader>
-                            <CardTitle>Assistente de Apresentação Semanal</CardTitle>
-                            <CardDescription>Cole aqui dados, links e rascunhos. A IA usará este repositório como contexto para gerar resumos e análises para sua reunião.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="space-y-4">
-                                <Label htmlFor="repository-content">Conteúdo do Repositório</Label>
-                                <Textarea
-                                    id="repository-content"
-                                    placeholder="Cole aqui o conteúdo bruto, links para documentos, anotações da última reunião ou qualquer dado que a IA deva considerar para a apresentação..."
-                                    className="h-48"
-                                    value={repositoryContent}
-                                    onChange={(e) => setRepositoryContent(e.target.value)}
-                                />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <h3 className="font-semibold text-lg"><Lightbulb /> Recomendações</h3>
+                                                    <ul className="list-disc list-inside space-y-1 bg-background p-4 rounded-md">
+                                                        {sheetAnalysisResult.recommendations.map((rec, index) => (
+                                                            <li key={index}>{rec}</li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        </AccordionContent>
+                    </AccordionItem>
+                    <AccordionItem value="item-3">
+                        <AccordionTrigger className="text-xl font-semibold">
+                            <div className="flex items-center gap-2">
+                                <Archive /> Repositório da Apresentação
                             </div>
-                        </CardContent>
-                        <CardFooter className="flex justify-end">
-                             <Button disabled>
-                                <BrainCircuit className="mr-2 h-4 w-4" />
-                                Gerar Resumo da Apresentação (Em Breve)
-                            </Button>
-                        </CardFooter>
-                   </Card>
-                </AccordionContent>
-            </AccordionItem>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                        <Card className="shadow-lg mt-2">
+                                <CardHeader>
+                                    <CardTitle>Assistente de Apresentação Semanal</CardTitle>
+                                    <CardDescription>Cole aqui dados, links e rascunhos. A IA usará este repositório como contexto para gerar resumos e análises para sua reunião.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="space-y-4">
+                                        <Label htmlFor="repository-content">Conteúdo do Repositório</Label>
+                                        <Textarea
+                                            id="repository-content"
+                                            placeholder="Cole aqui o conteúdo bruto, links para documentos, anotações da última reunião ou qualquer dado que a IA deva considerar para a apresentação..."
+                                            className="h-48"
+                                            value={repositoryContent}
+                                            onChange={(e) => setRepositoryContent(e.target.value)}
+                                        />
+                                    </div>
+                                </CardContent>
+                                <CardFooter className="flex justify-end">
+                                    <Button disabled>
+                                        <BrainCircuit className="mr-2 h-4 w-4" />
+                                        Gerar Resumo da Apresentação (Em Breve)
+                                    </Button>
+                                </CardFooter>
+                        </Card>
+                        </AccordionContent>
+                    </AccordionItem>
+                </>
+            )}
         </Accordion>
     </div>
   );

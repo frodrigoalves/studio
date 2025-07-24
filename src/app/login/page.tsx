@@ -23,12 +23,21 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulação de autenticação
     await new Promise(resolve => setTimeout(resolve, 500));
 
+    let userRole: 'diretor' | 'analyst' | null = null;
+    let loginSuccess = false;
+
     if (password === 'diretoria') {
-      // "Loga" o usuário salvando o estado no localStorage
-      localStorage.setItem('user', JSON.stringify({ name: name || 'Admin' }));
+        userRole = 'diretor';
+        loginSuccess = true;
+    } else if (password === 'analise2024') {
+        userRole = 'analyst';
+        loginSuccess = true;
+    }
+
+    if (loginSuccess && userRole) {
+      localStorage.setItem('user', JSON.stringify({ name: name || (userRole === 'diretor' ? 'Diretor' : 'Analista'), role: userRole }));
       
       toast({
         title: "Login bem-sucedido!",

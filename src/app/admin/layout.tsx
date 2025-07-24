@@ -23,6 +23,7 @@ import { LayoutDashboard, Settings, FileText, LogOut, Bus, Sparkles, Loader2 } f
 
 interface User {
   name: string;
+  role: 'diretor' | 'analyst';
 }
 
 export default function AdminLayout({
@@ -36,7 +37,6 @@ export default function AdminLayout({
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
-    // Verificação de autenticação no lado do cliente usando localStorage
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       setUser(JSON.parse(storedUser));
@@ -120,7 +120,7 @@ export default function AdminLayout({
             </Avatar>
              <div className="group-data-[collapsible=icon]:hidden">
               <p className="font-semibold truncate">{user.name}</p>
-              <p className="text-xs text-muted-foreground truncate">Administrador</p>
+              <p className="text-xs text-muted-foreground truncate capitalize">{user.role === 'diretor' ? 'Diretoria' : 'Analista'}</p>
             </div>
             <Button variant="ghost" size="icon" className="ml-auto group-data-[collapsible=icon]:hidden" onClick={handleLogout} disabled={isLoggingOut}>
               {isLoggingOut ? <Loader2 className="animate-spin" /> : <LogOut />}
