@@ -137,6 +137,7 @@ export function DriverForm() {
         const photoBase64 = data.endOdometerPhoto ? await fileToBase64(data.endOdometerPhoto) : null;
 
         await updateRecord(existingRecord.id, {
+            ...existingRecord,
             kmEnd: data.finalKm,
             status: "Finalizado",
             endOdometerPhoto: photoBase64,
