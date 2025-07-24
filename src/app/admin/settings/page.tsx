@@ -7,46 +7,39 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Save } from "lucide-react";
+import { Save, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
-interface DieselPrice {
-    id: number;
-    date: string;
-    price: string;
-}
-
-const getStoredPrices = (): DieselPrice[] => {
-    if (typeof window === 'undefined') return [];
-    const stored = localStorage.getItem('dieselPrices');
-    if (stored) {
-        try {
-            const parsed = JSON.parse(stored);
-            return Array.isArray(parsed) ? parsed : [];
-        } catch {
-            return [];
-        }
-    }
-    return [];
-};
-
-const setStoredPrices = (prices: DieselPrice[]) => {
-    if (typeof window !== 'undefined') {
-        localStorage.setItem('dieselPrices', JSON.stringify(prices));
-    }
-};
+import { getDieselPrices, saveDieselPrice, type DieselPrice } from "@/services/settings";
 
 export default function SettingsPage() {
     const { toast } = useToast();
     const [prices, setPrices] = useState<DieselPrice[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [newPrice, setNewPrice] = useState('');
     const [newDate, setNewDate] = useState(new Date().toISOString().split('T')[0]);
 
+    const fetchPrices = async () => {
+        setIsLoading(true);
+        try {
+            const fetchedPrices = await getDieselPrices();
+            setPrices(fetchedPrices);
+        } catch (error) {
+            console.error("Failed to fetch diesel prices", error);
+            toast({
+                variant: 'destructive',
+                title: 'Erro',
+                description: 'Não foi possível carregar o histórico de preços.'
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     useEffect(() => {
-        setPrices(getStoredPrices());
+        fetchPrices();
     }, []);
 
-    const handleSavePrice = (e: React.FormEvent) => {
+    const handleSavePrice = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newPrice || !newDate) {
             toast({
@@ -57,23 +50,27 @@ export default function SettingsPage() {
             return;
         }
 
-        const newPriceEntry: DieselPrice = {
-            id: Date.now(),
-            date: newDate,
-            price: parseFloat(newPrice).toFixed(2),
-        };
+        try {
+            await saveDieselPrice({
+                date: newDate,
+                price: parseFloat(newPrice).toFixed(2),
+            });
+            
+            setNewPrice('');
+            setNewDate(new Date().toISOString().split('T')[0]);
+            fetchPrices(); // Refresh data
 
-        const updatedPrices = [...prices, newPriceEntry].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        setPrices(updatedPrices);
-        setStoredPrices(updatedPrices);
-
-        setNewPrice('');
-        setNewDate(new Date().toISOString().split('T')[0]);
-
-        toast({
-            title: "Sucesso!",
-            description: "O novo preço do diesel foi salvo."
-        });
+            toast({
+                title: "Sucesso!",
+                description: "O novo preço do diesel foi salvo."
+            });
+        } catch (error) {
+             toast({
+                variant: 'destructive',
+                title: "Erro",
+                description: "Não foi possível salvar o novo preço."
+            });
+        }
     };
 
     return (
@@ -126,7 +123,13 @@ export default function SettingsPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {prices.map(item => (
+                            {isLoading ? (
+                                <TableRow>
+                                    <TableCell colSpan={2} className="text-center">
+                                        <Loader2 className="mx-auto h-8 w-8 animate-spin" />
+                                    </TableCell>
+                                </TableRow>
+                            ) : prices.map(item => (
                                 <TableRow key={item.id}>
                                     <TableCell>{new Date(item.date).toLocaleDateString('pt-BR', { timeZone: 'UTC'})}</TableCell>
                                     <TableCell className="text-right font-mono">{item.price}</TableCell>

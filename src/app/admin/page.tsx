@@ -1,39 +1,17 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Line, LineChart, Tooltip } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { GaugeCircle, AlertTriangle } from "lucide-react";
+import { GaugeCircle, AlertTriangle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { subDays, subWeeks, subMonths, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { getRecords, type Record } from "@/services/records";
+import { useToast } from "@/hooks/use-toast";
 
-
-interface Record {
-  id: number;
-  date: string;
-  driver: string;
-  car: string;
-  plate: string;
-  kmStart: number | null;
-  kmEnd: number | null;
-  status: "Finalizado" | "Em Andamento";
-  startOdometerPhoto: string | null;
-  endOdometerPhoto: string | null;
-}
-
-const getStoredRecords = (): Record[] => {
-    if (typeof window === 'undefined') return [];
-    const stored = localStorage.getItem('tripRecords');
-    try {
-        const parsed = stored ? JSON.parse(stored) : [];
-        return Array.isArray(parsed) ? parsed : [];
-    } catch {
-        return [];
-    }
-};
 
 const chartConfig = {
     km: {
@@ -49,40 +27,45 @@ const chartConfig = {
 type FilterType = "semanal" | "quinzenal" | "mensal";
 
 export default function AdminDashboard() {
+  const { toast } = useToast();
   const [filter, setFilter] = useState<FilterType>("mensal");
   const [records, setRecords] = useState<Record[]>([]);
-  const [dashboardData, setDashboardData] = useState<any>({
-      totalKm: 0,
-      totalKmPrevious: 0,
-      alerts: 0,
-      performanceData: [],
-      topVehicles: [],
-  });
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const allRecords = getStoredRecords();
-    setRecords(allRecords);
-
-    const handleStorageChange = () => {
-        setRecords(getStoredRecords());
+    const fetchAndSetRecords = async () => {
+        setIsLoading(true);
+        try {
+            const allRecords = await getRecords();
+            setRecords(allRecords);
+        } catch (error) {
+            console.error(error);
+            toast({
+                variant: 'destructive',
+                title: 'Erro ao carregar dados',
+                description: 'Não foi possível buscar os registros para o dashboard.'
+            });
+        } finally {
+            setIsLoading(false);
+        }
     };
-    
-    window.addEventListener('storage', handleStorageChange);
-    return () => {
-        window.removeEventListener('storage', handleStorageChange);
+    fetchAndSetRecords();
+  }, [toast]);
+
+  const dashboardData = useMemo(() => {
+    if(records.length === 0) return {
+        totalKm: 0,
+        totalKmPrevious: 0,
+        alerts: 0,
+        performanceData: [],
+        topVehicles: [],
     };
-
-  }, []);
-
-  useEffect(() => {
-    if(records.length === 0) return;
 
     const now = new Date();
     let startDate: Date;
     let previousStartDate: Date;
     let previousEndDate: Date;
     
-    // Define date ranges based on filter
     switch(filter) {
         case 'semanal':
             startDate = startOfWeek(now, { weekStartsOn: 1 });
@@ -105,33 +88,26 @@ export default function AdminDashboard() {
         try {
             const recordDate = parseISO(r.date);
             return recordDate >= startDate;
-        } catch {
-            return false;
-        }
+        } catch { return false; }
     });
 
     const previousRecords = records.filter(r => {
         try {
             const recordDate = parseISO(r.date);
             return recordDate >= previousStartDate && recordDate <= previousEndDate;
-        } catch {
-            return false;
-        }
+        } catch { return false; }
     });
     
-    // Calculate total KM for the current period
     const totalKm = filteredRecords
         .filter(r => r.status === 'Finalizado' && r.kmEnd && r.kmStart)
         .reduce((sum, r) => sum + (r.kmEnd! - r.kmStart!), 0);
 
-    // Calculate total KM for the previous period
     const totalKmPrevious = previousRecords
         .filter(r => r.status === 'Finalizado' && r.kmEnd && r.kmStart)
         .reduce((sum, r) => sum + (r.kmEnd! - r.kmStart!), 0);
         
     const alerts = records.filter(r => r.status === "Em Andamento").length;
 
-    // Calculate performance data for the line chart
     const performanceData = (() => {
         switch(filter) {
             case 'semanal':
@@ -196,7 +172,7 @@ export default function AdminDashboard() {
         .slice(0, 5);
 
 
-    setDashboardData({ totalKm, totalKmPrevious, alerts, performanceData, topVehicles });
+    return { totalKm, totalKmPrevious, alerts, performanceData, topVehicles };
 
   }, [records, filter]);
   
@@ -206,6 +182,13 @@ export default function AdminDashboard() {
       
   const xAxisKey = filter === 'semanal' ? 'name' : filter === 'quinzenal' ? 'name' : 'name';
 
+  if (isLoading) {
+      return (
+          <div className="flex justify-center items-center h-full">
+              <Loader2 className="h-16 w-16 animate-spin" />
+          </div>
+      )
+  }
 
   return (
     <div className="space-y-6">
@@ -271,7 +254,7 @@ export default function AdminDashboard() {
                     <YAxis dataKey="name" type="category" tickLine={false} axisLine={false} tickMargin={8} width={80} />
                     <XAxis type="number" hide />
                     <Tooltip cursor={false} content={<ChartTooltipContent indicator="dot" />} />
-                    <Bar dataKey="km" radius={5} name="KM" />
+                    <Bar dataKey="km" radius={5} name="KM" fill="var(--color-km)" />
                 </BarChart>
             </ChartContainer>
           </CardContent>

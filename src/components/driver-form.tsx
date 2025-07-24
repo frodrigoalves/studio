@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useTransition, useCallback, useRef } from "react";
+import { useState, useTransition, useCallback, useRef, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -20,6 +20,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { prepopulateFields, type PrepopulateFieldsOutput } from "@/ai/flows/prepopulate-fields";
+import { addRecord, getRecordByPlateAndStatus, updateRecord } from "@/services/records";
 
 function debounce<T extends (...args: any[]) => void>(func: T, wait: number) {
   let timeout: NodeJS.Timeout;
@@ -70,6 +71,7 @@ export function DriverForm() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("start");
   const [isAiLoading, startAiTransition] = useTransition();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const startForm = useForm<StartFormValues>({
     resolver: zodResolver(startFormSchema),
@@ -86,19 +88,15 @@ export function DriverForm() {
     
     const form = activeTab === 'start' ? startForm : endForm;
 
-    if (activeTab === 'end' && typeof window !== 'undefined') {
-        const stored = localStorage.getItem('tripRecords') || '[]';
-        const records = JSON.parse(stored);
-        const existingRecord = records.find((rec: any) => rec.plate === chapa && rec.status === "Em Andamento");
-
-        if (existingRecord) {
-            endForm.setValue("name", existingRecord.driver);
-            endForm.setValue("car", existingRecord.car);
-            return;
-        }
-    }
-    
     startAiTransition(async () => {
+      if (activeTab === 'end') {
+          const existingRecord = await getRecordByPlateAndStatus(chapa, "Em Andamento");
+          if (existingRecord) {
+              endForm.setValue("name", existingRecord.driver);
+              endForm.setValue("car", existingRecord.car);
+              return;
+          }
+      }
       try {
         const result: PrepopulateFieldsOutput = await prepopulateFields({ chapa });
         if (result.name && result.car) {
@@ -121,17 +119,11 @@ export function DriverForm() {
   const startFileInputRef = useRef<HTMLInputElement>(null);
   const endFileInputRef = useRef<HTMLInputElement>(null);
 
-  const updateLocalStorage = async (data: StartFormValues | EndFormValues) => {
-    if (typeof window === 'undefined') return;
+  async function onStartSubmit(data: StartFormValues) {
+    setIsSubmitting(true);
     try {
-      const stored = localStorage.getItem('tripRecords') || '[]';
-      const records = JSON.parse(stored);
-      
-      const existingRecordIndex = records.findIndex((rec: any) => rec.plate === data.chapa && rec.status === "Em Andamento");
-
-      if (activeTab === 'start') {
-        const startData = data as StartFormValues;
-        if(existingRecordIndex > -1){
+        const existingRecord = await getRecordByPlateAndStatus(data.chapa, "Em Andamento");
+        if (existingRecord) {
             toast({
                 variant: "destructive",
                 title: "Viagem já iniciada",
@@ -140,35 +132,47 @@ export function DriverForm() {
             return;
         }
 
-        const photoBase64 = startData.startOdometerPhoto ? await fileToBase64(startData.startOdometerPhoto) : null;
+        const photoBase64 = data.startOdometerPhoto ? await fileToBase64(data.startOdometerPhoto) : null;
 
-        const newRecord = {
-          id: Date.now(),
+        await addRecord({
           date: new Date().toISOString().split('T')[0],
-          driver: startData.name,
-          car: startData.car,
-          plate: startData.chapa,
-          kmStart: startData.initialKm,
+          driver: data.name,
+          car: data.car,
+          plate: data.chapa,
+          kmStart: data.initialKm,
           kmEnd: null,
           status: "Em Andamento",
           startOdometerPhoto: photoBase64,
           endOdometerPhoto: null,
-        };
-        records.push(newRecord);
+        });
+
         toast({
           title: "Viagem iniciada com sucesso!",
           description: "Seus dados foram salvos.",
           variant: "default",
           className: "bg-accent text-accent-foreground",
         });
-        startForm.reset();
+        startForm.reset(initialStartValues);
         if (startFileInputRef.current) {
             startFileInputRef.current.value = "";
         }
+    } catch(e) {
+        console.error("Failed to start trip", e);
+        toast({
+            variant: "destructive",
+            title: "Erro ao iniciar viagem",
+            description: "Não foi possível salvar os dados. Tente novamente.",
+        })
+    } finally {
+        setIsSubmitting(false);
+    }
+  }
 
-      } else { // end trip
-        const endData = data as EndFormValues;
-        if (existingRecordIndex === -1) {
+  async function onEndSubmit(data: EndFormValues) {
+     setIsSubmitting(true);
+     try {
+        const existingRecord = await getRecordByPlateAndStatus(data.chapa, "Em Andamento");
+        if (!existingRecord) {
             toast({
                 variant: "destructive",
                 title: "Nenhuma viagem em andamento",
@@ -177,40 +181,32 @@ export function DriverForm() {
             return;
         }
 
-        const photoBase64 = endData.endOdometerPhoto ? await fileToBase64(endData.endOdometerPhoto) : null;
+        const photoBase64 = data.endOdometerPhoto ? await fileToBase64(data.endOdometerPhoto) : null;
 
-        records[existingRecordIndex].kmEnd = endData.finalKm;
-        records[existingRecordIndex].status = "Finalizado";
-        records[existingRecordIndex].endOdometerPhoto = photoBase64;
+        await updateRecord(existingRecord.id, {
+            kmEnd: data.finalKm,
+            status: "Finalizado",
+            endOdometerPhoto: photoBase64,
+        });
+        
         toast({
           title: "Viagem finalizada com sucesso!",
           description: "Seus dados foram atualizados.",
         });
-        endForm.reset();
+        endForm.reset(initialEndValues);
          if (endFileInputRef.current) {
             endFileInputRef.current.value = "";
         }
-      }
-
-      localStorage.setItem('tripRecords', JSON.stringify(records));
-      window.dispatchEvent(new Event('storage'));
-    } catch(e) {
-        console.error("Failed to update local storage", e);
+     } catch (e) {
+        console.error("Failed to end trip", e);
         toast({
             variant: "destructive",
-            title: "Erro ao salvar",
-            description: "Não foi possível salvar os dados localmente.",
+            title: "Erro ao finalizar viagem",
+            description: "Não foi possível salvar os dados. Tente novamente.",
         })
-    }
-  }
-
-
-  function onStartSubmit(data: StartFormValues) {
-    updateLocalStorage(data);
-  }
-
-  function onEndSubmit(data: EndFormValues) {
-     updateLocalStorage(data);
+     } finally {
+        setIsSubmitting(false);
+     }
   }
 
   return (
@@ -281,7 +277,7 @@ export function DriverForm() {
                     <FormItem>
                       <FormLabel>Km Inicial</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="123456" {...field} value={field.value || ''} />
+                        <Input type="number" placeholder="123456" {...field} value={field.value === 0 ? '' : field.value} onChange={(e) => field.onChange(e.target.valueAsNumber)} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -307,8 +303,8 @@ export function DriverForm() {
                     </FormItem>
                   )}
                 />
-                <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={startForm.formState.isSubmitting}>
-                  {startForm.formState.isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                <Button type="submit" className="w-full bg-accent hover:bg-accent/90 text-accent-foreground" disabled={isSubmitting}>
+                  {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
                   Registrar Início
                 </Button>
               </form>
@@ -374,7 +370,7 @@ export function DriverForm() {
                     <FormItem>
                       <FormLabel>KM Final</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="123567" {...field} value={field.value || ''} />
+                        <Input type="number" placeholder="123567" {...field} value={field.value === 0 ? '' : field.value} onChange={(e) => field.onChange(e.target.valueAsNumber)} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -400,8 +396,8 @@ export function DriverForm() {
                     </FormItem>
                   )}
                 />
-                <Button type="submit" className="w-full" disabled={endForm.formState.isSubmitting}>
-                   {endForm.formState.isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                <Button type="submit" className="w-full" disabled={isSubmitting}>
+                   {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
                   Registrar Fim
                 </Button>
               </form>

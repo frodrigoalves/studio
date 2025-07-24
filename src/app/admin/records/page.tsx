@@ -8,17 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { MoreHorizontal, PlusCircle, FileUp, Camera, AlertCircle, KeyRound, Loader2 } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
@@ -31,56 +21,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from '@/hooks/use-toast';
-
-interface Record {
-  id: number;
-  date: string;
-  driver: string;
-  car: string;
-  plate: string;
-  kmStart: number | null;
-  kmEnd: number | null;
-  status: "Finalizado" | "Em Andamento";
-  startOdometerPhoto: string | null;
-  endOdometerPhoto: string | null;
-}
-
-// This is now only used if localStorage is completely empty for the very first time.
-const initialRecords: Record[] = [
-  { id: 1, date: "2024-05-20", driver: "João Silva", car: "Fiat Argo", plate: "A123", kmStart: 12345, kmEnd: 12445, status: "Finalizado", startOdometerPhoto: null, endOdometerPhoto: null },
-  { id: 2, date: "2024-05-20", driver: "Maria Oliveira", car: "VW Gol", plate: "B456", kmStart: 54321, kmEnd: 54401, status: "Finalizado", startOdometerPhoto: null, endOdometerPhoto: null },
-  { id: 3, date: "2024-05-21", driver: "Carlos Pereira", car: "Hyundai HB20", plate: "C789", kmStart: 87654, kmEnd: null, status: "Em Andamento", startOdometerPhoto: null, endOdometerPhoto: null },
-];
-
-const getStoredRecords = (): Record[] => {
-    if (typeof window === 'undefined') return [];
-    const stored = localStorage.getItem('tripRecords');
-    if (stored) {
-        try {
-            const parsed = JSON.parse(stored);
-            // A simple check to see if it's likely our records array
-            if (Array.isArray(parsed) && (parsed.length === 0 || parsed[0].id)) {
-                 return parsed;
-            }
-        } catch {
-             // If parsing fails, it's not our data, so we'll start fresh below.
-        }
-    }
-    // Only set initial records if local storage is empty or contains invalid data
-    localStorage.setItem('tripRecords', JSON.stringify(initialRecords));
-    return initialRecords;
-};
-
-const setStoredRecords = (records: Record[]) => {
-    if (typeof window !== 'undefined') {
-        localStorage.setItem('tripRecords', JSON.stringify(records));
-        window.dispatchEvent(new Event('storage'));
-    }
-};
+import { getRecords, addRecord, updateRecord, type Record } from '@/services/records';
 
 export default function RecordsPage() {
     const { toast } = useToast();
     const [records, setRecords] = useState<Record[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [isAddDialogOpen, setAddDialogOpen] = useState(false);
     const [isPhotosDialogOpen, setPhotosDialogOpen] = useState(false);
     const [isEditDialogOpen, setEditDialogOpen] = useState(false);
@@ -100,62 +46,74 @@ export default function RecordsPage() {
     
     const [editRecordData, setEditRecordData] = useState<Record | null>(null);
 
-    useEffect(() => {
-        setRecords(getStoredRecords());
+    const fetchRecords = async () => {
+        setIsLoading(true);
+        try {
+            const fetchedRecords = await getRecords();
+            setRecords(fetchedRecords);
+        } catch (error) {
+            console.error("Failed to fetch records", error);
+            toast({
+                variant: 'destructive',
+                title: 'Erro ao carregar registros',
+                description: 'Não foi possível buscar os dados do servidor.'
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
-        const handleStorageChange = () => {
-            setRecords(getStoredRecords());
-        };
-        
-        window.addEventListener('storage', handleStorageChange);
-        return () => {
-            window.removeEventListener('storage', handleStorageChange);
-        };
+    useEffect(() => {
+        fetchRecords();
     }, []);
 
-    const handleAddRecord = () => {
-      const newRecordWithId: Record = {
+    const handleAddRecord = async () => {
+      const newRecordPayload = {
         ...newRecord,
-        id: Date.now(),
         kmStart: newRecord.kmStart ? Number(newRecord.kmStart) : null,
         kmEnd: newRecord.kmEnd ? Number(newRecord.kmEnd) : null,
-        status: newRecord.kmEnd ? "Finalizado" : "Em Andamento",
+        status: newRecord.kmEnd ? "Finalizado" : "Em Andamento" as "Finalizado" | "Em Andamento",
         startOdometerPhoto: null,
         endOdometerPhoto: null,
       };
-      const updatedRecords = [...records, newRecordWithId];
-      setRecords(updatedRecords);
-      setStoredRecords(updatedRecords);
-      setAddDialogOpen(false);
-      setNewRecord({
-        date: new Date().toISOString().split('T')[0],
-        driver: '',
-        car: '',
-        plate: '',
-        kmStart: null,
-        kmEnd: null,
-      });
+      
+      try {
+        await addRecord(newRecordPayload);
+        setAddDialogOpen(false);
+        setNewRecord({
+          date: new Date().toISOString().split('T')[0],
+          driver: '',
+          car: '',
+          plate: '',
+          kmStart: null,
+          kmEnd: null,
+        });
+        fetchRecords(); // Refresh data
+        toast({ title: "Sucesso!", description: "Registro adicionado." });
+      } catch (error) {
+        toast({ variant: 'destructive', title: "Erro", description: "Não foi possível adicionar o registro." });
+      }
     }
     
-    const handleUpdateRecord = () => {
+    const handleUpdateRecord = async () => {
         if (!editRecordData) return;
         
-        const updatedRecords = records.map(record => {
-            if (record.id === editRecordData.id) {
-                return {
-                    ...editRecordData,
-                    kmStart: editRecordData.kmStart ? Number(editRecordData.kmStart) : null,
-                    kmEnd: editRecordData.kmEnd ? Number(editRecordData.kmEnd) : null,
-                    status: editRecordData.kmEnd ? "Finalizado" : "Em Andamento" as "Finalizado" | "Em Andamento",
-                };
-            }
-            return record;
-        });
-        setRecords(updatedRecords);
-        setStoredRecords(updatedRecords);
-        setEditDialogOpen(false);
-        setEditRecordData(null);
-        toast({ title: "Sucesso!", description: "Registro atualizado com sucesso." });
+        try {
+            const { id, ...dataToUpdate } = {
+                ...editRecordData,
+                kmStart: editRecordData.kmStart ? Number(editRecordData.kmStart) : null,
+                kmEnd: editRecordData.kmEnd ? Number(editRecordData.kmEnd) : null,
+                status: editRecordData.kmEnd ? "Finalizado" : "Em Andamento" as "Finalizado" | "Em Andamento",
+            };
+            
+            await updateRecord(id, dataToUpdate);
+            setEditDialogOpen(false);
+            setEditRecordData(null);
+            fetchRecords(); // Refresh data
+            toast({ title: "Sucesso!", description: "Registro atualizado com sucesso." });
+        } catch (error) {
+             toast({ variant: 'destructive', title: "Erro", description: "Não foi possível atualizar o registro." });
+        }
     }
 
     const openPhotosDialog = (record: Record) => {
@@ -275,7 +233,13 @@ export default function RecordsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {records.map((record) => (
+            {isLoading ? (
+                <TableRow>
+                    <TableCell colSpan={8} className="text-center">
+                        <Loader2 className="mx-auto h-8 w-8 animate-spin" />
+                    </TableCell>
+                </TableRow>
+            ) : records.map((record) => (
               <TableRow key={record.id}>
                 <TableCell>{new Date(record.date).toLocaleDateString('pt-BR', { timeZone: 'UTC'})}</TableCell>
                 <TableCell className="font-medium">{record.driver}</TableCell>
@@ -439,7 +403,6 @@ export default function RecordsPage() {
             </DialogFooter>
         </DialogContent>
     </Dialog>
-
     </>
   );
 }
