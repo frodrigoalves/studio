@@ -1,0 +1,11 @@
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      // Permite acesso de leitura e escrita para que o aplicativo possa funcionar.
+      // Para um aplicativo em produção, você deve implementar regras de segurança mais detalhadas.
+      allow read, write: if true;
+    }
+  }
+}
