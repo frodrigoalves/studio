@@ -21,7 +21,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from '@/hooks/use-toast';
-import { getRecords, addRecord, updateRecord, type Record } from '@/services/records';
+import { getRecords, addRecord, updateRecord, type Record, type RecordAddPayload } from '@/services/records';
 
 const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -92,11 +92,11 @@ export default function RecordsPage() {
         const startPhotoBase64 = newRecord.startOdometerPhoto ? await fileToBase64(newRecord.startOdometerPhoto) : null;
         const endPhotoBase64 = newRecord.endOdometerPhoto ? await fileToBase64(newRecord.endOdometerPhoto) : null;
 
-        const newRecordPayload = {
+        const newRecordPayload: RecordAddPayload = {
           ...newRecord,
           kmStart: newRecord.kmStart ? Number(newRecord.kmStart) : null,
           kmEnd: newRecord.kmEnd ? Number(newRecord.kmEnd) : null,
-          status: newRecord.kmEnd ? "Finalizado" : "Em Andamento" as "Finalizado" | "Em Andamento",
+          status: newRecord.kmEnd ? "Finalizado" : "Em Andamento",
           startOdometerPhoto: startPhotoBase64,
           endOdometerPhoto: endPhotoBase64,
         };
@@ -218,11 +218,11 @@ export default function RecordsPage() {
                              <div className="grid grid-cols-2 gap-4">
                                <div className="space-y-2">
                                     <Label htmlFor="kmStart">KM Início</Label>
-                                    <Input id="kmStart" type="number" value={newRecord.kmStart ?? ''} onChange={(e) => setNewRecord({...newRecord, kmStart: e.target.valueAsNumber})} />
+                                    <Input id="kmStart" type="number" value={newRecord.kmStart ?? ''} onChange={(e) => setNewRecord({...newRecord, kmStart: e.target.value === '' ? null : e.target.valueAsNumber})} />
                                 </div>
                                <div className="space-y-2">
                                     <Label htmlFor="kmEnd">KM Fim</Label>
-                                    <Input id="kmEnd" type="number" value={newRecord.kmEnd ?? ''} onChange={(e) => setNewRecord({...newRecord, kmEnd: e.target.valueAsNumber})} />
+                                    <Input id="kmEnd" type="number" value={newRecord.kmEnd ?? ''} onChange={(e) => setNewRecord({...newRecord, kmEnd: e.target.value === '' ? null : e.target.valueAsNumber})} />
                                 </div>
                             </div>
                              <div className="grid grid-cols-2 gap-4">
