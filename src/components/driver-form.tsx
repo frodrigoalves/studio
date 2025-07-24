@@ -20,6 +20,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { addRecord, getRecordByPlateAndStatus, updateRecord } from "@/services/records";
+import { cn } from "@/lib/utils";
+
 
 const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -161,7 +163,12 @@ export function DriverForm() {
   }
 
   return (
-    <Card className="shadow-2xl shadow-primary/10">
+    <Card className={cn(
+        "shadow-2xl shadow-primary/10 transition-all duration-300",
+        activeTab === 'start' 
+            ? "border-green-500/50 shadow-green-500/20" 
+            : "border-destructive/50 shadow-destructive/20"
+    )}>
       <CardContent className="p-2 sm:p-4">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
@@ -259,14 +266,14 @@ export function DriverForm() {
           <TabsContent value="end" className="pt-4">
             <Form {...endForm}>
               <form onSubmit={endForm.handleSubmit(onEndSubmit)} className="space-y-6 px-2">
-                <FormField
+                 <FormField
                   control={endForm.control}
                   name="chapa"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Chapa</FormLabel>
                       <FormControl>
-                        <Input placeholder="Sua matrícula" {...field} />
+                        <Input placeholder="Confirme sua matrícula" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -305,7 +312,7 @@ export function DriverForm() {
                     </FormItem>
                   )}
                 />
-                <Button type="submit" className="w-full" disabled={isSubmitting}>
+                <Button type="submit" variant="destructive" className="w-full" disabled={isSubmitting}>
                    {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
                   Registrar Fim
                 </Button>
