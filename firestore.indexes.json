@@ -1,0 +1,23 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "tripRecords",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "plate",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "date",
+          "order": "DESCENDING"
+        }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}
