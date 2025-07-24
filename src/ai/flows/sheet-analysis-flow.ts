@@ -31,56 +31,59 @@ const SheetAnalysisOutputSchema = z.object({
 export type SheetAnalysisOutput = z.infer<typeof SheetAnalysisOutputSchema>;
 
 
-const hrPrompt = `
-  Você é um especialista em Recursos Humanos e analista de dados para o Guilherme da TopBus Transportes.
-  Seu objetivo é analisar a planilha de atestados médicos para encontrar padrões, anomalias e insights para a reunião semanal da diretoria.
-  Foque em dados concretos, ignorando cabeçalhos e rodapés complexos. Identifique a linha de cabeçalho para entender as colunas.
+const hrAnalysisPrompt = ai.definePrompt({
+    name: 'hrAnalysisPrompt',
+    input: { schema: SheetAnalysisInputSchema },
+    output: { schema: SheetAnalysisOutputSchema },
+    prompt: `
+      Você é um especialista em Recursos Humanos e analista de dados para o Guilherme da TopBus Transportes.
+      Seu objetivo é analisar a planilha de atestados médicos para encontrar padrões, anomalias e insights para a reunião semanal da diretoria.
+      Foque em dados concretos, ignorando cabeçalhos e rodapés complexos. Identifique a linha de cabeçalho para entender as colunas.
 
-  Foco da Análise:
-  1.  **Identificar Colaboradores Ausentes:** Liste os 5 colaboradores com maior número de atestados ou dias de ausência.
-  2.  **Principais Causas (CID):** Identifique os 3 CIDs (doenças) mais frequentes na planilha.
-  3.  **Anomalias:** Procure por padrões incomuns. Ex: Um grupo de motoristas da mesma rota apresentando o mesmo CID; um aumento súbito de atestados em um determinado período; atestados frequentes de curta duração para o mesmo colaborador.
-  4.  **Recomendações:** Com base na análise, sugira 2-3 ações para a diretoria. Ex: "Iniciar campanha de vacinação contra gripe (CID J11)", "Investigar condições de ergonomia na rota X", "Oferecer suporte de saúde mental para o colaborador Y".
+      Foco da Análise:
+      1.  **Identificar Colaboradores Ausentes:** Liste os 5 colaboradores com maior número de atestados ou dias de ausência.
+      2.  **Principais Causas (CID):** Identifique os 3 CIDs (doenças) mais frequentes na planilha.
+      3.  **Anomalias:** Procure por padrões incomuns. Ex: Um grupo de motoristas da mesma rota apresentando o mesmo CID; um aumento súbito de atestados em um determinado período; atestados frequentes de curta duração para o mesmo colaborador.
+      4.  **Recomendações:** Com base na análise, sugira 2-3 ações para a diretoria. Ex: "Iniciar campanha de vacinação contra gripe (CID J11)", "Investigar condições de ergonomia na rota X", "Oferecer suporte de saúde mental para o colaborador Y".
 
-  O relatório deve ser claro, objetivo e formatado para ser facilmente copiado para uma apresentação.
-`;
+      O relatório deve ser claro, objetivo e formatado para ser facilmente copiado para uma apresentação.
 
-const maintenancePrompt = `
-  Você é um especialista em gestão de frotas e analista de dados para o Guilherme da TopBus Transportes.
-  Seu objetivo é analisar a planilha de manutenção de veículos para encontrar gargalos, otimizar custos e aumentar a disponibilidade da frota para a reunião semanal da diretoria.
-  Foque em dados concretos, ignorando cabeçalhos e rodapés complexos. Identifique a linha de cabeçalho para entender as colunas.
+      **Dados da Planilha (CSV):**
+      {{{sheetContent}}}
 
-  Foco da Análise:
-  1.  **Veículos Críticos:** Liste os 5 veículos com maior tempo total em manutenção ou maior frequência de reparos.
-  2.  **Principais Defeitos:** Identifique os 3 tipos de reparo mais comuns em toda a frota.
-  3.  **Anomalias e Gargalos:** Procure por padrões. Ex: Um tipo de peça que falha recorrentemente em um modelo específico de ônibus; tempo de reparo para o mesmo defeito muito discrepante entre equipes; correlação entre motoristas e tipos específicos de avaria (se possível cruzar dados).
-  4.  **Recomendações:** Com base na análise, sugira 2-3 ações para a diretoria. Ex: "Considerar a troca do fornecedor da peça X", "Padronizar o processo de reparo para o defeito Y para reduzir o tempo de parada", "Promover treinamento de direção defensiva para os motoristas que mais geram manutenção corretiva".
+      Agora, gere a análise no formato de saída JSON especificado.
+    `,
+});
 
-  O relatório deve ser claro, objetivo e formatado para ser facilmente copiado para uma apresentação.
-`;
+const maintenanceAnalysisPrompt = ai.definePrompt({
+    name: 'maintenanceAnalysisPrompt',
+    input: { schema: SheetAnalysisInputSchema },
+    output: { schema: SheetAnalysisOutputSchema },
+    prompt: `
+      Você é um especialista em gestão de frotas e analista de dados para o Guilherme da TopBus Transportes.
+      Seu objetivo é analisar a planilha de manutenção de veículos para encontrar gargalos, otimizar custos e aumentar a disponibilidade da frota para a reunião semanal da diretoria.
+      Foque em dados concretos, ignorando cabeçalhos e rodapés complexos. Identifique a linha de cabeçalho para entender as colunas.
+
+      Foco da Análise:
+      1.  **Veículos Críticos:** Liste os 5 veículos com maior tempo total em manutenção ou maior frequência de reparos.
+      2.  **Principais Defeitos:** Identifique os 3 tipos de reparo mais comuns em toda a frota.
+      3.  **Anomalias e Gargalos:** Procure por padrões. Ex: Um tipo de peça que falha recorrentemente em um modelo específico de ônibus; tempo de reparo para o mesmo defeito muito discrepante entre equipes; correlação entre motoristas e tipos específicos de avaria (se possível cruzar dados).
+      4.  **Recomendações:** Com base na análise, sugira 2-3 ações para a diretoria. Ex: "Considerar a troca do fornecedor da peça X", "Padronizar o processo de reparo para o defeito Y para reduzir o tempo de parada", "Promover treinamento de direção defensiva para os motoristas que mais geram manutenção corretiva".
+
+      O relatório deve ser claro, objetivo e formatado para ser facilmente copiado para uma apresentação.
+
+      **Dados da Planilha (CSV):**
+      {{{sheetContent}}}
+
+      Agora, gere a análise no formato de saída JSON especificado.
+    `,
+});
 
 
 export async function analyseSheet(input: SheetAnalysisInput): Promise<SheetAnalysisOutput> {
   return sheetAnalysisFlow(input);
 }
 
-const analysisPrompt = ai.definePrompt({
-    name: 'sheetAnalysisPrompt',
-    input: { schema: SheetAnalysisInputSchema },
-    output: { schema: SheetAnalysisOutputSchema },
-    prompt: `
-        {{#if (eq analysisType "hr")}}
-            ${hrPrompt}
-        {{else}}
-            ${maintenancePrompt}
-        {{/if}}
-
-        **Dados da Planilha (CSV):**
-        {{{sheetContent}}}
-
-        Agora, gere a análise no formato de saída JSON especificado.
-    `,
-});
 
 const sheetAnalysisFlow = ai.defineFlow(
   {
@@ -89,12 +92,17 @@ const sheetAnalysisFlow = ai.defineFlow(
     outputSchema: SheetAnalysisOutputSchema,
   },
   async (input) => {
-    // Adiciona o título dinamicamente antes de chamar a IA
     const analysisWithTitle = {
         ...input,
         title: input.analysisType === 'hr' ? 'Análise de Atestados Médicos (RH)' : 'Análise de Manutenção de Frota',
     };
-    const { output } = await analysisPrompt(analysisWithTitle);
-    return output!;
+
+    if (input.analysisType === 'hr') {
+        const { output } = await hrAnalysisPrompt(analysisWithTitle);
+        return output!;
+    } else {
+        const { output } = await maintenanceAnalysisPrompt(analysisWithTitle);
+        return output!;
+    }
   }
 );
