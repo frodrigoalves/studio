@@ -65,8 +65,8 @@ export default function Home() {
                  <div className="space-y-1">
                   <h4 className="font-semibold">Observações:</h4>
                   <ul className="list-disc list-inside text-muted-foreground space-y-1">
-                    <li><span className="font-semibold">Chapa:</span> É o seu número de matrícula na empresa.</li>
-                    <li><span className="font-semibold">Carro:</span> É o número do ônibus que você está dirigindo.</li>
+                    <li><span className="font-semibold">Chapa:</span> Seu número de matrícula na empresa.</li>
+                    <li><span className="font-semibold">Carro:</span> O número do ônibus que você está dirigindo.</li>
                   </ul>
                 </div>
               </div>
