@@ -17,12 +17,20 @@ export interface Record {
   endOdometerPhoto: string | null;
 }
 
+export type RecordUpdatePayload = {
+    kmEnd?: number | null;
+    status?: "Finalizado" | "Em Andamento";
+    endOdometerPhoto?: string | null;
+    [key: string]: any; 
+}
+
+
 export async function addRecord(record: Omit<Record, 'id'>): Promise<Record> {
   const docRef = await addDoc(collection(db, "tripRecords"), record);
   return { id: docRef.id, ...record };
 }
 
-export async function updateRecord(id: string, record: DocumentData): Promise<{ id: string }> {
+export async function updateRecord(id: string, record: RecordUpdatePayload): Promise<{ id: string }> {
     const recordRef = doc(db, "tripRecords", id);
     await updateDoc(recordRef, record);
     return { id };

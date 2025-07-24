@@ -19,7 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { addRecord, getRecordByPlateAndStatus, updateRecord } from "@/services/records";
+import { addRecord, getRecordByPlateAndStatus, updateRecord, RecordUpdatePayload } from "@/services/records";
 import { cn } from "@/lib/utils";
 
 
@@ -136,9 +136,9 @@ export function DriverForm() {
 
         const photoBase64 = data.endOdometerPhoto ? await fileToBase64(data.endOdometerPhoto) : null;
         
-        const dataToUpdate = {
+        const dataToUpdate: RecordUpdatePayload = {
           kmEnd: data.finalKm,
-          status: "Finalizado" as const,
+          status: "Finalizado",
           endOdometerPhoto: photoBase64,
         };
 
