@@ -21,18 +21,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { addRecord, getRecordByPlateAndStatus, updateRecord } from "@/services/records";
 
-function debounce<T extends (...args: any[]) => void>(func: T, wait: number) {
-  let timeout: NodeJS.Timeout;
-  return function executedFunction(...args: Parameters<T>) {
-    const later = () => {
-      clearTimeout(timeout);
-      func(...args);
-    };
-    clearTimeout(timeout);
-    timeout = setTimeout(later, wait);
-  };
-}
-
 const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -69,7 +57,6 @@ const initialEndValues: Omit<EndFormValues, 'finalKm'> & { finalKm: string | num
 export function DriverForm() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("start");
-  const [isFindingRecord, setIsFindingRecord] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const startForm = useForm<StartFormValues>({
@@ -81,22 +68,6 @@ export function DriverForm() {
     resolver: zodResolver(endFormSchema),
     defaultValues: initialEndValues,
   });
-  
-  const handleChapaChange = useCallback(async (chapa: string) => {
-    if (chapa.length < 3) return;
-    
-    if (activeTab === 'end') {
-        setIsFindingRecord(true);
-        const existingRecord = await getRecordByPlateAndStatus(chapa, "Em Andamento");
-        if (existingRecord) {
-            endForm.setValue("name", existingRecord.driver);
-            endForm.setValue("car", existingRecord.car);
-        }
-        setIsFindingRecord(false);
-    }
-  }, [activeTab, endForm]);
-
-  const debouncedChapaChange = useCallback(debounce(handleChapaChange, 500), [handleChapaChange]);
   
   const startFileInputRef = useRef<HTMLInputElement>(null);
   const endFileInputRef = useRef<HTMLInputElement>(null);
@@ -111,7 +82,7 @@ export function DriverForm() {
                 title: "Viagem já iniciada",
                 description: "Já existe uma viagem em andamento para esta chapa.",
             });
-            setIsSubmitting(false); // Correctly stop loading indicator
+            setIsSubmitting(false);
             return;
         }
 
@@ -159,7 +130,7 @@ export function DriverForm() {
                 title: "Nenhuma viagem em andamento",
                 description: "Não foi encontrada uma viagem em andamento para esta chapa.",
             });
-            setIsSubmitting(false); // Correctly stop loading indicator
+            setIsSubmitting(false);
             return;
         }
 
@@ -169,6 +140,8 @@ export function DriverForm() {
             kmEnd: data.finalKm,
             status: "Finalizado",
             endOdometerPhoto: photoBase64,
+            driver: data.name, // Also update name and car if changed
+            car: data.car,
         });
         
         toast({
@@ -297,10 +270,7 @@ export function DriverForm() {
                     <FormItem>
                       <FormLabel>Chapa</FormLabel>
                       <FormControl>
-                        <Input placeholder="Sua matrícula" {...field} onChange={(e) => {
-                            field.onChange(e);
-                            debouncedChapaChange(e.target.value);
-                        }}/>
+                        <Input placeholder="Sua matrícula" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -315,8 +285,7 @@ export function DriverForm() {
                           <FormLabel>Nome do Motorista</FormLabel>
                           <FormControl>
                              <div className="relative">
-                               <Input {...field} readOnly className="bg-muted border-dashed" placeholder="Preenchido automaticamente" />
-                                {isFindingRecord && <Loader2 className="absolute right-3 top-2.5 h-4 w-4 animate-spin" />}
+                               <Input placeholder="Seu nome" {...field} />
                              </div>
                           </FormControl>
                            <FormMessage />
@@ -331,8 +300,7 @@ export function DriverForm() {
                           <FormLabel>Carro</FormLabel>
                           <FormControl>
                              <div className="relative">
-                                <Input {...field} readOnly className="bg-muted border-dashed" placeholder="Preenchido automaticamente"/>
-                                {isFindingRecord && <Loader2 className="absolute right-3 top-2.5 h-4 w-4 animate-spin" />}
+                                <Input placeholder="Número do ônibus" {...field} />
                              </div>
                           </FormControl>
                            <FormMessage />
