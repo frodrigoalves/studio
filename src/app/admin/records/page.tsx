@@ -116,7 +116,7 @@ export default function RecordsPage() {
     
     const handleUpdateRecord = async () => {
         if (!editRecordData) return;
-        
+        setIsSaving(true);
         try {
             const { id, ...dataToUpdate } = {
                 ...editRecordData,
@@ -132,6 +132,8 @@ export default function RecordsPage() {
             toast({ title: "Sucesso!", description: "Registro atualizado com sucesso." });
         } catch (error) {
              toast({ variant: 'destructive', title: "Erro", description: "Não foi possível atualizar o registro." });
+        } finally {
+            setIsSaving(false);
         }
     }
 
@@ -431,7 +433,10 @@ export default function RecordsPage() {
             )}
             <DialogFooter>
                 <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Cancelar</Button>
-                <Button onClick={handleUpdateRecord}>Salvar Alterações</Button>
+                <Button onClick={handleUpdateRecord} disabled={isSaving}>
+                    {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {isSaving ? 'Salvando...' : 'Salvar Alterações'}
+                </Button>
             </DialogFooter>
         </DialogContent>
     </Dialog>
@@ -440,4 +445,5 @@ export default function RecordsPage() {
 }
 
 
+    
     

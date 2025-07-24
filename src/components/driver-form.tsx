@@ -312,7 +312,7 @@ export function DriverForm() {
                 />
                 <Button type="submit" className="w-full bg-green-600 hover:bg-green-700" disabled={isSubmitting}>
                   {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                  Registrar Início
+                  {isSubmitting ? "Registrando..." : "Registrar Início"}
                 </Button>
               </form>
             </Form>
@@ -399,7 +399,7 @@ export function DriverForm() {
                 />
                 <Button type="submit" variant="destructive" className="w-full" disabled={isSubmitting}>
                    {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                  Registrar Fim
+                  {isSubmitting ? "Finalizando..." : "Registrar Fim"}
                 </Button>
               </form>
             </Form>
@@ -409,3 +409,5 @@ export function DriverForm() {
     </Card>
   );
 }
+
+    
