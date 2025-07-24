@@ -18,7 +18,8 @@ export interface Record {
 }
 
 export type RecordAddPayload = Omit<Record, 'id'>;
-export type RecordUpdatePayload = Partial<Omit<Record, 'id'>>;
+export type RecordUpdatePayload = Partial<Omit<Record, 'id' | 'driver' | 'car' | 'plate' | 'kmStart' | 'startOdometerPhoto' | 'date'>>;
+
 
 export async function addRecord(record: RecordAddPayload): Promise<Record> {
   const dataToSave = {
@@ -39,14 +40,9 @@ export async function updateRecord(id: string, data: RecordUpdatePayload): Promi
     const recordRef = doc(db, "tripRecords", id);
     const dataToUpdate: { [key: string]: any } = { ...data };
 
-    if (dataToUpdate.kmEnd !== undefined) {
-        dataToUpdate.kmEnd = dataToUpdate.kmEnd ? Number(dataToUpdate.kmEnd) : null;
-         if(isNaN(dataToUpdate.kmEnd!)) dataToUpdate.kmEnd = null;
-    }
-    
-    if (dataToUpdate.kmStart !== undefined) {
-        dataToUpdate.kmStart = dataToUpdate.kmStart ? Number(dataToUpdate.kmStart) : null;
-        if(isNaN(dataToUpdate.kmStart!)) dataToUpdate.kmStart = null;
+    if (data.kmEnd !== undefined) {
+        const kmEndNumber = Number(data.kmEnd);
+        dataToUpdate.kmEnd = isNaN(kmEndNumber) ? null : kmEndNumber;
     }
 
     await updateDoc(recordRef, dataToUpdate);
