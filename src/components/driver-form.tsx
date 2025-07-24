@@ -19,7 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { addRecord, getRecordByPlateAndStatus, updateRecord, RecordUpdatePayload } from "@/services/records";
+import { addRecord, getRecordByPlateAndStatus, updateRecord, RecordUpdatePayload, Record } from "@/services/records";
 import { cn } from "@/lib/utils";
 
 
@@ -42,6 +42,8 @@ const startFormSchema = z.object({
 
 const endFormSchema = z.object({
   chapa: z.string().min(1, "Chapa é obrigatória."),
+  name: z.string().min(1, "Nome é obrigatório."),
+  car: z.string().min(1, "Carro é obrigatório."),
   finalKm: z.coerce.number({ required_error: "Km Final é obrigatório."}).min(1, "Km Final é obrigatório."),
   endOdometerPhoto: z.any().refine(file => file, "Foto é obrigatória."),
 });
@@ -51,13 +53,15 @@ type StartFormValues = z.infer<typeof startFormSchema>;
 type EndFormValues = z.infer<typeof endFormSchema>;
 
 const initialStartValues: Omit<StartFormValues, 'initialKm'> & { initialKm: string | number } = { chapa: "", name: "", car: "", initialKm: '', startOdometerPhoto: null };
-const initialEndValues: Omit<EndFormValues, 'finalKm'> & { finalKm: string | number } = { chapa: "", finalKm: '', endOdometerPhoto: null };
+const initialEndValues: Omit<EndFormValues, 'finalKm' | 'name' | 'car'> & { finalKm: string | number, name: string, car: string } = { chapa: "", name: "", car: "", finalKm: '', endOdometerPhoto: null };
 
 
 export function DriverForm() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("start");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const [recordToEnd, setRecordToEnd] = useState<Record | null>(null);
 
   const startForm = useForm<StartFormValues>({
     resolver: zodResolver(startFormSchema),
@@ -71,6 +75,37 @@ export function DriverForm() {
   
   const startFileInputRef = useRef<HTMLInputElement>(null);
   const endFileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleChapaBlur = useCallback(async (chapa: string) => {
+    if(!chapa || activeTab !== 'end') return;
+
+    setIsSearching(true);
+    try {
+        const record = await getRecordByPlateAndStatus(chapa, 'Em Andamento');
+        if(record) {
+            setRecordToEnd(record);
+            endForm.setValue('name', record.driver);
+            endForm.setValue('car', record.car);
+        } else {
+            setRecordToEnd(null);
+            endForm.reset({ ...initialEndValues, chapa });
+             toast({
+                variant: "destructive",
+                title: "Nenhuma viagem em andamento",
+                description: "Não foi encontrada uma viagem em andamento para esta chapa.",
+            });
+        }
+    } catch (e) {
+        console.error("Failed to fetch record by plate", e);
+        toast({
+            variant: "destructive",
+            title: "Erro ao buscar viagem",
+            description: "Não foi possível verificar a chapa. Tente novamente.",
+        });
+    } finally {
+        setIsSearching(false);
+    }
+  }, [activeTab, endForm, toast]);
 
   async function onStartSubmit(data: StartFormValues) {
     setIsSubmitting(true);
@@ -123,12 +158,21 @@ export function DriverForm() {
   async function onEndSubmit(data: EndFormValues) {
      setIsSubmitting(true);
      try {
-        const existingRecord = await getRecordByPlateAndStatus(data.chapa, "Em Andamento");
-        if (!existingRecord) {
+        if (!recordToEnd) {
             toast({
                 variant: "destructive",
                 title: "Nenhuma viagem em andamento",
-                description: "Não foi encontrada uma viagem em andamento para esta chapa.",
+                description: "Por favor, insira uma chapa válida para encontrar a viagem a ser finalizada.",
+            });
+            setIsSubmitting(false);
+            return;
+        }
+
+        if (data.finalKm <= (recordToEnd.kmStart ?? 0)) {
+            toast({
+                variant: "destructive",
+                title: "KM Final inválido",
+                description: "O KM final deve ser maior que o KM inicial.",
             });
             setIsSubmitting(false);
             return;
@@ -142,13 +186,14 @@ export function DriverForm() {
           endOdometerPhoto: photoBase64,
         };
 
-        await updateRecord(existingRecord.id, dataToUpdate);
+        await updateRecord(recordToEnd.id, dataToUpdate);
         
         toast({
           title: "Viagem finalizada com sucesso!",
           description: "Seus dados foram atualizados.",
         });
         endForm.reset(initialEndValues);
+        setRecordToEnd(null);
          if (endFileInputRef.current) {
             endFileInputRef.current.value = "";
         }
@@ -163,6 +208,13 @@ export function DriverForm() {
         setIsSubmitting(false);
      }
   }
+  
+  useEffect(() => {
+    if (activeTab === 'start') {
+        setRecordToEnd(null);
+        endForm.reset(initialEndValues);
+    }
+  }, [activeTab, endForm]);
 
   return (
     <Card className={cn(
@@ -275,12 +327,43 @@ export function DriverForm() {
                     <FormItem>
                       <FormLabel>Chapa</FormLabel>
                       <FormControl>
-                        <Input placeholder="Confirme sua matrícula" {...field} />
+                        <div className="relative">
+                            <Input placeholder="Confirme sua matrícula" {...field} onBlur={(e) => handleChapaBlur(e.target.value)} />
+                             {isSearching && <Loader2 className="absolute right-3 top-2.5 h-5 w-5 animate-spin" />}
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     <FormField
+                        control={endForm.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Nome do Motorista</FormLabel>
+                            <FormControl>
+                               <Input placeholder="Preenchido automaticamente" {...field} disabled />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={endForm.control}
+                        name="car"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Carro</FormLabel>
+                            <FormControl>
+                               <Input placeholder="Preenchido automaticamente" {...field} disabled />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                </div>
                 <FormField
                   control={endForm.control}
                   name="finalKm"
@@ -326,3 +409,6 @@ export function DriverForm() {
     </Card>
   );
 }
+
+
+    
