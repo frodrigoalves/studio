@@ -15,8 +15,8 @@ import { generateReport, type ReportOutput } from "@/ai/flows/report-flow";
 import { analyseSheet, type SheetAnalysisInput, type SheetAnalysisOutput } from "@/ai/flows/sheet-analysis-flow";
 import { Input } from "@/components/ui/input";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
-import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
+import { Bar, XAxis, YAxis, CartesianGrid, Line } from "recharts";
+import { ChartContainer, ChartTooltipContent, ChartTooltip } from "@/components/ui/chart";
 import { subDays, subWeeks, subMonths, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import * as XLSX from 'xlsx';
@@ -464,7 +464,7 @@ export default function AiReportsPage() {
                                         <CartesianGrid vertical={false} />
                                         <XAxis dataKey={xAxisKey} tickLine={false} axisLine={false} tickMargin={8} />
                                         <YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => `${value / 1000}k`} />
-                                        <Tooltip content={<ChartTooltipContent indicator="dot" />} />
+                                        <ChartTooltip content={<ChartTooltipContent indicator="dot" />} />
                                         <Line dataKey="total" type="monotone" stroke="var(--color-total)" strokeWidth={2} dot={true} name="KM" />
                                     </LineChart>
                                     </ChartContainer>
@@ -481,7 +481,7 @@ export default function AiReportsPage() {
                                             <CartesianGrid horizontal={false} />
                                             <YAxis dataKey="name" type="category" tickLine={false} axisLine={false} tickMargin={8} width={80} />
                                             <XAxis type="number" hide />
-                                            <Tooltip content={<ChartTooltipContent indicator="dot" />} />
+                                            <ChartTooltip content={<ChartTooltipContent indicator="dot" />} />
                                             <Bar dataKey="km" radius={5} name="KM" fill="var(--color-km)" />
                                         </BarChart>
                                     </ChartContainer>
@@ -704,5 +704,7 @@ export default function AiReportsPage() {
     </div>
   );
 }
+
+    
 
     
