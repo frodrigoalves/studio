@@ -111,6 +111,7 @@ export function DriverForm() {
                 title: "Viagem já iniciada",
                 description: "Já existe uma viagem em andamento para esta chapa.",
             });
+            setIsSubmitting(false); // Correctly stop loading indicator
             return;
         }
 
@@ -158,6 +159,7 @@ export function DriverForm() {
                 title: "Nenhuma viagem em andamento",
                 description: "Não foi encontrada uma viagem em andamento para esta chapa.",
             });
+            setIsSubmitting(false); // Correctly stop loading indicator
             return;
         }
 
@@ -252,7 +254,7 @@ export function DriverForm() {
                     <FormItem>
                       <FormLabel>Km Inicial</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="123456" {...field} value={field.value === 0 ? '' : field.value} onChange={(e) => field.onChange(e.target.valueAsNumber)} />
+                        <Input type="number" placeholder="123456" {...field} value={field.value ?? ''} onChange={(e) => field.onChange(e.target.value === '' ? null : e.target.valueAsNumber)} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -345,7 +347,7 @@ export function DriverForm() {
                     <FormItem>
                       <FormLabel>KM Final</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="123567" {...field} value={field.value === 0 ? '' : field.value} onChange={(e) => field.onChange(e.target.valueAsNumber)} />
+                        <Input type="number" placeholder="123567" {...field} value={field.value ?? ''} onChange={(e) => field.onChange(e.target.value === '' ? null : e.target.valueAsNumber)} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
