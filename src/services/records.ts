@@ -2,7 +2,7 @@
 'use server';
 
 import { db } from '@/lib/firebase';
-import { collection, addDoc, getDocs, doc, updateDoc, query, where, getDoc, orderBy, DocumentData } from 'firebase/firestore';
+import { collection, addDoc, getDocs, doc, updateDoc, query, where, getDoc, orderBy, DocumentData, limit } from 'firebase/firestore';
 
 export interface Record {
   id: string;
@@ -22,9 +22,10 @@ export async function addRecord(record: Omit<Record, 'id'>): Promise<Record> {
   return { id: docRef.id, ...record };
 }
 
-export async function updateRecord(id: string, record: DocumentData): Promise<void> {
+export async function updateRecord(id: string, record: DocumentData): Promise<{ id: string }> {
     const recordRef = doc(db, "tripRecords", id);
     await updateDoc(recordRef, record);
+    return { id };
 }
 
 
@@ -35,7 +36,12 @@ export async function getRecords(): Promise<Record[]> {
 }
 
 export async function getRecordByPlateAndStatus(plate: string, status: "Em Andamento"): Promise<Record | null> {
-    const q = query(collection(db, "tripRecords"), where("plate", "==", plate), where("status", "==", status));
+    const q = query(
+        collection(db, "tripRecords"), 
+        where("plate", "==", plate), 
+        where("status", "==", status),
+        limit(1)
+    );
     const querySnapshot = await getDocs(q);
     if (querySnapshot.empty) {
         return null;
