@@ -1,45 +1,66 @@
 
 'use client';
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Sparkles, Wand2, FileText, Upload, Lightbulb, ListChecks, BarChart2, Archive, BrainCircuit } from "lucide-react";
+import { Loader2, Sparkles, Wand2, FileText, Upload, Lightbulb, ListChecks, BarChart2, Archive, BrainCircuit, GaugeCircle, AlertTriangle, Fuel, DollarSign } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { getRecords } from "@/services/records";
-import { getDieselPrices } from "@/services/settings";
+import { getRecords, type Record } from "@/services/records";
+import { getDieselPrices, type DieselPrice } from "@/services/settings";
 import { generateReport, type ReportOutput } from "@/ai/flows/report-flow";
 import { analyseSheet, type SheetAnalysisInput, type SheetAnalysisOutput } from "@/ai/flows/sheet-analysis-flow";
 import { Input } from "@/components/ui/input";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Bar, Line, LineChart, XAxis, YAxis, CartesianGrid, Tooltip } from "recharts";
+import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
+import { subDays, subWeeks, subMonths, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, format, parseISO } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 type Period = "daily" | "weekly" | "monthly";
 type AnalysisType = 'hr' | 'maintenance';
+type FilterType = "semanal" | "quinzenal" | "mensal";
+const AVERAGE_KM_PER_LITER = 2.5;
+
+const chartConfig = {
+    km: {
+      label: "KM",
+      color: "hsl(var(--primary))",
+    },
+    total: {
+      label: "Total KM",
+      color: "hsl(var(--primary))",
+    },
+};
 
 export default function AiReportsPage() {
     const { toast } = useToast();
     
-    // State for User Role
+    // Common state
     const [userRole, setUserRole] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(true);
 
-    // State for Fleet Report
+    // Dashboard state
+    const [filter, setFilter] = useState<FilterType>("mensal");
+    const [records, setRecords] = useState<Record[]>([]);
+    const [dieselPrices, setDieselPrices] = useState<DieselPrice[]>([]);
+
+    // Fleet Report state
     const [fleetPeriod, setFleetPeriod] = useState<Period>("weekly");
     const [isFleetLoading, setIsFleetLoading] = useState(false);
     const [fleetReport, setFleetReport] = useState<ReportOutput | null>(null);
 
-    // State for Sheet Analysis
+    // Sheet Analysis state
     const [analysisType, setAnalysisType] = useState<AnalysisType>('hr');
     const [file, setFile] = useState<File | null>(null);
     const [isSheetLoading, setIsSheetLoading] = useState(false);
     const [sheetAnalysisResult, setSheetAnalysisResult] = useState<SheetAnalysisOutput | null>(null);
 
-    // State for Presentation Repository
+    // Presentation Repository state
     const [repositoryContent, setRepositoryContent] = useState('');
-    const [isRepoLoading, setIsRepoLoading] = useState(false);
-    const [repoAnalysis, setRepoAnalysis] = useState<string | null>(null);
     
     useEffect(() => {
         const storedUser = localStorage.getItem('user');
@@ -47,17 +68,180 @@ export default function AiReportsPage() {
             const userData = JSON.parse(storedUser);
             setUserRole(userData.role);
         }
-    }, []);
+
+        const fetchAndSetData = async () => {
+            setIsLoading(true);
+            try {
+                const [allRecords, allPrices] = await Promise.all([
+                    getRecords(),
+                    getDieselPrices()
+                ]);
+                setRecords(allRecords);
+                setDieselPrices(allPrices);
+            } catch (error) {
+                console.error(error);
+                toast({
+                    variant: 'destructive',
+                    title: 'Erro ao carregar dados',
+                    description: 'Não foi possível buscar os registros para o dashboard.'
+                });
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchAndSetData();
+
+    }, [toast]);
+
+    const dashboardData = useMemo(() => {
+        const latestPrice = dieselPrices.length > 0 ? parseFloat(dieselPrices[0].price) : 0;
+        
+        if(records.length === 0) return {
+            totalKm: 0,
+            totalKmPrevious: 0,
+            alerts: 0,
+            performanceData: [],
+            topVehicles: [],
+            totalCost: 0,
+            latestDieselPrice: latestPrice
+        };
+
+        const now = new Date();
+        let startDate: Date;
+        let endDate: Date = endOfDay(now);
+        let previousStartDate: Date;
+        let previousEndDate: Date;
+        
+        switch(filter) {
+            case 'semanal':
+                startDate = startOfWeek(now, { weekStartsOn: 1 });
+                endDate = endOfWeek(now, { weekStartsOn: 1 });
+                previousStartDate = startOfWeek(subWeeks(now, 1), { weekStartsOn: 1 });
+                previousEndDate = endOfWeek(subWeeks(now, 1), { weekStartsOn: 1 });
+                break;
+            case 'quinzenal':
+                startDate = startOfDay(subDays(now, 14));
+                previousStartDate = startOfDay(subDays(now, 28));
+                previousEndDate = endOfDay(subDays(now, 15));
+                break;
+            case 'mensal':
+                startDate = startOfMonth(now);
+                previousStartDate = startOfMonth(subMonths(now, 1));
+                previousEndDate = endOfMonth(subMonths(now, 1));
+                break;
+        }
+
+        const filteredRecords = records.filter(r => {
+            try {
+                const recordDate = parseISO(r.date);
+                return recordDate >= startDate && recordDate <= endDate;
+            } catch { return false; }
+        });
+
+        const previousRecords = records.filter(r => {
+            try {
+                const recordDate = parseISO(r.date);
+                return recordDate >= previousStartDate && recordDate <= previousEndDate;
+            } catch { return false; }
+        });
+        
+        const totalKm = filteredRecords
+            .filter(r => r.status === 'Finalizado' && r.kmEnd && r.kmStart)
+            .reduce((sum, r) => sum + (r.kmEnd! - r.kmStart!), 0);
+
+        const totalKmPrevious = previousRecords
+            .filter(r => r.status === 'Finalizado' && r.kmEnd && r.kmStart)
+            .reduce((sum, r) => sum + (r.kmEnd! - r.kmStart!), 0);
+            
+        const alerts = records.filter(r => r.status === "Em Andamento").length;
+        
+        const totalCost = (totalKm / AVERAGE_KM_PER_LITER) * latestPrice;
+
+        const performanceData = (() => {
+            switch(filter) {
+                case 'semanal':
+                    return Array.from({ length: 7 }).map((_, i) => {
+                        const day = startOfWeek(now, { weekStartsOn: 1 });
+                        day.setDate(day.getDate() + i);
+                        const dayString = format(day, 'EEE', { locale: ptBR });
+                        const total = records
+                            .filter(r => {
+                                if (r.status !== 'Finalizado' || !r.kmEnd || !r.kmStart) return false;
+                                const recordDate = parseISO(r.date);
+                                const start = startOfWeek(now, { weekStartsOn: 1 });
+                                const end = endOfWeek(now, { weekStartsOn: 1 });
+                                return recordDate >= start && recordDate <= end && format(recordDate, 'EEE', { locale: ptBR }) === dayString;
+                            })
+                            .reduce((sum, r) => sum + (r.kmEnd! - r.kmStart!), 0);
+                        return { name: dayString, total: total };
+                    });
+                case 'quinzenal':
+                     return [
+                        {
+                          name: "Semana Anterior",
+                          total: records.filter(r => {
+                              if (r.status !== 'Finalizado' || !r.kmEnd || !r.kmStart) return false;
+                              const recordDate = parseISO(r.date);
+                              const start = startOfWeek(subWeeks(now, 1), { locale: ptBR, weekStartsOn: 1 });
+                              const end = endOfWeek(subWeeks(now, 1), { locale: ptBR, weekStartsOn: 1 });
+                              return recordDate >= start && recordDate <= end;
+                          }).reduce((sum, r) => sum + (r.kmEnd! - r.kmStart!), 0)
+                        },
+                        {
+                          name: "Semana Atual",
+                          total: records.filter(r => {
+                               if (r.status !== 'Finalizado' || !r.kmEnd || !r.kmStart) return false;
+                               const recordDate = parseISO(r.date);
+                               const start = startOfWeek(now, { locale: ptBR, weekStartsOn: 1 });
+                               const end = endOfWeek(now, { locale: ptBR, weekStartsOn: 1 });
+                               return recordDate >= start && recordDate <= end;
+                          }).reduce((sum, r) => sum + (r.kmEnd! - r.kmStart!), 0)
+                        }
+                    ];
+                case 'mensal':
+                    return Array.from({ length: 6 }).map((_, i) => {
+                        const month = subMonths(now, 5 - i);
+                        const monthString = format(month, 'MMM', { locale: ptBR });
+                        const total = records
+                            .filter(r => r.status === 'Finalizado' && r.kmEnd && r.kmStart && format(parseISO(r.date), 'MMM', { locale: ptBR }) === monthString)
+                            .reduce((sum, r) => sum + (r.kmEnd! - r.kmStart!), 0);
+                        return { name: monthString, total: total };
+                    });
+            }
+        })();
+        
+        const vehicleKm = filteredRecords
+            .filter(r => r.status === 'Finalizado' && r.kmEnd && r.kmStart)
+            .reduce((acc, r) => {
+                const km = r.kmEnd! - r.kmStart!;
+                if (!acc[r.car]) {
+                    acc[r.car] = 0;
+                }
+                acc[r.car] += km;
+                return acc;
+            }, {} as Record<string, number>);
+
+        const topVehicles = Object.entries(vehicleKm)
+            .map(([name, km]) => ({ name, km, fill: `var(--color-km)`}))
+            .sort((a, b) => b.km - a.km)
+            .slice(0, 5);
+
+
+        return { totalKm, totalKmPrevious, alerts, performanceData, topVehicles, totalCost, latestDieselPrice: latestPrice };
+
+    }, [records, filter, dieselPrices]);
+
+    const kmPercentageChange = dashboardData.totalKmPrevious > 0 
+      ? ((dashboardData.totalKm - dashboardData.totalKmPrevious) / dashboardData.totalKmPrevious) * 100
+      : dashboardData.totalKm > 0 ? 100 : 0;
+      
+    const xAxisKey = filter === 'semanal' ? 'name' : filter === 'quinzenal' ? 'name' : 'name';
+
 
     const handleGenerateFleetReport = async () => {
         setIsFleetLoading(true);
         setFleetReport(null);
         try {
-            const [records, dieselPrices] = await Promise.all([
-                getRecords(),
-                getDieselPrices()
-            ]);
-
             if (records.length === 0 || dieselPrices.length === 0) {
                  toast({
                     variant: 'destructive',
@@ -145,6 +329,14 @@ export default function AiReportsPage() {
       };
 
 
+  if (isLoading) {
+    return (
+        <div className="flex h-screen items-center justify-center bg-background">
+            <Loader2 className="h-16 w-16 animate-spin text-primary" />
+        </div>
+    );
+  }
+
   return (
     <div className="max-w-6xl mx-auto space-y-8">
         <div className="text-center space-y-2">
@@ -152,8 +344,102 @@ export default function AiReportsPage() {
                 <Sparkles className="w-10 h-10" />
             </div>
             <h1 className="text-3xl font-bold">Central de Inteligência</h1>
-            <p className="text-muted-foreground">Gere análises de frota, planilhas ou use o repositório para obter insights com IA.</p>
+            <p className="text-muted-foreground">Analise, gere relatórios e obtenha insights com IA para otimizar a operação.</p>
         </div>
+
+        {/* --- Dashboard Section --- */}
+        <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                <h2 className="text-2xl font-semibold">Análise de Desempenho</h2>
+                <div className="flex gap-2">
+                    <Button variant={filter === 'semanal' ? 'default' : 'outline'} onClick={() => setFilter('semanal')}>Semanal</Button>
+                    <Button variant={filter === 'quinzenal' ? 'default' : 'outline'} onClick={() => setFilter('quinzenal')}>Quinzenal</Button>
+                    <Button variant={filter === 'mensal' ? 'default' : 'outline'} onClick={() => setFilter('mensal')}>Mensal</Button>
+                </div>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <Card>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <h3 className="text-sm font-medium">KM Total ({filter})</h3>
+                        <GaugeCircle className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{dashboardData.totalKm.toLocaleString('pt-BR')} km</div>
+                        <p className={`text-xs ${kmPercentageChange >= 0 ? 'text-green-600' : 'text-destructive'}`}>
+                            {kmPercentageChange >= 0 ? '+' : ''}{kmPercentageChange.toFixed(1)}% do período anterior
+                        </p>
+                    </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <h3 className="text-sm font-medium">Custo Total ({filter})</h3>
+                    <DollarSign className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">R$ {dashboardData.totalCost.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                     <p className="text-xs text-muted-foreground">Custo com combustível no período.</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <h3 className="text-sm font-medium">Preço do Diesel</h3>
+                    <Fuel className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">R$ {dashboardData.latestDieselPrice.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                    <p className="text-xs text-muted-foreground">Último valor salvo.</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <h3 className="text-sm font-medium">Alertas de Preenchimento</h3>
+                    <AlertTriangle className="h-4 w-4 text-destructive" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{dashboardData.alerts} Alertas</div>
+                    <p className="text-xs text-muted-foreground">Viagens em andamento.</p>
+                  </CardContent>
+                </Card>
+            </div>
+             <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-7">
+                <Card className="lg:col-span-4">
+                  <CardHeader>
+                    <CardTitle>Desempenho Geral</CardTitle>
+                    <CardDescription>Total de quilômetros rodados no período.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="pl-2">
+                    <ChartContainer config={chartConfig} className="h-[250px] w-full">
+                      <LineChart data={dashboardData.performanceData} margin={{ left: 12, right: 12 }}>
+                        <CartesianGrid vertical={false} />
+                        <XAxis dataKey={xAxisKey} tickLine={false} axisLine={false} tickMargin={8} />
+                        <YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => `${value / 1000}k`} />
+                        <Tooltip content={<ChartTooltipContent indicator="dot" />} />
+                        <Line dataKey="total" type="monotone" stroke="var(--color-total)" strokeWidth={2} dot={true} name="KM" />
+                      </LineChart>
+                    </ChartContainer>
+                  </CardContent>
+                </Card>
+                <Card className="lg:col-span-3">
+                  <CardHeader>
+                    <CardTitle>Top 5 Veículos por KM</CardTitle>
+                    <CardDescription>Veículos que mais rodaram no período.</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                     <ChartContainer config={chartConfig} className="h-[250px] w-full">
+                        <BarChart2 data={dashboardData.topVehicles} layout="vertical" margin={{ left: 10 }}>
+                            <CartesianGrid horizontal={false} />
+                            <YAxis dataKey="name" type="category" tickLine={false} axisLine={false} tickMargin={8} width={80} />
+                            <XAxis type="number" hide />
+                            <Tooltip content={<ChartTooltipContent indicator="dot" />} />
+                            <Bar dataKey="km" radius={5} name="KM" fill="var(--color-km)" />
+                        </BarChart2>
+                    </ChartContainer>
+                  </CardContent>
+                </Card>
+            </div>
+        </div>
+        {/* --- End Dashboard Section --- */}
+
 
         <Accordion type="single" collapsible className="w-full" defaultValue="item-1">
             <AccordionItem value="item-1">
@@ -352,3 +638,4 @@ export default function AiReportsPage() {
     </div>
   );
 }
+
