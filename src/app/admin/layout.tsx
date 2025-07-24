@@ -1,7 +1,11 @@
 
 'use client';
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { useAuthState } from 'react-firebase-hooks/auth';
+import { auth } from '@/lib/firebase';
 import {
   SidebarProvider,
   Sidebar,
@@ -16,8 +20,8 @@ import {
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { LayoutDashboard, Settings, FileText, LogOut, Bus, Sparkles } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { LayoutDashboard, Settings, FileText, LogOut, Bus, Sparkles, Loader2 } from "lucide-react";
+
 
 export default function AdminLayout({
   children,
@@ -25,11 +29,35 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const [user, loading, error] = useAuthState(auth);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  const handleLogout = () => {
-    // Here you can add any logic to clear user session, etc.
-    router.push('/login');
+  useEffect(() => {
+    if (!loading && !user && pathname !== '/login') {
+      router.push('/login');
+    }
+     if (error) {
+      console.error("Authentication error:", error);
+      router.push('/login');
+    }
+  }, [user, loading, router, pathname, error]);
+  
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    await auth.signOut();
+    // The useEffect hook will handle the redirection to /login
+    setIsLoggingOut(false);
   };
+  
+  if (loading || !user) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background">
+        <Loader2 className="h-16 w-16 animate-spin text-primary" />
+      </div>
+    );
+  }
+
 
   return (
     <SidebarProvider>
@@ -84,15 +112,15 @@ export default function AdminLayout({
         <SidebarFooter>
           <div className="flex items-center gap-3 p-2 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center">
             <Avatar className="h-9 w-9">
-              <AvatarImage src="https://placehold.co/40x40.png" alt="Admin" data-ai-hint="person avatar" />
-              <AvatarFallback>AD</AvatarFallback>
+              <AvatarImage src={user?.photoURL ?? undefined} alt={user?.displayName ?? 'Admin'} />
+              <AvatarFallback>{user?.displayName?.charAt(0) ?? 'A'}</AvatarFallback>
             </Avatar>
              <div className="group-data-[collapsible=icon]:hidden">
-              <p className="font-semibold">Admin</p>
-              <p className="text-xs text-muted-foreground">admin@fleet.com</p>
+              <p className="font-semibold truncate">{user?.displayName ?? 'Admin'}</p>
+              <p className="text-xs text-muted-foreground truncate">{user?.email ?? 'admin@fleet.com'}</p>
             </div>
-            <Button variant="ghost" size="icon" className="ml-auto group-data-[collapsible=icon]:hidden" onClick={handleLogout}>
-              <LogOut />
+            <Button variant="ghost" size="icon" className="ml-auto group-data-[collapsible=icon]:hidden" onClick={handleLogout} disabled={isLoggingOut}>
+              {isLoggingOut ? <Loader2 className="animate-spin" /> : <LogOut />}
             </Button>
           </div>
         </SidebarFooter>
