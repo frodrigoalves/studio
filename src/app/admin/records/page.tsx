@@ -305,51 +305,43 @@ export default function RecordsPage() {
                                 Preencha os detalhes da viagem manualmente, incluindo as fotos do odômetro.
                             </DialogDescription>
                         </DialogHeader>
-                        <div className="grid gap-4 py-4">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="driver">Motorista</Label>
+                                <Input id="driver" value={newRecord.driver} onChange={(e) => setNewRecord({...newRecord, driver: e.target.value})} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="plate">Chapa</Label>
+                                <Input id="plate" value={newRecord.plate} onChange={(e) => setNewRecord({...newRecord, plate: e.target.value})} />
+                            </div>
+                           <div className="space-y-2">
+                                <Label htmlFor="car">Veículo</Label>
+                                <Input id="car" value={newRecord.car} onChange={(e) => setNewRecord({...newRecord, car: e.target.value})} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="line">Linha</Label>
+                                <Input id="line" value={newRecord.line} onChange={(e) => setNewRecord({...newRecord, line: e.target.value})} />
+                            </div>
+                           <div className="space-y-2">
+                                <Label htmlFor="date">Data</Label>
+                                <Input id="date" type="date" value={newRecord.date} onChange={(e) => setNewRecord({...newRecord, date: e.target.value})} />
+                            </div>
+                           <div className="space-y-2">
+                                <Label htmlFor="kmStart">KM Início</Label>
+                                <Input id="kmStart" type="number" value={newRecord.kmStart ?? ''} onChange={(e) => setNewRecord({...newRecord, kmStart: e.target.value === '' ? null : e.target.valueAsNumber})} />
+                            </div>
+                           <div className="space-y-2">
+                                <Label htmlFor="kmEnd">KM Fim</Label>
+                                <Input id="kmEnd" type="number" value={newRecord.kmEnd ?? ''} onChange={(e) => setNewRecord({...newRecord, kmEnd: e.target.value === '' ? null : e.target.valueAsNumber})} />
+                            </div>
+                            <div className="space-y-2 sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label htmlFor="driver">Motorista</Label>
-                                    <Input id="driver" value={newRecord.driver} onChange={(e) => setNewRecord({...newRecord, driver: e.target.value})} />
+                                        <Label htmlFor="startOdometerPhoto">Foto Odômetro (Início)</Label>
+                                        <Input id="startOdometerPhoto" type="file" accept="image/*" ref={startPhotoInputRef} onChange={(e) => setNewRecord({...newRecord, startOdometerPhoto: e.target.files ? e.target.files[0] : null})} />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="plate">Chapa</Label>
-                                    <Input id="plate" value={newRecord.plate} onChange={(e) => setNewRecord({...newRecord, plate: e.target.value})} />
-                                </div>
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                               <div className="space-y-2">
-                                    <Label htmlFor="car">Veículo</Label>
-                                    <Input id="car" value={newRecord.car} onChange={(e) => setNewRecord({...newRecord, car: e.target.value})} />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="line">Linha</Label>
-                                    <Input id="line" value={newRecord.line} onChange={(e) => setNewRecord({...newRecord, line: e.target.value})} />
-                                </div>
-                            </div>
-                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                               <div className="space-y-2">
-                                    <Label htmlFor="date">Data</Label>
-                                    <Input id="date" type="date" value={newRecord.date} onChange={(e) => setNewRecord({...newRecord, date: e.target.value})} />
-                                </div>
-                               <div className="space-y-2">
-                                    <Label htmlFor="kmStart">KM Início</Label>
-                                    <Input id="kmStart" type="number" value={newRecord.kmStart ?? ''} onChange={(e) => setNewRecord({...newRecord, kmStart: e.target.value === '' ? null : e.target.valueAsNumber})} />
-                                </div>
-                            </div>
-                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                               <div className="space-y-2">
-                                    <Label htmlFor="kmEnd">KM Fim</Label>
-                                    <Input id="kmEnd" type="number" value={newRecord.kmEnd ?? ''} onChange={(e) => setNewRecord({...newRecord, kmEnd: e.target.value === '' ? null : e.target.valueAsNumber})} />
-                                </div>
-                            </div>
-                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                               <div className="space-y-2">
-                                    <Label htmlFor="startOdometerPhoto">Foto Odômetro (Início)</Label>
-                                    <Input id="startOdometerPhoto" type="file" accept="image/*" ref={startPhotoInputRef} onChange={(e) => setNewRecord({...newRecord, startOdometerPhoto: e.target.files ? e.target.files[0] : null})} />
-                                </div>
-                               <div className="space-y-2">
-                                    <Label htmlFor="endOdometerPhoto">Foto Odômetro (Fim)</Label>
-                                    <Input id="endOdometerPhoto" type="file" accept="image/*" ref={endPhotoInputRef} onChange={(e) => setNewRecord({...newRecord, endOdometerPhoto: e.target.files ? e.target.files[0] : null})} />
+                                        <Label htmlFor="endOdometerPhoto">Foto Odômetro (Fim)</Label>
+                                        <Input id="endOdometerPhoto" type="file" accept="image/*" ref={endPhotoInputRef} onChange={(e) => setNewRecord({...newRecord, endOdometerPhoto: e.target.files ? e.target.files[0] : null})} />
                                 </div>
                             </div>
                         </div>
@@ -511,7 +503,7 @@ export default function RecordsPage() {
     </Dialog>
 
     <Dialog open={isEditDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="sm:max-w-[480px]">
+        <DialogContent className="sm:max-w-2xl">
             <DialogHeader>
                 <DialogTitle>Editar Registro</DialogTitle>
                 <DialogDescription>
@@ -519,38 +511,32 @@ export default function RecordsPage() {
                 </DialogDescription>
             </DialogHeader>
             {editRecordData && (
-                <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="edit-driver">Motorista</Label>
-                            <Input id="edit-driver" value={editRecordData.driver} onChange={(e) => setEditRecordData({...editRecordData, driver: e.target.value})} />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="edit-plate">Chapa</Label>
-                            <Input id="edit-plate" value={editRecordData.plate} onChange={(e) => setEditRecordData({...editRecordData, plate: e.target.value})} />
-                        </div>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                       <div className="space-y-2">
-                            <Label htmlFor="edit-car">Veículo</Label>
-                            <Input id="edit-car" value={editRecordData.car} onChange={(e) => setEditRecordData({...editRecordData, car: e.target.value})} />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="edit-line">Linha</Label>
-                            <Input id="edit-line" value={editRecordData.line} onChange={(e) => setEditRecordData({...editRecordData, line: e.target.value})} />
-                        </div>
-                    </div>
-                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="edit-date">Data</Label>
-                            <Input id="edit-date" type="date" value={editRecordData.date} onChange={(e) => setEditRecordData({...editRecordData, date: e.target.value})} />
-                        </div>
-                       <div className="space-y-2">
-                            <Label htmlFor="edit-kmStart">KM Início</Label>
-                            <Input id="edit-kmStart" type="number" value={editRecordData.kmStart ?? ''} onChange={(e) => setEditRecordData({...editRecordData, kmStart: e.target.value === '' ? null : Number(e.target.value)})} />
-                        </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="edit-driver">Motorista</Label>
+                        <Input id="edit-driver" value={editRecordData.driver} onChange={(e) => setEditRecordData({...editRecordData, driver: e.target.value})} />
                     </div>
                     <div className="space-y-2">
+                        <Label htmlFor="edit-plate">Chapa</Label>
+                        <Input id="edit-plate" value={editRecordData.plate} onChange={(e) => setEditRecordData({...editRecordData, plate: e.target.value})} />
+                    </div>
+                   <div className="space-y-2">
+                        <Label htmlFor="edit-car">Veículo</Label>
+                        <Input id="edit-car" value={editRecordData.car} onChange={(e) => setEditRecordData({...editRecordData, car: e.target.value})} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="edit-line">Linha</Label>
+                        <Input id="edit-line" value={editRecordData.line} onChange={(e) => setEditRecordData({...editRecordData, line: e.target.value})} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="edit-date">Data</Label>
+                        <Input id="edit-date" type="date" value={editRecordData.date} onChange={(e) => setEditRecordData({...editRecordData, date: e.target.value})} />
+                    </div>
+                   <div className="space-y-2">
+                        <Label htmlFor="edit-kmStart">KM Início</Label>
+                        <Input id="edit-kmStart" type="number" value={editRecordData.kmStart ?? ''} onChange={(e) => setEditRecordData({...editRecordData, kmStart: e.target.value === '' ? null : Number(e.target.value)})} />
+                    </div>
+                    <div className="space-y-2 sm:col-span-2">
                         <Label htmlFor="edit-kmEnd">KM Fim</Label>
                         <Input id="edit-kmEnd" type="number" value={editRecordData.kmEnd ?? ''} onChange={(e) => setEditRecordData({...editRecordData, kmEnd: e.target.value === '' ? null : Number(e.target.value)})} />
                     </div>
@@ -568,6 +554,8 @@ export default function RecordsPage() {
     </>
   );
 }
+
+    
 
     
 

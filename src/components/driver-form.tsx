@@ -235,69 +235,59 @@ export function DriverForm() {
           </TabsList>
           <TabsContent value="start" className="pt-4">
             <Form {...startForm}>
-              <form onSubmit={startForm.handleSubmit(onStartSubmit)} className="space-y-6 px-2">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <FormField
-                      control={startForm.control}
-                      name="chapa"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Chapa</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Sua matrícula" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={startForm.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Nome do Motorista</FormLabel>
-                          <FormControl>
-                             <div className="relative">
-                              <Input placeholder="Seu nome" {...field} />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <FormField
-                    control={startForm.control}
-                    name="car"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Carro</FormLabel>
-                        <FormControl>
-                           <div className="relative">
-                            <Input placeholder="Número do ônibus" {...field} />
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={startForm.control}
-                    name="line"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Linha</FormLabel>
-                        <FormControl>
-                           <div className="relative">
-                            <Input placeholder="Número da linha" {...field} />
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+              <form onSubmit={startForm.handleSubmit(onStartSubmit)} className="space-y-4 px-2">
+                <FormField
+                  control={startForm.control}
+                  name="chapa"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Chapa</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Sua matrícula" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={startForm.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nome do Motorista</FormLabel>
+                      <FormControl>
+                          <Input placeholder="Seu nome" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={startForm.control}
+                  name="car"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Carro</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Número do ônibus" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={startForm.control}
+                  name="line"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Linha</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Número da linha" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <FormField
                   control={startForm.control}
                   name="initialKm"
@@ -343,7 +333,7 @@ export function DriverForm() {
           </TabsContent>
           <TabsContent value="end" className="pt-4">
             <Form {...endForm}>
-              <form onSubmit={endForm.handleSubmit(onEndSubmit)} className="space-y-6 px-2">
+              <form onSubmit={endForm.handleSubmit(onEndSubmit)} className="space-y-4 px-2">
                  <FormField
                   control={endForm.control}
                   name="chapa"
@@ -360,34 +350,32 @@ export function DriverForm() {
                     </FormItem>
                   )}
                 />
-                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                     <FormField
-                        control={endForm.control}
-                        name="name"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Nome do Motorista</FormLabel>
-                            <FormControl>
-                               <Input placeholder="Preenchido automaticamente" {...field} disabled />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={endForm.control}
-                        name="car"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Carro</FormLabel>
-                            <FormControl>
-                               <Input placeholder="Preenchido automaticamente" {...field} disabled />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                </div>
+                 <FormField
+                    control={endForm.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nome do Motorista</FormLabel>
+                        <FormControl>
+                           <Input placeholder="Preenchido automaticamente" {...field} disabled />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={endForm.control}
+                    name="car"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Carro</FormLabel>
+                        <FormControl>
+                           <Input placeholder="Preenchido automaticamente" {...field} disabled />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                  <FormField
                     control={endForm.control}
                     name="line"
@@ -449,5 +437,7 @@ export function DriverForm() {
     </Card>
   );
 }
+
+    
 
     
