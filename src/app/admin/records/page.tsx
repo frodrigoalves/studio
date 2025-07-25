@@ -89,7 +89,7 @@ export default function RecordsPage() {
 
     useEffect(() => {
         fetchRecords();
-    }, []);
+    }, [toast]);
 
     const handleAddRecord = async () => {
       setIsSaving(true);
@@ -210,10 +210,10 @@ export default function RecordsPage() {
         const tableColumn = ["Data", "Motorista", "Veículo", "Linha", "Chapa", "KM Início", "KM Fim", "KM Total", "Status"];
         const tableRows = tableData.map(obj => tableColumn.map(key => obj[key as keyof typeof obj] ?? ''));
 
-        doc.autoTable({
+        (doc as any).autoTable({
             head: [tableColumn],
             body: tableRows,
-            didDrawPage: (data) => {
+            didDrawPage: (data: any) => {
                 doc.setFontSize(20);
                 doc.text("Relatório de Registros de Viagem", data.settings.margin.left, 15);
             },
@@ -555,3 +555,5 @@ export default function RecordsPage() {
     </>
   );
 }
+
+    
