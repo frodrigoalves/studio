@@ -126,9 +126,6 @@ export default function AdminLayout({
         <main className="p-4 lg:p-6 flex-1">{children}</main>
         <footer className="p-4 text-center text-xs text-muted-foreground">
             <div>Institutional MVP developed by Rodrigo Alves</div>
-            <a href="https://rodrigosinguldev.netlify.app" target="_blank" rel="noopener noreferrer" className="underline hover:text-primary">
-                View Portfolio
-            </a>
         </footer>
       </div>
     </SidebarProvider>

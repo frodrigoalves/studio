@@ -52,9 +52,8 @@ const processSheetFile = (file: File): Promise<string> => {
                 const worksheet = workbook.Sheets[sheetName];
                 const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
                 const csvData = Papa.unparse(jsonData as Papa.ParseResult<any>['data']);
-                // The data URI for text/csv does not need to be Base64 encoded.
-                // We can just encode the CSV data directly.
-                const dataUri = `data:text/csv;charset=utf-8,${encodeURIComponent(csvData)}`;
+                // Pass the raw CSV text to a text/plain data URI. The AI can parse this.
+                const dataUri = `data:text/plain,${csvData}`;
                 resolve(dataUri);
             } catch (error) {
                 reject(error);
