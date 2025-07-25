@@ -46,7 +46,7 @@ const analysisPrompt = ai.definePrompt({
           *   Se for **Atestados Médicos**, foque em padrões de ausência, CIDs recorrentes, e anomalias entre equipes ou indivíduos.
           *   Se for **Manutenção**, foque em veículos críticos, defeitos recorrentes, e gargalos de tempo de reparo.
           *   Se for **Viagens**, foque em atrasos, cancelamentos e performance de rotas.
-          *   Se for **SLA**, foque no cumprimento de metas e nos principais desvios.
+          *   Se for **RH**, foque em métricas gerais de RH, como turnover, absenteísmo, ou outros dados fornecidos.
       4.  **Estrutura do Relatório:** Gere um relatório claro e acionável.
           *   **title:** Use o '{{analysisType}}' como título principal.
           *   **summary:** Um parágrafo executivo com os insights mais importantes.

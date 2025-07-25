@@ -601,7 +601,7 @@ export default function AdminDashboard() {
                                                 <SelectItem value="Análise de Manutenção de Frota">Análise de Manutenção de Frota</SelectItem>
                                                 <SelectItem value="Análise de Viagens Atrasadas/Não Realizadas">Viagens Atrasadas/Não Realizadas</SelectItem>
                                                 <SelectItem value="Análise de Outras Ocorrências">Outras Ocorrências</SelectItem>
-                                                <SelectItem value="Análise de SLA (Nível de Serviço)">Análise de SLA (Nível de Serviço)</SelectItem>
+                                                <SelectItem value="Análise de RH">Análise de RH</SelectItem>
                                             </SelectContent>
                                         </Select>
                                         </div>

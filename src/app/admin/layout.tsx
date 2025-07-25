@@ -15,10 +15,11 @@ import {
   SidebarInset,
   SidebarTrigger,
   SidebarFooter,
+  SidebarSeparator,
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Settings, FileText, LogOut, BrainCircuit, Loader2, Clock4, FileHeart, Wrench, ClipboardList, BadgeCheck } from "lucide-react";
+import { Settings, FileText, LogOut, BrainCircuit, Loader2, Clock4, FileHeart, Wrench, ClipboardList, Users } from "lucide-react";
 import { Logo } from "@/components/logo";
 
 
@@ -93,15 +94,9 @@ export default function AdminLayout({
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
+            
+            <SidebarSeparator />
             <SidebarMenuItem>
-              <SidebarMenuButton asChild>
-                <Link href="#">
-                  <Clock4 />
-                  Viagens
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-             <SidebarMenuItem>
               <SidebarMenuButton asChild>
                 <Link href="#">
                   <FileHeart />
@@ -128,8 +123,18 @@ export default function AdminLayout({
              <SidebarMenuItem>
               <SidebarMenuButton asChild>
                 <Link href="#">
-                  <BadgeCheck />
-                  SLA
+                  <Users />
+                  RH
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarSeparator />
+
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild>
+                <Link href="#">
+                  <Clock4 />
+                  Viagens
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
