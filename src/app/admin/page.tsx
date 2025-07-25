@@ -20,7 +20,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { Bar, BarChart as BarChartComponent, Line, LineChart, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend } from "recharts";
 import { ChartContainer, ChartTooltipContent, ChartTooltip, ChartLegend, ChartLegendContent } from "@/components/ui/chart";
-import { addDays, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, format, parseISO } from 'date-fns';
+import { addDays, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, format, parseISO, compareAsc } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { DateRange } from "react-day-picker";
 import { cn } from "@/lib/utils";
@@ -119,7 +119,10 @@ export default function AdminDashboard() {
             if (!startDate || !endDate) return true;
             try {
                 const recordDate = parseISO(r.date);
-                return recordDate >= startDate && recordDate <= endDate;
+                // Set hours to 0 to include the whole day
+                const start = new Date(startDate.setHours(0,0,0,0));
+                const end = new Date(endDate.setHours(23,59,59,999));
+                return recordDate >= start && recordDate <= end;
             } catch { return false; }
         });
         
@@ -138,23 +141,30 @@ export default function AdminDashboard() {
             if (!startDate || !endDate) return [];
             const diffDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
 
-            const groupedData = new Map<string, number>();
+            const groupedData = new Map<string, { date: Date, total: number }>();
             const formatKey = diffDays > 31 
                 ? (date: Date) => format(date, 'MMM/yy', { locale: ptBR })
-                : (date: Date) => format(date, 'dd/MM');
+                : (date: Date) => format(date, 'dd/MM/yyyy');
 
             filteredRecords.forEach(r => {
                 if (r.status === 'Finalizado' && r.kmEnd && r.kmStart) {
                     try {
                         const recordDate = parseISO(r.date);
                         const key = formatKey(recordDate);
-                        const currentTotal = groupedData.get(key) || 0;
-                        groupedData.set(key, currentTotal + (r.kmEnd! - r.kmStart!));
+                        const currentData = groupedData.get(key) || { date: recordDate, total: 0 };
+                        currentData.total += (r.kmEnd! - r.kmStart!);
+                        groupedData.set(key, currentData);
                     } catch {}
                 }
             });
 
-            return Array.from(groupedData.entries()).map(([name, total]) => ({ name, total }));
+            return Array.from(groupedData.entries())
+                .map(([_, value]) => ({ 
+                    name: format(value.date, diffDays > 31 ? 'MMM/yy' : 'dd/MM', { locale: ptBR }), 
+                    total: value.total,
+                    date: value.date,
+                }))
+                .sort((a,b) => compareAsc(a.date, b.date));
         })();
         
         const vehicleKm = filteredRecords
@@ -366,7 +376,7 @@ export default function AdminDashboard() {
                                     </PopoverContent>
                                 </Popover>
                                 <div className="flex items-center gap-2">
-                                     <Button variant="outline" size="sm" onClick={() => setDateRange({ from: startOfWeek(new Date()), to: endOfWeek(new Date())})}>Esta Semana</Button>
+                                     <Button variant="outline" size="sm" onClick={() => setDateRange({ from: startOfWeek(new Date(), { weekStartsOn: 1 }), to: endOfWeek(new Date(), { weekStartsOn: 1 })})}>Esta Semana</Button>
                                      <Button variant="outline" size="sm" onClick={() => setDateRange({ from: subDays(new Date(), 15), to: new Date()})}>Últimos 15 dias</Button>
                                      <Button variant="outline" size="sm" onClick={() => setDateRange({ from: startOfMonth(new Date()), to: endOfMonth(new Date())})}>Este Mês</Button>
                                 </div>
