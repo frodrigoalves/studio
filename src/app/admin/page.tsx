@@ -378,7 +378,7 @@ export default function AdminDashboard() {
             <div className="inline-block bg-primary/10 text-primary rounded-full p-4 border-2 border-primary/20">
                 <BrainCircuit className="w-8 h-8" />
             </div>
-            <h1 className="text-3xl font-bold">Business Intelligence</h1>
+            <h1 className="text-3xl font-bold">Business Intelligence BI</h1>
             <p className="text-muted-foreground">Analise, gere relatórios e obtenha insights com IA para otimizar a operação.</p>
         </div>
 
