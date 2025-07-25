@@ -382,7 +382,7 @@ export default function AdminDashboard() {
             <p className="text-muted-foreground">Analise, gere relatórios e obtenha insights com IA para otimizar a operação.</p>
         </div>
 
-        <Accordion type="single" collapsible className="w-full" defaultValue="item-1">
+        <Accordion type="multiple" className="w-full">
              <AccordionItem value="item-1">
                 <AccordionTrigger className="text-xl font-semibold">
                     <div className="flex items-center gap-2">
@@ -751,5 +751,3 @@ export default function AdminDashboard() {
     </div>
   );
 }
-
-    
