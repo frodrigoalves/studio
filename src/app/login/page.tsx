@@ -8,8 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Bus, Loader2, ArrowLeft } from 'lucide-react';
+import { Loader2, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Logo } from '@/components/logo';
 
 
 export default function LoginPage() {
@@ -58,11 +59,8 @@ export default function LoginPage() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-4 bg-background">
       <div className="w-full max-w-sm">
-        <div className="flex flex-col items-center justify-center mb-8 text-center">
-          <div className="bg-primary/10 text-primary rounded-full p-4 mb-4 border-2 border-primary/20">
-            <Bus className="w-10 h-10" />
-          </div>
-          <h1 className="text-4xl font-bold tracking-tight text-foreground font-headline">TopBus</h1>
+        <div className="flex flex-col items-center justify-center mb-6 text-center">
+          <Logo className="w-auto h-12 mb-2" />
           <p className="mt-2 text-lg text-muted-foreground">
             Acesso ao Painel de Gestor
           </p>
