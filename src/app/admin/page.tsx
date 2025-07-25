@@ -143,7 +143,6 @@ export default function AdminDashboard() {
             if (!startDate || !endDate) return true;
             try {
                 const recordDate = parseISO(r.date);
-                // Create new Date objects to avoid mutating the original state
                 const start = new Date(startDate);
                 start.setHours(0, 0, 0, 0);
                 const end = new Date(endDate);

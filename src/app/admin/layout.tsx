@@ -21,6 +21,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Settings, FileText, LogOut, BrainCircuit, Loader2, Clock4, FileHeart, Wrench, ClipboardList, Users } from "lucide-react";
 import { Logo } from "@/components/logo";
+import { useToast } from "@/hooks/use-toast";
 
 
 interface User {
@@ -34,6 +35,7 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const { toast } = useToast();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -56,6 +58,14 @@ export default function AdminLayout({
     setIsLoggingOut(false);
   };
   
+  const handleDevelopmentClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault();
+    toast({
+        title: "Em Breve",
+        description: "Esta função está em desenvolvimento.",
+    });
+  }
+
   if (loading || !user) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
@@ -94,11 +104,19 @@ export default function AdminLayout({
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
+             <SidebarMenuItem>
+              <SidebarMenuButton asChild>
+                <Link href="#" onClick={handleDevelopmentClick}>
+                  <Clock4 />
+                  Viagens
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
             
             <SidebarSeparator />
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
-                <Link href="#">
+                <Link href="#" onClick={handleDevelopmentClick}>
                   <FileHeart />
                   Atestados
                 </Link>
@@ -106,7 +124,7 @@ export default function AdminLayout({
             </SidebarMenuItem>
              <SidebarMenuItem>
               <SidebarMenuButton asChild>
-                <Link href="#">
+                <Link href="#" onClick={handleDevelopmentClick}>
                   <Wrench />
                   Manutenção
                 </Link>
@@ -114,7 +132,7 @@ export default function AdminLayout({
             </SidebarMenuItem>
              <SidebarMenuItem>
               <SidebarMenuButton asChild>
-                <Link href="#">
+                <Link href="#" onClick={handleDevelopmentClick}>
                   <ClipboardList />
                   Ocorrências
                 </Link>
@@ -122,7 +140,7 @@ export default function AdminLayout({
             </SidebarMenuItem>
              <SidebarMenuItem>
               <SidebarMenuButton asChild>
-                <Link href="#">
+                <Link href="#" onClick={handleDevelopmentClick}>
                   <Users />
                   RH
                 </Link>
@@ -130,14 +148,6 @@ export default function AdminLayout({
             </SidebarMenuItem>
             <SidebarSeparator />
 
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild>
-                <Link href="#">
-                  <Clock4 />
-                  Viagens
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
             <SidebarMenuItem>
                <SidebarMenuButton asChild>
                 <Link href="/admin/settings">
