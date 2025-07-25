@@ -60,7 +60,12 @@ export default function LoginPage() {
     <main className="flex min-h-screen flex-col items-center justify-center p-4 bg-background">
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center justify-center mb-6 text-center">
-          <Logo className="w-auto h-12 mb-2" />
+          <Logo 
+            className="w-auto h-12 mb-2 transition-all duration-500"
+            iconFill={isLoading ? '#77B5FE' : '#A0A0A0'}
+            textFill={isLoading ? '#2C4E8A' : '#A0A0A0'}
+            transportesFill={isLoading ? '#2C4E8A' : '#A0A0A0'}
+          />
           <p className="mt-2 text-lg text-muted-foreground">
             Acesso ao Painel de Gestor
           </p>
@@ -74,11 +79,11 @@ export default function LoginPage() {
                 <form onSubmit={handleLogin} className="space-y-4">
                     <div className="space-y-2">
                         <Label htmlFor="name">Nome</Label>
-                        <Input id="name" placeholder="Seu nome" value={name} onChange={(e) => setName(e.target.value)} required />
+                        <Input id="name" placeholder="Seu nome" value={name} onChange={(e) => setName(e.target.value)} required disabled={isLoading}/>
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="password">Senha</Label>
-                        <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                        <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required disabled={isLoading} />
                     </div>
                     <Button type="submit" className="w-full" disabled={isLoading}>
                         {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
