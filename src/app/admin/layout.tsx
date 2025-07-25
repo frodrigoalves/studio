@@ -18,7 +18,8 @@ import {
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Settings, FileText, LogOut, BrainCircuit, Loader2, AppWindow } from "lucide-react";
+import { Settings, FileText, LogOut, BrainCircuit, Loader2 } from "lucide-react";
+import { Logo } from "@/components/logo";
 
 
 interface User {
@@ -68,12 +69,9 @@ export default function AdminLayout({
       <Sidebar>
         <SidebarHeader>
           <div className="flex items-center gap-3 p-2">
-            <div className="bg-primary/10 text-primary rounded-lg p-2 border border-primary/20">
-              <AppWindow className="w-6 h-6" />
-            </div>
+            <Logo className="w-auto h-10" />
             <div className="group-data-[collapsible=icon]:hidden">
-              <h2 className="font-semibold text-lg">TopBus</h2>
-              <p className="text-sm text-muted-foreground">Painel Gestor</p>
+              <h2 className="font-semibold text-lg">Painel Gestor</h2>
             </div>
           </div>
         </SidebarHeader>
@@ -83,7 +81,7 @@ export default function AdminLayout({
               <SidebarMenuButton asChild>
                 <Link href="/admin">
                   <BrainCircuit />
-                  Central de IA
+                  Business Intelligence
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
