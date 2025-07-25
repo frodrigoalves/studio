@@ -373,14 +373,6 @@ export default function AdminDashboard() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
-        <div className="text-center space-y-2">
-            <div className="inline-block bg-primary/10 text-primary rounded-full p-4 border-2 border-primary/20">
-                <BrainCircuit className="w-8 h-8" />
-            </div>
-            <h1 className="text-3xl font-bold">Business Intelligence BI</h1>
-            <p className="text-muted-foreground">Analise, gere relatórios e obtenha insights com IA para otimizar a operação.</p>
-        </div>
-
         <Accordion type="multiple" className="w-full">
              <AccordionItem value="item-1">
                 <AccordionTrigger className="text-xl font-semibold">
