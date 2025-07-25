@@ -18,12 +18,14 @@ import { Input } from "@/components/ui/input";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { Bar, BarChart as BarChartComponent, Line, LineChart, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend } from "recharts";
-import { ChartContainer, ChartTooltipContent, ChartTooltip, ChartLegend, ChartLegendContent } from "@/components/ui/chart";
+import { Bar, BarChart as BarChartComponent, Line, LineChart, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
 import { addDays, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, format, parseISO, compareAsc } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { DateRange } from "react-day-picker";
 import { cn } from "@/lib/utils";
+import * as XLSX from 'xlsx';
+import Papa from 'papaparse';
 
 
 type Period = "daily" | "weekly" | "monthly";
@@ -36,6 +38,28 @@ const fileToDataURI = (file: File): Promise<string> => {
         reader.onload = (e) => resolve(e.target?.result as string);
         reader.onerror = reject;
         reader.readAsDataURL(file);
+    });
+};
+
+const processSheetFile = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = new Uint8Array(e.target?.result as ArrayBuffer);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                const csvData = Papa.unparse(jsonData as Papa.ParseResult<any>['data']);
+                const dataUri = `data:text/csv;base64,${btoa(csvData)}`;
+                resolve(dataUri);
+            } catch (error) {
+                reject(error);
+            }
+        };
+        reader.onerror = reject;
+        reader.readAsArrayBuffer(file);
     });
 };
 
@@ -246,7 +270,16 @@ export default function AdminDashboard() {
         setSheetAnalysisResult(null);
     
         try {
-            const fileDataUri = await fileToDataURI(file);
+            let fileDataUri: string;
+            const fileType = file.type;
+
+            const isSheet = fileType.includes('spreadsheet') || fileType.includes('csv') || file.name.endsWith('.xlsx') || file.name.endsWith('.xls') || file.name.endsWith('.csv');
+
+            if (isSheet) {
+                 fileDataUri = await processSheetFile(file);
+            } else {
+                 fileDataUri = await fileToDataURI(file);
+            }
             
             const analysisInput: SheetAnalysisInput = {
               fileDataUri: fileDataUri,
@@ -436,7 +469,7 @@ export default function AdminDashboard() {
                                         <CartesianGrid vertical={false} />
                                         <XAxis dataKey="name" tickLine={false} axisLine={false} tickMargin={8} />
                                         <YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => `${value / 1000}k`} />
-                                        <ChartTooltip content={<ChartTooltipContent indicator="dot" />} />
+                                        <Tooltip content={<ChartTooltipContent indicator="dot" />} />
                                         <Line dataKey="total" type="monotone" stroke="hsl(var(--primary))" strokeWidth={2} dot={true} name="KM" />
                                     </LineChart>
                                 </ChartContainer>
@@ -453,7 +486,7 @@ export default function AdminDashboard() {
                                         <CartesianGrid horizontal={false} />
                                         <YAxis dataKey="name" type="category" tickLine={false} axisLine={false} tickMargin={8} width={80} />
                                         <XAxis type="number" hide />
-                                        <ChartTooltip content={<ChartTooltipContent indicator="dot" />} />
+                                        <Tooltip content={<ChartTooltipContent indicator="dot" />} />
                                         <Bar dataKey="km" radius={5} name="KM" fill="hsl(var(--primary))" />
                                     </BarChartComponent>
                                 </ChartContainer>
@@ -565,6 +598,7 @@ export default function AdminDashboard() {
                                             <Input
                                                 id="sheet-upload"
                                                 type="file"
+                                                accept=".xlsx, .xls, .csv, image/*, application/pdf"
                                                 onChange={handleFileChange}
                                                 disabled={isSheetLoading}
                                                 className="pr-12"
