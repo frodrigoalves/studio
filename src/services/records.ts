@@ -44,6 +44,7 @@ export async function addRecord(record: RecordAddPayload): Promise<Record> {
   const tempDocRef = doc(collection(db, "tripRecords"));
   
   const startOdometerPhotoUrl = await uploadPhoto(record.startOdometerPhoto, tempDocRef.id, 'start');
+  const endOdometerPhotoUrl = await uploadPhoto(record.endOdometerPhoto, tempDocRef.id, 'end');
 
   const dataToSave = {
       ...record,
@@ -51,7 +52,7 @@ export async function addRecord(record: RecordAddPayload): Promise<Record> {
       kmEnd: record.kmEnd ? Number(record.kmEnd) : null,
       date: new Date(record.date).toISOString().split('T')[0],
       startOdometerPhoto: startOdometerPhotoUrl,
-      endOdometerPhoto: null // End photo is always null on creation
+      endOdometerPhoto: endOdometerPhotoUrl,
   };
 
   if(isNaN(dataToSave.kmStart!)) dataToSave.kmStart = null;
@@ -71,15 +72,14 @@ export async function updateRecord(id: string, data: RecordUpdatePayload): Promi
 
     if (endOdometerPhotoUrl) {
         dataToUpdate.endOdometerPhoto = endOdometerPhotoUrl;
+    } else {
+        delete dataToUpdate.endOdometerPhoto;
     }
 
     if (data.kmEnd !== undefined) {
         const kmEndNumber = Number(data.kmEnd);
         dataToUpdate.kmEnd = isNaN(kmEndNumber) ? null : kmEndNumber;
     }
-
-    // Remove a propriedade da foto em base64 para não salvar no firestore
-    delete dataToUpdate.endOdometerPhotoFile;
 
     await updateDoc(recordRef, dataToUpdate);
 }
@@ -108,3 +108,5 @@ export async function getRecordByPlateAndStatus(plate: string, status: "Em Andam
     
     return records[0];
 }
+
+    

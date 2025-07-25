@@ -64,6 +64,9 @@ export function DriverForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [recordToEnd, setRecordToEnd] = useState<Record | null>(null);
+  
+  const startFileInputRef = useRef<HTMLInputElement>(null);
+  const endFileInputRef = useRef<HTMLInputElement>(null);
 
   const startForm = useForm<StartFormValues>({
     resolver: zodResolver(startFormSchema),
@@ -74,9 +77,6 @@ export function DriverForm() {
     resolver: zodResolver(endFormSchema),
     defaultValues: initialEndValues,
   });
-  
-  const startFileInputRef = useRef<HTMLInputElement>(null);
-  const endFileInputRef = useRef<HTMLInputElement>(null);
 
   const handleChapaBlur = useCallback(async (chapa: string) => {
     if(!chapa || activeTab !== 'end') return;
@@ -322,7 +322,10 @@ export function DriverForm() {
                           <Input type="file" accept="image/*" capture="camera" className="pr-12"
                             {...rest}
                             ref={startFileInputRef}
-                            onChange={(e) => onChange(e.target.files ? e.target.files[0] : null)}
+                            onChange={(e) => {
+                              const file = e.target.files ? e.target.files[0] : null;
+                              onChange(file);
+                            }}
                           />
                           <Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
                         </div>
@@ -422,7 +425,10 @@ export function DriverForm() {
                           <Input type="file" accept="image/*" capture="camera" className="pr-12"
                            {...rest}
                            ref={endFileInputRef}
-                           onChange={(e) => onChange(e.target.files ? e.target.files[0] : null)}
+                           onChange={(e) => {
+                             const file = e.target.files ? e.target.files[0] : null;
+                             onChange(file);
+                           }}
                           />
                           <Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
                         </div>
@@ -443,3 +449,5 @@ export function DriverForm() {
     </Card>
   );
 }
+
+    

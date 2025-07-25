@@ -54,6 +54,9 @@ export default function RecordsPage() {
     const [isAuthorizing, setIsAuthorizing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     
+    const startPhotoInputRef = useRef<HTMLInputElement>(null);
+    const endPhotoInputRef = useRef<HTMLInputElement>(null);
+    
     const initialNewRecordState: NewRecordState = {
         date: new Date().toISOString().split('T')[0],
         driver: '',
@@ -89,9 +92,17 @@ export default function RecordsPage() {
 
     useEffect(() => {
         fetchRecords();
-    }, [toast]);
+    }, []);
 
     const handleAddRecord = async () => {
+      if (newRecord.kmEnd && newRecord.kmStart && newRecord.kmEnd <= newRecord.kmStart) {
+        toast({
+            variant: "destructive",
+            title: "KM Final inválido",
+            description: "O KM final deve ser maior que o KM inicial.",
+        });
+        return;
+      }
       setIsSaving(true);
       try {
         const startPhotoBase64 = newRecord.startOdometerPhoto ? await fileToBase64(newRecord.startOdometerPhoto) : null;
@@ -109,6 +120,8 @@ export default function RecordsPage() {
         await addRecord(newRecordPayload);
         setAddDialogOpen(false);
         setNewRecord(initialNewRecordState);
+        if(startPhotoInputRef.current) startPhotoInputRef.current.value = "";
+        if(endPhotoInputRef.current) endPhotoInputRef.current.value = "";
         fetchRecords();
         toast({ title: "Sucesso!", description: "Registro adicionado com sucesso." });
       } catch (error) {
@@ -332,11 +345,11 @@ export default function RecordsPage() {
                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                <div className="space-y-2">
                                     <Label htmlFor="startOdometerPhoto">Foto Odômetro (Início)</Label>
-                                    <Input id="startOdometerPhoto" type="file" accept="image/*" onChange={(e) => setNewRecord({...newRecord, startOdometerPhoto: e.target.files ? e.target.files[0] : null})} />
+                                    <Input id="startOdometerPhoto" type="file" accept="image/*" ref={startPhotoInputRef} onChange={(e) => setNewRecord({...newRecord, startOdometerPhoto: e.target.files ? e.target.files[0] : null})} />
                                 </div>
                                <div className="space-y-2">
                                     <Label htmlFor="endOdometerPhoto">Foto Odômetro (Fim)</Label>
-                                    <Input id="endOdometerPhoto" type="file" accept="image/*" onChange={(e) => setNewRecord({...newRecord, endOdometerPhoto: e.target.files ? e.target.files[0] : null})} />
+                                    <Input id="endOdometerPhoto" type="file" accept="image/*" ref={endPhotoInputRef} onChange={(e) => setNewRecord({...newRecord, endOdometerPhoto: e.target.files ? e.target.files[0] : null})} />
                                 </div>
                             </div>
                         </div>
@@ -555,5 +568,7 @@ export default function RecordsPage() {
     </>
   );
 }
+
+    
 
     
