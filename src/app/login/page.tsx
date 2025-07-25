@@ -62,9 +62,9 @@ export default function LoginPage() {
         <div className="flex flex-col items-center justify-center mb-6 text-center">
           <Logo 
             className="w-auto h-12 mb-2 transition-all duration-500"
-            iconFill={isLoading ? '#77B5FE' : '#A0A0A0'}
-            textFill={isLoading ? '#2C4E8A' : '#A0A0A0'}
-            transportesFill={isLoading ? '#2C4E8A' : '#A0A0A0'}
+            iconFill={isLoading ? '#F29100' : '#A0A0A0'}
+            textFill={isLoading ? 'currentColor' : '#A0A0A0'}
+            transportesFill={isLoading ? 'currentColor' : '#A0A0A0'}
           />
           <p className="mt-2 text-lg text-muted-foreground">
             Acesso ao Painel de Gestor
