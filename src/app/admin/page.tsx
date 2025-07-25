@@ -18,9 +18,9 @@ import { Input } from "@/components/ui/input";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { Bar, BarChart as BarChartComponent, Line, LineChart, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from "recharts";
-import { ChartContainer, ChartTooltipContent, ChartTooltip } from "@/components/ui/chart";
-import { addDays, subDays, subWeeks, subMonths, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, format, parseISO } from 'date-fns';
+import { Bar, BarChart as BarChartComponent, Line, LineChart, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, Legend } from "recharts";
+import { ChartContainer, ChartTooltipContent, ChartTooltip, ChartLegend, ChartLegendContent } from "@/components/ui/chart";
+import { addDays, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { DateRange } from "react-day-picker";
 import { cn } from "@/lib/utils";
@@ -106,7 +106,6 @@ export default function AdminDashboard() {
         
         if(records.length === 0) return {
             totalKm: 0,
-            totalKmPrevious: 0,
             alerts: 0,
             performanceData: [],
             topVehicles: [],
@@ -114,13 +113,13 @@ export default function AdminDashboard() {
             latestDieselPrice: latestPrice
         };
 
-        const { from: startDate, to: endDate } = dateRange || {};
+        const { from: startDate, to: endDate } = dateRange || { from: new Date(), to: new Date()};
 
         const filteredRecords = records.filter(r => {
             if (!startDate || !endDate) return true;
             try {
                 const recordDate = parseISO(r.date);
-                return recordDate >= startOfDay(startDate) && recordDate <= endOfDay(endDate);
+                return recordDate >= startDate && recordDate <= endDate;
             } catch { return false; }
         });
         
@@ -128,34 +127,34 @@ export default function AdminDashboard() {
             .filter(r => r.status === 'Finalizado' && r.kmEnd && r.kmStart)
             .reduce((sum, r) => sum + (r.kmEnd! - r.kmStart!), 0);
             
-        const alerts = records.filter(r => r.status === "Em Andamento").length;
+        const alerts = records.filter(r => 
+            r.status === "Em Andamento" || 
+            (r.status === "Finalizado" && (!r.startOdometerPhoto || !r.endOdometerPhoto))
+        ).length;
         
         const totalCost = (totalKm / AVERAGE_KM_PER_LITER) * latestPrice;
 
         const performanceData = (() => {
             if (!startDate || !endDate) return [];
             const diffDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-            
-            if (diffDays <= 31) { // Daily view
-                 return Array.from({ length: diffDays + 1 }).map((_, i) => {
-                    const day = addDays(startDate, i);
-                    const dayString = format(day, 'dd/MM');
-                    const total = filteredRecords
-                        .filter(r => r.status === 'Finalizado' && r.kmEnd && r.kmStart && format(parseISO(r.date), 'dd/MM') === dayString)
-                        .reduce((sum, r) => sum + (r.kmEnd! - r.kmStart!), 0);
-                    return { name: dayString, total };
-                });
-            } else { // Monthly view
-                const monthMap = new Map<string, number>();
-                filteredRecords.forEach(r => {
-                    if (r.status === 'Finalizado' && r.kmEnd && r.kmStart) {
-                        const monthString = format(parseISO(r.date), 'MMM/yy', { locale: ptBR });
-                        const currentTotal = monthMap.get(monthString) || 0;
-                        monthMap.set(monthString, currentTotal + (r.kmEnd! - r.kmStart!));
-                    }
-                });
-                return Array.from(monthMap.entries()).map(([name, total]) => ({ name, total })).sort((a,b) => new Date(a.name).getTime() - new Date(b.name).getTime());
-            }
+
+            const groupedData = new Map<string, number>();
+            const formatKey = diffDays > 31 
+                ? (date: Date) => format(date, 'MMM/yy', { locale: ptBR })
+                : (date: Date) => format(date, 'dd/MM');
+
+            filteredRecords.forEach(r => {
+                if (r.status === 'Finalizado' && r.kmEnd && r.kmStart) {
+                    try {
+                        const recordDate = parseISO(r.date);
+                        const key = formatKey(recordDate);
+                        const currentTotal = groupedData.get(key) || 0;
+                        groupedData.set(key, currentTotal + (r.kmEnd! - r.kmStart!));
+                    } catch {}
+                }
+            });
+
+            return Array.from(groupedData.entries()).map(([name, total]) => ({ name, total }));
         })();
         
         const vehicleKm = filteredRecords
@@ -175,7 +174,7 @@ export default function AdminDashboard() {
             .slice(0, 5);
 
 
-        return { totalKm, alerts, performanceData, topVehicles, totalCost, latestDieselPrice: latestPrice, totalKmPrevious: 0 };
+        return { totalKm, alerts, performanceData, topVehicles, totalCost, latestDieselPrice: latestPrice };
 
     }, [records, dateRange, dieselPrices]);
 
@@ -328,7 +327,7 @@ export default function AdminDashboard() {
                 <AccordionContent>
                     <div className="space-y-6 pt-2">
                         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                             <div className="flex items-center gap-2">
+                             <div className="flex items-center gap-2 flex-wrap">
                                 <Popover>
                                     <PopoverTrigger asChild>
                                         <Button
@@ -343,11 +342,11 @@ export default function AdminDashboard() {
                                             {dateRange?.from ? (
                                                 dateRange.to ? (
                                                     <>
-                                                        {format(dateRange.from, "LLL dd, y")} -{" "}
-                                                        {format(dateRange.to, "LLL dd, y")}
+                                                        {format(dateRange.from, "LLL dd, y", { locale: ptBR })} -{" "}
+                                                        {format(dateRange.to, "LLL dd, y", { locale: ptBR })}
                                                     </>
                                                 ) : (
-                                                    format(dateRange.from, "LLL dd, y")
+                                                    format(dateRange.from, "LLL dd, y", { locale: ptBR })
                                                 )
                                             ) : (
                                                 <span>Selecione um período</span>
@@ -366,6 +365,11 @@ export default function AdminDashboard() {
                                         />
                                     </PopoverContent>
                                 </Popover>
+                                <div className="flex items-center gap-2">
+                                     <Button variant="outline" size="sm" onClick={() => setDateRange({ from: startOfWeek(new Date()), to: endOfWeek(new Date())})}>Esta Semana</Button>
+                                     <Button variant="outline" size="sm" onClick={() => setDateRange({ from: subDays(new Date(), 15), to: new Date()})}>Últimos 15 dias</Button>
+                                     <Button variant="outline" size="sm" onClick={() => setDateRange({ from: startOfMonth(new Date()), to: endOfMonth(new Date())})}>Este Mês</Button>
+                                </div>
                             </div>
                         </div>
                         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -406,7 +410,7 @@ export default function AdminDashboard() {
                             </CardHeader>
                             <CardContent>
                                 <div className="text-2xl font-bold">{dashboardData.alerts} Alertas</div>
-                                <p className="text-xs text-muted-foreground">Viagens em andamento.</p>
+                                <p className="text-xs text-muted-foreground">Viagens em aberto ou com fotos faltando.</p>
                             </CardContent>
                             </Card>
                         </div>
@@ -414,18 +418,18 @@ export default function AdminDashboard() {
                             <Card className="lg:col-span-4">
                             <CardHeader>
                                 <CardTitle>Desempenho Geral</CardTitle>
-                                <CardDescription>Total de quilômetros rodados no período.</CardDescription>
+                                <CardDescription>Total de quilômetros rodados no período selecionado.</CardDescription>
                             </CardHeader>
                             <CardContent className="pl-2">
-                                <ResponsiveContainer width="100%" height={250}>
-                                    <LineChart data={dashboardData.performanceData} margin={{ left: 12, right: 12 }}>
+                               <ChartContainer config={{}} className="h-[250px] w-full">
+                                    <LineChart accessibilityLayer data={dashboardData.performanceData} margin={{ left: 12, right: 12 }}>
                                         <CartesianGrid vertical={false} />
                                         <XAxis dataKey="name" tickLine={false} axisLine={false} tickMargin={8} />
                                         <YAxis tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => `${value / 1000}k`} />
-                                        <RechartsTooltip content={<ChartTooltipContent indicator="dot" />} />
+                                        <ChartTooltip content={<ChartTooltipContent indicator="dot" />} />
                                         <Line dataKey="total" type="monotone" stroke="hsl(var(--primary))" strokeWidth={2} dot={true} name="KM" />
                                     </LineChart>
-                                </ResponsiveContainer>
+                                </ChartContainer>
                             </CardContent>
                             </Card>
                             <Card className="lg:col-span-3">
@@ -434,15 +438,15 @@ export default function AdminDashboard() {
                                 <CardDescription>Veículos que mais rodaram no período.</CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <ResponsiveContainer width="100%" height={250}>
-                                    <BarChartComponent data={dashboardData.topVehicles} layout="vertical" margin={{ left: 10 }}>
+                                <ChartContainer config={{}} className="h-[250px] w-full">
+                                    <BarChartComponent accessibilityLayer data={dashboardData.topVehicles} layout="vertical" margin={{ left: 10 }}>
                                         <CartesianGrid horizontal={false} />
                                         <YAxis dataKey="name" type="category" tickLine={false} axisLine={false} tickMargin={8} width={80} />
                                         <XAxis type="number" hide />
-                                        <RechartsTooltip content={<ChartTooltipContent indicator="dot" />} />
+                                        <ChartTooltip content={<ChartTooltipContent indicator="dot" />} />
                                         <Bar dataKey="km" radius={5} name="KM" fill="hsl(var(--primary))" />
                                     </BarChartComponent>
-                                </ResponsiveContainer>
+                                </ChartContainer>
                             </CardContent>
                             </Card>
                         </div>
