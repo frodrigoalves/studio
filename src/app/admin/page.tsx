@@ -143,9 +143,11 @@ export default function AdminDashboard() {
             if (!startDate || !endDate) return true;
             try {
                 const recordDate = parseISO(r.date);
-                // Set hours to 0 to include the whole day
-                const start = new Date(startDate.setHours(0,0,0,0));
-                const end = new Date(endDate.setHours(23,59,59,999));
+                // Create new Date objects to avoid mutating the original state
+                const start = new Date(startDate);
+                start.setHours(0, 0, 0, 0);
+                const end = new Date(endDate);
+                end.setHours(23, 59, 59, 999);
                 return recordDate >= start && recordDate <= end;
             } catch { return false; }
         });
@@ -163,12 +165,12 @@ export default function AdminDashboard() {
 
         const performanceData = (() => {
             if (!startDate || !endDate) return [];
-            const diffDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+            const diffDays = Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24));
 
             const groupedData = new Map<string, { date: Date, total: number }>();
             const formatKey = diffDays > 31 
                 ? (date: Date) => format(date, 'MMM/yy', { locale: ptBR })
-                : (date: Date) => format(date, 'dd/MM/yyyy');
+                : (date: Date) => format(date, 'yyyy-MM-dd'); // Use a sortable format
 
             filteredRecords.forEach(r => {
                 if (r.status === 'Finalizado' && r.kmEnd && r.kmStart) {
@@ -182,13 +184,12 @@ export default function AdminDashboard() {
                 }
             });
 
-            return Array.from(groupedData.entries())
-                .map(([_, value]) => ({ 
+            return Array.from(groupedData.values())
+                .sort((a,b) => compareAsc(a.date, b.date))
+                .map((value) => ({ 
                     name: format(value.date, diffDays > 31 ? 'MMM/yy' : 'dd/MM', { locale: ptBR }), 
                     total: value.total,
-                    date: value.date,
-                }))
-                .sort((a,b) => compareAsc(a.date, b.date));
+                }));
         })();
         
         const vehicleKm = filteredRecords
@@ -229,8 +230,10 @@ export default function AdminDashboard() {
             const filteredRecords = records.filter(r => {
                 if (!startDate || !endDate) return true;
                 const recordDate = parseISO(r.date);
-                const start = new Date(startDate.setHours(0,0,0,0));
-                const end = new Date(endDate.setHours(23,59,59,999));
+                const start = new Date(startDate);
+                start.setHours(0,0,0,0);
+                const end = new Date(endDate);
+                end.setHours(23,59,59,999);
                 return recordDate >= start && recordDate <= end;
             });
 
@@ -748,3 +751,5 @@ export default function AdminDashboard() {
     </div>
   );
 }
+
+    
