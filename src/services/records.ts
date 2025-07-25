@@ -25,11 +25,13 @@ export type RecordAddPayload = Omit<Record, 'id'>;
 export type RecordUpdatePayload = Partial<Omit<Record, 'id' | 'driver' | 'car' | 'plate' | 'line' | 'kmStart' | 'startOdometerPhoto' | 'date'>>;
 
 async function uploadPhoto(photoBase64: string | null, recordId: string, type: 'start' | 'end'): Promise<string | null> {
-    if (!photoBase64) return null;
+    if (!photoBase64 || !photoBase64.startsWith('data:image')) {
+        console.log(`Skipping upload for ${type}, invalid photo format.`);
+        return null;
+    }
 
     const storageRef = ref(storage, `odometer_photos/${recordId}-${type}-${uuidv4()}.jpg`);
     
-    // A foto já está em base64 com o prefixo 'data:image/jpeg;base64,'
     // O uploadString espera a string base64 pura, então removemos o prefixo.
     const base64String = photoBase64.split(',')[1];
     
@@ -108,5 +110,3 @@ export async function getRecordByPlateAndStatus(plate: string, status: "Em Andam
     
     return records[0];
 }
-
-    

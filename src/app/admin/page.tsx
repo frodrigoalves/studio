@@ -315,8 +315,7 @@ export default function AdminDashboard() {
           toast({
             variant: 'destructive',
             title: 'Erro na Análise',
-            description:
-              'A IA não conseguiu processar o arquivo. Verifique o formato e tente novamente.',
+            description: 'A IA não conseguiu processar o arquivo. Verifique se o formato é suportado (planilha, PDF, imagem) e se o conteúdo é legível. Tente novamente.',
           });
         } finally {
           setIsSheetLoading(false);
