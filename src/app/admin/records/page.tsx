@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { MoreHorizontal, PlusCircle, FileUp, Camera, AlertCircle, KeyRound, Loader2, Upload } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { MoreHorizontal, PlusCircle, FileUp, Camera, AlertCircle, KeyRound, Loader2, Upload, FileDown, FileText, Send } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
@@ -22,7 +22,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from '@/hooks/use-toast';
 import { getRecords, addRecord, updateRecord, type Record, type RecordAddPayload } from '@/services/records';
-import Papa from 'papaparse';
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+
 
 const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -168,44 +171,76 @@ export default function RecordsPage() {
             });
         }
     };
+    
+    const getExportData = () => {
+        return records.map(r => ({
+            'Data': new Date(r.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' }),
+            'Motorista': r.driver,
+            'Veículo': r.car,
+            'Chapa': r.plate,
+            'KM Início': r.kmStart,
+            'KM Fim': r.kmEnd,
+            'KM Total': (r.kmEnd && r.kmStart) ? r.kmEnd - r.kmStart : 0,
+            'Status': r.status,
+        }));
+    };
 
-    const handleExport = () => {
-      if (records.length === 0) {
-          toast({
-              title: "Nenhum dado para exportar",
-              description: "A tabela de registros está vazia.",
-          });
-          return;
-      }
-  
-      const dataToExport = records.map(r => ({
-          'Data': new Date(r.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' }),
-          'Motorista': r.driver,
-          'Veículo': r.car,
-          'Chapa': r.plate,
-          'KM Início': r.kmStart,
-          'KM Fim': r.kmEnd,
-          'KM Total': (r.kmEnd && r.kmStart) ? r.kmEnd - r.kmStart : 0,
-          'Status': r.status,
-          'URL Foto Início': r.startOdometerPhoto,
-          'URL Foto Fim': r.endOdometerPhoto
-      }));
-  
-      const csv = Papa.unparse(dataToExport);
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      const url = URL.createObjectURL(blob);
-      link.setAttribute('href', url);
-      link.setAttribute('download', 'registros_viagens.csv');
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      toast({
-          title: "Exportação Concluída",
-          description: "O arquivo CSV foi baixado com sucesso."
-      });
-  };
+    const handleExportXLSX = () => {
+        if (records.length === 0) {
+            toast({ title: "Nenhum dado para exportar" });
+            return;
+        }
+        const data = getExportData();
+        const worksheet = XLSX.utils.json_to_sheet(data);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Registros");
+        XLSX.writeFile(workbook, "registros_viagens.xlsx");
+        toast({ title: "Exportação Concluída", description: "O arquivo XLSX foi baixado."});
+    };
+    
+    const handleExportPDF = () => {
+        if (records.length === 0) {
+            toast({ title: "Nenhum dado para exportar" });
+            return;
+        }
+        const doc = new jsPDF();
+        const tableData = getExportData();
+        const tableColumn = ["Data", "Motorista", "Veículo", "Chapa", "KM Início", "KM Fim", "KM Total", "Status"];
+        const tableRows = tableData.map(obj => tableColumn.map(key => obj[key as keyof typeof obj] ?? ''));
+
+        doc.autoTable({
+            head: [tableColumn],
+            body: tableRows,
+            didDrawPage: (data) => {
+                doc.setFontSize(20);
+                doc.text("Relatório de Registros de Viagem", data.settings.margin.left, 15);
+            },
+        });
+        doc.save('registros_viagens.pdf');
+        toast({ title: "Exportação Concluída", description: "O arquivo PDF foi baixado."});
+    };
+
+    const handleSendEmail = () => {
+        if (records.length === 0) {
+            toast({ title: "Nenhum dado para enviar" });
+            return;
+        }
+        const data = getExportData();
+        const subject = "Relatório de Registros de Viagens";
+        let body = "Segue o relatório de registros de viagens:\n\n";
+        
+        const headers = Object.keys(data[0]);
+        body += headers.join('\t|\t') + '\n';
+        body += '-'.repeat(headers.join('\t|\t').length * 1.5) + '\n';
+        
+        data.forEach(row => {
+            body += Object.values(row).join('\t|\t') + '\n';
+        });
+
+        window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        toast({ title: "E-mail Pronto", description: "Seu cliente de e-mail foi aberto."});
+    };
+
 
   return (
     <>
@@ -217,10 +252,30 @@ export default function RecordsPage() {
                 <CardDescription>Visualize e gerencie todos os registros de hodômetro.</CardDescription>
             </div>
             <div className="flex gap-2 w-full sm:w-auto">
-                <Button variant="outline" onClick={handleExport} className="w-1/2 sm:w-auto">
-                    <FileUp className="mr-2 h-4 w-4" />
-                    Exportar
-                </Button>
+                 <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="outline" className="w-1/2 sm:w-auto">
+                            <FileDown className="mr-2 h-4 w-4" />
+                            Exportar
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Opções de Exportação</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={handleExportXLSX}>
+                            <FileText className="mr-2 h-4 w-4" />
+                            Exportar para XLSX
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleExportPDF}>
+                            <FileText className="mr-2 h-4 w-4" />
+                            Exportar para PDF
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleSendEmail}>
+                            <Send className="mr-2 h-4 w-4" />
+                            Enviar por Email
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
                 <Dialog open={isAddDialogOpen} onOpenChange={setAddDialogOpen}>
                     <DialogTrigger asChild>
                         <Button className="w-1/2 sm:w-auto">
