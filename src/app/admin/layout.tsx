@@ -29,16 +29,25 @@ interface User {
   role: 'diretor' | 'analyst';
 }
 
+const pageTitles: { [key: string]: string } = {
+    '/admin': 'Painel BI',
+    '/admin/records': 'Registros de Viagens',
+    '/admin/settings': 'Configurações',
+};
+
+
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const { toast } = useToast();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [pageTitle, setPageTitle] = useState('Painel de Gestão');
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -50,6 +59,10 @@ export default function AdminLayout({
     setLoading(false);
   }, [router]);
   
+  useEffect(() => {
+    setPageTitle(pageTitles[pathname] || 'Painel de Gestão');
+  }, [pathname]);
+
   const handleLogout = async () => {
     setIsLoggingOut(true);
     localStorage.removeItem('user');
@@ -104,7 +117,10 @@ export default function AdminLayout({
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
-             <SidebarMenuItem>
+            
+            <SidebarSeparator />
+
+            <SidebarMenuItem>
               <SidebarMenuButton asChild>
                 <Link href="#" onClick={handleDevelopmentClick}>
                   <Clock4 />
@@ -112,8 +128,6 @@ export default function AdminLayout({
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
-            
-            <SidebarSeparator />
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
                 <Link href="#" onClick={handleDevelopmentClick}>
@@ -176,7 +190,7 @@ export default function AdminLayout({
       <div className="flex flex-col flex-1 h-screen">
         <header className="p-4 border-b flex items-center gap-4 sticky top-0 bg-background/80 backdrop-blur-sm z-10">
             <SidebarTrigger />
-            <h1 className="text-xl font-semibold">Painel de Gestão</h1>
+            <h1 className="text-xl font-semibold">{pageTitle}</h1>
         </header>
         <main className="p-4 lg:p-6 flex-1 overflow-y-auto">{children}</main>
         <footer className="p-4 text-center text-xs text-muted-foreground border-t">
