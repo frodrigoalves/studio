@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Settings, FileText, LogOut, BrainCircuit, Loader2 } from "lucide-react";
+import { Settings, FileText, LogOut, BrainCircuit, Loader2, Clock4, FileHeart, Wrench, ClipboardList, BadgeCheck } from "lucide-react";
 import { Logo } from "@/components/logo";
 
 
@@ -81,7 +81,7 @@ export default function AdminLayout({
               <SidebarMenuButton asChild>
                 <Link href="/admin">
                   <BrainCircuit />
-                  Business Intelligence
+                  Painel BI
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -90,6 +90,46 @@ export default function AdminLayout({
                 <Link href="/admin/records">
                   <FileText />
                   Registros
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild>
+                <Link href="#">
+                  <Clock4 />
+                  Viagens
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+             <SidebarMenuItem>
+              <SidebarMenuButton asChild>
+                <Link href="#">
+                  <FileHeart />
+                  Atestados
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+             <SidebarMenuItem>
+              <SidebarMenuButton asChild>
+                <Link href="#">
+                  <Wrench />
+                  Manutenção
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+             <SidebarMenuItem>
+              <SidebarMenuButton asChild>
+                <Link href="#">
+                  <ClipboardList />
+                  Ocorrências
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+             <SidebarMenuItem>
+              <SidebarMenuButton asChild>
+                <Link href="#">
+                  <BadgeCheck />
+                  SLA
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
