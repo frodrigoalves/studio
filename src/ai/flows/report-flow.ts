@@ -10,8 +10,6 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { Record } from '@/services/records';
-import { DieselPrice } from '@/services/settings';
 
 const ReportInputSchema = z.object({
   records: z.array(z.any()).describe("Uma lista de objetos de registro de viagem."),

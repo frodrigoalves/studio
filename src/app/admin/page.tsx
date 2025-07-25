@@ -224,9 +224,28 @@ export default function AdminDashboard() {
                 });
                 return;
             }
+            
+            const { from: startDate, to: endDate } = dateRange || {};
+            const filteredRecords = records.filter(r => {
+                if (!startDate || !endDate) return true;
+                const recordDate = parseISO(r.date);
+                const start = new Date(startDate.setHours(0,0,0,0));
+                const end = new Date(endDate.setHours(23,59,59,999));
+                return recordDate >= start && recordDate <= end;
+            });
+
+            if (filteredRecords.length === 0) {
+                 toast({
+                    variant: 'destructive',
+                    title: 'Sem dados no período',
+                    description: 'Não há registros no período selecionado para gerar o relatório.'
+                });
+                setIsFleetLoading(false);
+                return;
+            }
 
             const generatedReport = await generateReport({
-                records,
+                records: filteredRecords,
                 dieselPrices,
                 period: fleetPeriod,
             });
@@ -500,7 +519,7 @@ export default function AdminDashboard() {
             <AccordionItem value="item-2">
                  <AccordionTrigger className="text-xl font-semibold">
                     <div className="flex items-center gap-2">
-                        <FileText /> Análise de Frota
+                        <FileText /> Análise Preditiva e Cruzamento de Dados
                     </div>
                 </AccordionTrigger>
                 <AccordionContent>
@@ -510,32 +529,20 @@ export default function AdminDashboard() {
                             <CardDescription>Selecione o período e deixe a IA analisar os dados de viagem e gerar insights para você.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="flex flex-col sm:flex-row gap-4 items-end">
-                                <div className="w-full sm:w-auto flex-1 space-y-2">
-                                    <Label htmlFor="period">Período de Análise</Label>
-                                    <Select value={fleetPeriod} onValueChange={(value: Period) => setFleetPeriod(value)}>
-                                        <SelectTrigger id="period">
-                                            <SelectValue placeholder="Selecione o período" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="daily">Diário</SelectItem>
-                                            <SelectItem value="weekly">Semanal</SelectItem>
-                                            <SelectItem value="monthly">Mensal</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <Button onClick={handleGenerateFleetReport} disabled={isFleetLoading} className="w-full sm:w-auto">
-                                    {isFleetLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Wand2 className="mr-2 h-4 w-4"/>}
-                                    {isFleetLoading ? "Analisando Frota..." : "Gerar Relatório de Frota"}
-                                </Button>
-                            </div>
+                             <p className="text-sm text-muted-foreground">
+                                A análise usará o período de datas selecionado no filtro de desempenho acima: 
+                                <span className="font-semibold text-foreground">
+                                    {dateRange?.from ? format(dateRange.from, 'dd/MM/yy') : ''} à {dateRange?.to ? format(dateRange.to, 'dd/MM/yy') : ''}
+                                </span>
+                            </p>
+                             <Button onClick={handleGenerateFleetReport} disabled={isFleetLoading} className="w-full sm:w-auto">
+                                {isFleetLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Wand2 className="mr-2 h-4 w-4"/>}
+                                {isFleetLoading ? "Analisando Frota..." : "Gerar Relatório de Frota"}
+                            </Button>
                              {fleetReport && (
                                 <Card className="mt-6 bg-muted/20">
                                     <CardHeader>
                                         <CardTitle>Relatório da Frota Gerado</CardTitle>
-                                        <CardDescription>
-                                            Análise para o período: <span className="font-semibold capitalize">{fleetPeriod.replace('daily', 'diário').replace('weekly', 'semanal').replace('monthly', 'mensal')}</span>
-                                        </CardDescription>
                                     </CardHeader>
                                     <CardContent className="space-y-6">
                                         <div className="space-y-2">
