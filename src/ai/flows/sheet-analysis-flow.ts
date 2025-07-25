@@ -13,14 +13,14 @@ import { z } from 'zod';
 
 const SheetAnalysisInputSchema = z.object({
   fileDataUri: z.string().describe("O conteúdo do arquivo como uma URI de dados (pode ser CSV, imagem, PDF, etc.)."),
-  analysisType: z.enum(['hr', 'maintenance']).describe('O tipo de análise a ser realizada: "hr" para Recursos Humanos ou "maintenance" para Manutenção.'),
+  analysisType: z.string().describe('O tipo de análise a ser realizada. Ex: "Análise de Atestados Médicos", "Análise de Manutenção de Frota".'),
 });
 export type SheetAnalysisInput = z.infer<typeof SheetAnalysisInputSchema>;
 
 
 const SheetAnalysisOutputSchema = z.object({
-  title: z.string().describe("Um título geral para a análise gerada."),
-  summary: z.string().describe('Um resumo executivo dos principais pontos encontrados na planilha.'),
+  title: z.string().describe("Um título geral para a análise gerada, baseado no tipo de análise solicitado."),
+  summary: z.string().describe('Um resumo executivo dos principais pontos encontrados no documento.'),
   keyFindings: z.array(z.object({
     finding: z.string().describe('A descrição do ponto de atenção ou anomalia identificada.'),
     details: z.string().describe('Detalhes adicionais, métricas ou dados que suportam a descoberta.'),
@@ -31,56 +31,36 @@ const SheetAnalysisOutputSchema = z.object({
 export type SheetAnalysisOutput = z.infer<typeof SheetAnalysisOutputSchema>;
 
 
-const hrAnalysisPrompt = ai.definePrompt({
-    name: 'hrAnalysisPrompt',
+const analysisPrompt = ai.definePrompt({
+    name: 'analysisPrompt',
     input: { schema: SheetAnalysisInputSchema },
     output: { schema: SheetAnalysisOutputSchema },
     prompt: `
-      Você é um especialista em Recursos Humanos e analista de dados para o Guilherme da TopBus Transportes.
-      Seu objetivo é analisar o documento de atestados médicos para encontrar padrões, anomalias e insights para a reunião semanal da diretoria.
-      Primeiro, verifique o tipo de arquivo. Se for uma imagem ou PDF, use OCR para extrair todo o texto antes de prosseguir com a análise.
-      Foque nos dados concretos, ignorando cabeçalhos e rodapés complexos. Identifique a linha de cabeçalho para entender as colunas.
+      Você é um analista de dados especialista para Guilherme da TopBus Transportes.
+      Sua tarefa é realizar uma **{{analysisType}}** com base no documento fornecido.
 
-      Foco da Análise:
-      1.  **Identificar Colaboradores Ausentes:** Liste os 5 colaboradores com maior número de atestados ou dias de ausência.
-      2.  **Principais Causas (CID):** Identifique os 3 CIDs (doenças) mais frequentes no documento.
-      3.  **Anomalias:** Procure por padrões incomuns. Ex: Um grupo de motoristas da mesma rota apresentando o mesmo CID; um aumento súbito de atestados em um determinado período; atestados frequentes de curta duração para o mesmo colaborador.
-      4.  **Recomendações:** Com base na análise, sugira 2-3 ações para a diretoria. Ex: "Iniciar campanha de vacinação contra gripe (CID J11)", "Investigar condições de ergonomia na rota X", "Oferecer suporte de saúde mental para o colaborador Y".
+      **Instruções Cruciais:**
+      1.  **Foco nos Dados:** Ignore completamente cabeçalhos, rodapés, menus ou qualquer outro elemento de interface da planilha (como "Arquivo", "Página Inicial", "Inserir", etc.). Concentre-se APENAS na tabela de dados, ou seja, nas linhas e colunas que contêm as informações relevantes.
+      2.  **Identifique os Cabeçalhos da Tabela:** A primeira linha com texto geralmente contém os nomes das colunas. Use-os para entender o significado de cada coluna de dados.
+      3.  **Seja um Especialista no Assunto:** Aja como um especialista no tópico de **"{{analysisType}}"**. Sua análise deve refletir o conhecimento desse domínio.
+          *   Se for **Atestados Médicos**, foque em padrões de ausência, CIDs recorrentes, e anomalias entre equipes ou indivíduos.
+          *   Se for **Manutenção**, foque em veículos críticos, defeitos recorrentes, e gargalos de tempo de reparo.
+          *   Se for **Viagens**, foque em atrasos, cancelamentos e performance de rotas.
+          *   Se for **SLA**, foque no cumprimento de metas e nos principais desvios.
+      4.  **Estrutura do Relatório:** Gere um relatório claro e acionável.
+          *   **title:** Use o '{{analysisType}}' como título principal.
+          *   **summary:** Um parágrafo executivo com os insights mais importantes.
+          *   **keyFindings:** Uma lista detalhada das 3 a 5 descobertas mais críticas. Para cada uma, explique o achado, os dados que o suportam e qual o impacto para o negócio.
+          *   **recommendations:** Com base nos achados, sugira de 2 a 3 ações ou investigações práticas para o Guilherme.
 
-      O relatório deve ser claro, objetivo e formatado para ser facilmente copiado para uma apresentação.
+      O relatório deve ser objetivo e formatado para ser facilmente copiado para uma apresentação.
 
       **Dados do Documento:**
       {{media url=fileDataUri}}
 
-      Agora, gere a análise no formato de saída JSON especificado.
+      Agora, gere a análise no formato de saída JSON especificado, atuando como um especialista em **{{analysisType}}**.
     `,
 });
-
-const maintenanceAnalysisPrompt = ai.definePrompt({
-    name: 'maintenanceAnalysisPrompt',
-    input: { schema: SheetAnalysisInputSchema },
-    output: { schema: SheetAnalysisOutputSchema },
-    prompt: `
-      Você é um especialista em gestão de frotas e analista de dados para o Guilherme da TopBus Transportes.
-      Seu objetivo é analisar o documento de manutenção de veículos para encontrar gargalos, otimizar custos e aumentar a disponibilidade da frota para a reunião semanal da diretoria.
-      Primeiro, verifique o tipo de arquivo. Se for uma imagem ou PDF, use OCR para extrair todo o texto antes de prosseguir com a análise.
-      Foque em dados concretos, ignorando cabeçalhos e rodapés complexos. Identifique a linha de cabeçalho para entender as colunas.
-
-      Foco da Análise:
-      1.  **Veículos Críticos:** Liste os 5 veículos com maior tempo total em manutenção ou maior frequência de reparos.
-      2.  **Principais Defeitos:** Identifique os 3 tipos de reparo mais comuns em toda a frota.
-      3.  **Anomalias e Gargalos:** Procure por padrões. Ex: Um tipo de peça que falha recorrentemente em um modelo específico de ônibus; tempo de reparo para o mesmo defeito muito discrepante entre equipes; correlação entre motoristas e tipos específicos de avaria (se possível cruzar dados).
-      4.  **Recomendações:** Com base na análise, sugira 2-3 ações para a diretoria. Ex: "Considerar a troca do fornecedor da peça X", "Padronizar o processo de reparo para o defeito Y para reduzir o tempo de parada", "Promover treinamento de direção defensiva para os motoristas que mais geram manutenção corretiva".
-
-      O relatório deve ser claro, objetivo e formatado para ser facilmente copiado para uma apresentação.
-
-      **Dados do Documento:**
-      {{media url=fileDataUri}}
-
-      Agora, gere a análise no formato de saída JSON especificado.
-    `,
-});
-
 
 export async function analyseSheet(input: SheetAnalysisInput): Promise<SheetAnalysisOutput> {
   return sheetAnalysisFlow(input);
@@ -94,17 +74,7 @@ const sheetAnalysisFlow = ai.defineFlow(
     outputSchema: SheetAnalysisOutputSchema,
   },
   async (input) => {
-    const analysisWithTitle = {
-        ...input,
-        title: input.analysisType === 'hr' ? 'Análise de Atestados Médicos (RH)' : 'Análise de Manutenção de Frota',
-    };
-
-    if (input.analysisType === 'hr') {
-        const { output } = await hrAnalysisPrompt(analysisWithTitle);
-        return output!;
-    } else {
-        const { output } = await maintenanceAnalysisPrompt(analysisWithTitle);
-        return output!;
-    }
+    const { output } = await analysisPrompt(input);
+    return output!;
   }
 );

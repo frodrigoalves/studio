@@ -29,7 +29,6 @@ import Papa from 'papaparse';
 
 
 type Period = "daily" | "weekly" | "monthly";
-type AnalysisType = 'hr' | 'maintenance';
 const AVERAGE_KM_PER_LITER = 2.5;
 
 const fileToDataURI = (file: File): Promise<string> => {
@@ -53,7 +52,7 @@ const processSheetFile = (file: File): Promise<string> => {
                 const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
                 const csvData = Papa.unparse(jsonData as Papa.ParseResult<any>['data']);
                 // Pass the raw CSV text to a text/plain data URI. The AI can parse this.
-                const dataUri = `data:text/plain,${csvData}`;
+                const dataUri = `data:text/plain;charset=utf-8,${encodeURIComponent(csvData)}`;
                 resolve(dataUri);
             } catch (error) {
                 reject(error);
@@ -85,7 +84,7 @@ export default function AdminDashboard() {
     const [fleetReport, setFleetReport] = useState<ReportOutput | null>(null);
 
     // Sheet Analysis state
-    const [analysisType, setAnalysisType] = useState<AnalysisType>('hr');
+    const [analysisType, setAnalysisType] = useState<string>('Análise de Atestados Médicos');
     const [file, setFile] = useState<File | null>(null);
     const [isSheetLoading, setIsSheetLoading] = useState(false);
     const [sheetAnalysisResult, setSheetAnalysisResult] = useState<SheetAnalysisOutput | null>(null);
@@ -581,15 +580,18 @@ export default function AdminDashboard() {
                                         <Label htmlFor="analysis-type">Tipo de Análise</Label>
                                         <Select
                                             value={analysisType}
-                                            onValueChange={(value: AnalysisType) => setAnalysisType(value)}
+                                            onValueChange={(value: string) => setAnalysisType(value)}
                                             disabled={isSheetLoading}
                                         >
                                             <SelectTrigger id="analysis-type">
                                             <SelectValue placeholder="Selecione o tipo" />
                                             </SelectTrigger>
                                             <SelectContent>
-                                            <SelectItem value="hr">Recursos Humanos (Atestados)</SelectItem>
-                                            <SelectItem value="maintenance">Manutenção de Veículos</SelectItem>
+                                                <SelectItem value="Análise de Atestados Médicos">Análise de Atestados Médicos</SelectItem>
+                                                <SelectItem value="Análise de Manutenção de Frota">Análise de Manutenção de Frota</SelectItem>
+                                                <SelectItem value="Análise de Viagens Atrasadas/Não Realizadas">Viagens Atrasadas/Não Realizadas</SelectItem>
+                                                <SelectItem value="Análise de Outras Ocorrências">Outras Ocorrências</SelectItem>
+                                                <SelectItem value="Análise de SLA (Nível de Serviço)">Análise de SLA (Nível de Serviço)</SelectItem>
                                             </SelectContent>
                                         </Select>
                                         </div>
