@@ -36,6 +36,7 @@ const startFormSchema = z.object({
   chapa: z.string().min(1, "Chapa é obrigatória."),
   name: z.string().min(1, "Nome é obrigatório."),
   car: z.string().min(1, "Carro é obrigatório."),
+  line: z.string().min(1, "Linha é obrigatória."),
   initialKm: z.coerce.number({ required_error: "Km Inicial é obrigatório."}).min(1, "Km Inicial é obrigatório."),
   startOdometerPhoto: z.any().refine(file => file, "Foto é obrigatória."),
 });
@@ -44,6 +45,7 @@ const endFormSchema = z.object({
   chapa: z.string().min(1, "Chapa é obrigatória."),
   name: z.string().min(1, "Nome é obrigatório."),
   car: z.string().min(1, "Carro é obrigatório."),
+  line: z.string().min(1, "Linha é obrigatória."),
   finalKm: z.coerce.number({ required_error: "Km Final é obrigatório."}).min(1, "Km Final é obrigatório."),
   endOdometerPhoto: z.any().refine(file => file, "Foto é obrigatória."),
 });
@@ -52,8 +54,8 @@ const endFormSchema = z.object({
 type StartFormValues = z.infer<typeof startFormSchema>;
 type EndFormValues = z.infer<typeof endFormSchema>;
 
-const initialStartValues: Omit<StartFormValues, 'initialKm'> & { initialKm: string | number } = { chapa: "", name: "", car: "", initialKm: '', startOdometerPhoto: null };
-const initialEndValues: Omit<EndFormValues, 'finalKm' | 'name' | 'car'> & { finalKm: string | number, name: string, car: string } = { chapa: "", name: "", car: "", finalKm: '', endOdometerPhoto: null };
+const initialStartValues: Omit<StartFormValues, 'initialKm'> & { initialKm: string | number } = { chapa: "", name: "", car: "", line: "", initialKm: '', startOdometerPhoto: null };
+const initialEndValues: Omit<EndFormValues, 'finalKm' | 'name' | 'car' | 'line'> & { finalKm: string | number, name: string, car: string, line: string } = { chapa: "", name: "", car: "", line: "", finalKm: '', endOdometerPhoto: null };
 
 
 export function DriverForm() {
@@ -86,6 +88,7 @@ export function DriverForm() {
             setRecordToEnd(record);
             endForm.setValue('name', record.driver);
             endForm.setValue('car', record.car);
+            endForm.setValue('line', record.line);
         } else {
             setRecordToEnd(null);
             endForm.reset({ ...initialEndValues, chapa });
@@ -128,6 +131,7 @@ export function DriverForm() {
           driver: data.name,
           car: data.car,
           plate: data.chapa,
+          line: data.line,
           kmStart: data.initialKm,
           kmEnd: null,
           status: "Em Andamento",
@@ -232,35 +236,37 @@ export function DriverForm() {
           <TabsContent value="start" className="pt-4">
             <Form {...startForm}>
               <form onSubmit={startForm.handleSubmit(onStartSubmit)} className="space-y-6 px-2">
-                <FormField
-                  control={startForm.control}
-                  name="chapa"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Chapa</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Sua matrícula" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <FormField
-                    control={startForm.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Nome do Motorista</FormLabel>
-                        <FormControl>
-                           <div className="relative">
-                            <Input placeholder="Seu nome" {...field} />
-                          </div>
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                    <FormField
+                      control={startForm.control}
+                      name="chapa"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Chapa</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Sua matrícula" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={startForm.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nome do Motorista</FormLabel>
+                          <FormControl>
+                             <div className="relative">
+                              <Input placeholder="Seu nome" {...field} />
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FormField
                     control={startForm.control}
                     name="car"
@@ -270,6 +276,21 @@ export function DriverForm() {
                         <FormControl>
                            <div className="relative">
                             <Input placeholder="Número do ônibus" {...field} />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={startForm.control}
+                    name="line"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Linha</FormLabel>
+                        <FormControl>
+                           <div className="relative">
+                            <Input placeholder="Número da linha" {...field} />
                           </div>
                         </FormControl>
                         <FormMessage />
@@ -364,6 +385,19 @@ export function DriverForm() {
                         )}
                       />
                 </div>
+                 <FormField
+                    control={endForm.control}
+                    name="line"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Linha</FormLabel>
+                        <FormControl>
+                           <Input placeholder="Preenchido automaticamente" {...field} disabled />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 <FormField
                   control={endForm.control}
                   name="finalKm"

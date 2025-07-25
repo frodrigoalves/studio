@@ -206,7 +206,7 @@ export default function AdminDashboard() {
         const topVehicles = Object.entries(vehicleKm)
             .map(([name, km]) => ({ name, km, fill: "var(--color-primary)"}))
             .sort((a, b) => b.km - a.km)
-            .slice(0, 5);
+            .slice(0, 10);
 
 
         return { totalKm, alerts, performanceData, topVehicles, totalCost, latestDieselPrice: latestPrice };
@@ -486,7 +486,7 @@ export default function AdminDashboard() {
                                 <CardDescription>Total de quilômetros rodados no período selecionado.</CardDescription>
                             </CardHeader>
                             <CardContent className="pl-2">
-                               <ChartContainer config={{}} className="h-[250px] w-full">
+                               <ChartContainer config={{}} className="h-[350px] w-full">
                                     <LineChart accessibilityLayer data={dashboardData.performanceData} margin={{ left: 12, right: 12 }}>
                                         <CartesianGrid vertical={false} />
                                         <XAxis dataKey="name" tickLine={false} axisLine={false} tickMargin={8} />
@@ -499,17 +499,17 @@ export default function AdminDashboard() {
                             </Card>
                             <Card className="lg:col-span-3">
                             <CardHeader>
-                                <CardTitle>Top 5 Veículos por KM</CardTitle>
+                                <CardTitle>Top 10 Veículos por KM</CardTitle>
                                 <CardDescription>Veículos que mais rodaram no período.</CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <ChartContainer config={{}} className="h-[250px] w-full">
+                                <ChartContainer config={{}} className="h-[350px] w-full">
                                     <BarChartComponent accessibilityLayer data={dashboardData.topVehicles} layout="vertical" margin={{ left: 10 }}>
                                         <CartesianGrid horizontal={false} />
                                         <YAxis dataKey="name" type="category" tickLine={false} axisLine={false} tickMargin={8} width={80} />
                                         <XAxis type="number" hide />
                                         <Tooltip content={<ChartTooltipContent indicator="dot" />} />
-                                        <Bar dataKey="km" radius={5} name="KM" fill="hsl(var(--primary))" />
+                                        <Bar dataKey="km" radius={5} name="KM" fill="hsl(var(--primary))" barSize={15} />
                                     </BarChartComponent>
                                 </ChartContainer>
                             </CardContent>

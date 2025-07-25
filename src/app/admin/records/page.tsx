@@ -59,6 +59,7 @@ export default function RecordsPage() {
         driver: '',
         car: '',
         plate: '',
+        line: '',
         kmStart: null,
         kmEnd: null,
         startOdometerPhoto: null,
@@ -177,6 +178,7 @@ export default function RecordsPage() {
             'Data': new Date(r.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' }),
             'Motorista': r.driver,
             'Veículo': r.car,
+            'Linha': r.line,
             'Chapa': r.plate,
             'KM Início': r.kmStart,
             'KM Fim': r.kmEnd,
@@ -205,7 +207,7 @@ export default function RecordsPage() {
         }
         const doc = new jsPDF();
         const tableData = getExportData();
-        const tableColumn = ["Data", "Motorista", "Veículo", "Chapa", "KM Início", "KM Fim", "KM Total", "Status"];
+        const tableColumn = ["Data", "Motorista", "Veículo", "Linha", "Chapa", "KM Início", "KM Fim", "KM Total", "Status"];
         const tableRows = tableData.map(obj => tableColumn.map(key => obj[key as keyof typeof obj] ?? ''));
 
         doc.autoTable({
@@ -306,16 +308,22 @@ export default function RecordsPage() {
                                     <Label htmlFor="car">Veículo</Label>
                                     <Input id="car" value={newRecord.car} onChange={(e) => setNewRecord({...newRecord, car: e.target.value})} />
                                 </div>
-                               <div className="space-y-2">
-                                    <Label htmlFor="date">Data</Label>
-                                    <Input id="date" type="date" value={newRecord.date} onChange={(e) => setNewRecord({...newRecord, date: e.target.value})} />
+                                <div className="space-y-2">
+                                    <Label htmlFor="line">Linha</Label>
+                                    <Input id="line" value={newRecord.line} onChange={(e) => setNewRecord({...newRecord, line: e.target.value})} />
                                 </div>
                             </div>
                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                <div className="space-y-2">
+                                    <Label htmlFor="date">Data</Label>
+                                    <Input id="date" type="date" value={newRecord.date} onChange={(e) => setNewRecord({...newRecord, date: e.target.value})} />
+                                </div>
+                               <div className="space-y-2">
                                     <Label htmlFor="kmStart">KM Início</Label>
                                     <Input id="kmStart" type="number" value={newRecord.kmStart ?? ''} onChange={(e) => setNewRecord({...newRecord, kmStart: e.target.value === '' ? null : e.target.valueAsNumber})} />
                                 </div>
+                            </div>
+                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                <div className="space-y-2">
                                     <Label htmlFor="kmEnd">KM Fim</Label>
                                     <Input id="kmEnd" type="number" value={newRecord.kmEnd ?? ''} onChange={(e) => setNewRecord({...newRecord, kmEnd: e.target.value === '' ? null : e.target.valueAsNumber})} />
@@ -351,6 +359,7 @@ export default function RecordsPage() {
               <TableHead className="hidden sm:table-cell">Data</TableHead>
               <TableHead>Motorista</TableHead>
               <TableHead className="hidden md:table-cell">Veículo</TableHead>
+              <TableHead className="hidden md:table-cell">Linha</TableHead>
               <TableHead>Chapa</TableHead>
               <TableHead className="text-right hidden lg:table-cell">KM Início</TableHead>
               <TableHead className="text-right hidden lg:table-cell">KM Fim</TableHead>
@@ -364,7 +373,7 @@ export default function RecordsPage() {
           <TableBody>
             {isLoading ? (
                 <TableRow>
-                    <TableCell colSpan={9} className="text-center">
+                    <TableCell colSpan={10} className="text-center">
                         <Loader2 className="mx-auto h-8 w-8 animate-spin" />
                     </TableCell>
                 </TableRow>
@@ -373,6 +382,7 @@ export default function RecordsPage() {
                 <TableCell className="hidden sm:table-cell">{new Date(record.date).toLocaleDateString('pt-BR', { timeZone: 'UTC'})}</TableCell>
                 <TableCell className="font-medium">{record.driver}</TableCell>
                 <TableCell className="hidden md:table-cell">{record.car}</TableCell>
+                <TableCell className="hidden md:table-cell">{record.line}</TableCell>
                 <TableCell>
                   <Badge variant="secondary">{record.plate}</Badge>
                 </TableCell>
@@ -512,20 +522,24 @@ export default function RecordsPage() {
                             <Label htmlFor="edit-car">Veículo</Label>
                             <Input id="edit-car" value={editRecordData.car} onChange={(e) => setEditRecordData({...editRecordData, car: e.target.value})} />
                         </div>
-                       <div className="space-y-2">
-                            <Label htmlFor="edit-date">Data</Label>
-                            <Input id="edit-date" type="date" value={editRecordData.date} onChange={(e) => setEditRecordData({...editRecordData, date: e.target.value})} />
+                        <div className="space-y-2">
+                            <Label htmlFor="edit-line">Linha</Label>
+                            <Input id="edit-line" value={editRecordData.line} onChange={(e) => setEditRecordData({...editRecordData, line: e.target.value})} />
                         </div>
                     </div>
                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="edit-date">Data</Label>
+                            <Input id="edit-date" type="date" value={editRecordData.date} onChange={(e) => setEditRecordData({...editRecordData, date: e.target.value})} />
+                        </div>
                        <div className="space-y-2">
                             <Label htmlFor="edit-kmStart">KM Início</Label>
                             <Input id="edit-kmStart" type="number" value={editRecordData.kmStart ?? ''} onChange={(e) => setEditRecordData({...editRecordData, kmStart: e.target.value === '' ? null : Number(e.target.value)})} />
                         </div>
-                       <div className="space-y-2">
-                            <Label htmlFor="edit-kmEnd">KM Fim</Label>
-                            <Input id="edit-kmEnd" type="number" value={editRecordData.kmEnd ?? ''} onChange={(e) => setEditRecordData({...editRecordData, kmEnd: e.target.value === '' ? null : Number(e.target.value)})} />
-                        </div>
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="edit-kmEnd">KM Fim</Label>
+                        <Input id="edit-kmEnd" type="number" value={editRecordData.kmEnd ?? ''} onChange={(e) => setEditRecordData({...editRecordData, kmEnd: e.target.value === '' ? null : Number(e.target.value)})} />
                     </div>
                 </div>
             )}

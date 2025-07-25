@@ -13,6 +13,7 @@ export interface Record {
   driver: string;
   car: string;
   plate: string;
+  line: string;
   kmStart: number | null;
   kmEnd: number | null;
   status: "Finalizado" | "Em Andamento";
@@ -21,7 +22,7 @@ export interface Record {
 }
 
 export type RecordAddPayload = Omit<Record, 'id'>;
-export type RecordUpdatePayload = Partial<Omit<Record, 'id' | 'driver' | 'car' | 'plate' | 'kmStart' | 'startOdometerPhoto' | 'date'>>;
+export type RecordUpdatePayload = Partial<Omit<Record, 'id' | 'driver' | 'car' | 'plate' | 'line' | 'kmStart' | 'startOdometerPhoto' | 'date'>>;
 
 async function uploadPhoto(photoBase64: string | null, recordId: string, type: 'start' | 'end'): Promise<string | null> {
     if (!photoBase64) return null;
