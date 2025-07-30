@@ -20,7 +20,7 @@ export interface VehicleParameters {
  * Cada documento terá o ID do veículo como seu ID no Firestore para fácil acesso.
  * @param parameters A lista de parâmetros de veículos a ser salva.
  */
-export async function saveVehicleParameters(parameters: Omit<VehicleParameters, 'status'>[]): Promise<void> {
+export async function saveVehicleParameters(parameters: Omit<VehicleParameters, 'status' | 'carId'>[] & { carId: string }[]): Promise<void> {
   const batch = writeBatch(db);
   const parametersCollection = collection(db, 'vehicleParameters');
 
@@ -29,7 +29,11 @@ export async function saveVehicleParameters(parameters: Omit<VehicleParameters, 
     if (param.carId) { // Garante que temos um ID antes de tentar salvar
         const docRef = doc(parametersCollection, param.carId);
         // Adiciona o status 'active' por padrão ao salvar
-        const dataToSave = { ...param, status: 'active' as const };
+        const dataToSave: Omit<VehicleParameters, 'carId'> = { 
+            status: 'active' as const,
+            thresholds: param.thresholds,
+            tankCapacity: param.tankCapacity
+        };
         batch.set(docRef, dataToSave, { merge: true }); // Usar merge: true para não sobrescrever
     }
   });
