@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Wand2, FileText, Upload, Lightbulb, ListChecks, BarChart, Archive, BrainCircuit, GaugeCircle, AlertTriangle, Fuel, DollarSign, LineChart as LineChartIcon, BarChart2, Calendar as CalendarIcon, FileUp, Info, MapPin } from "lucide-react";
+import { Loader2, Wand2, FileText, Upload, Lightbulb, ListChecks, BarChart, Archive, BrainCircuit, GaugeCircle, AlertTriangle, Fuel, DollarSign, LineChart as LineChartIcon, BarChart2, Calendar as CalendarIcon, FileUp, Info, MapPin as MapIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getRecords, type Record } from "@/services/records";
 import { getDieselPrices, type DieselPrice } from "@/services/settings";
@@ -79,7 +79,6 @@ export default function AdminDashboard() {
     const [dieselPrices, setDieselPrices] = useState<DieselPrice[]>([]);
 
     // Fleet Report state
-    const [fleetPeriod, setFleetPeriod] = useState<Period>("weekly");
     const [isFleetLoading, setIsFleetLoading] = useState(false);
     const [fleetReport, setFleetReport] = useState<ReportOutput | null>(null);
 
@@ -250,7 +249,7 @@ export default function AdminDashboard() {
             const generatedReport = await generateReport({
                 records: filteredRecords,
                 dieselPrices,
-                period: fleetPeriod,
+                period: "weekly",
             });
             setFleetReport(generatedReport);
 
@@ -547,26 +546,39 @@ export default function AdminDashboard() {
             <AccordionItem value="item-2">
                  <AccordionTrigger className="text-xl font-semibold">
                     <div className="flex items-center gap-2">
-                        <FileText /> Análise Preditiva e Cruzamento de Dados
+                        <Wand2 /> Análise Preditiva e Cruzamento de Dados
                     </div>
                 </AccordionTrigger>
                 <AccordionContent>
                     <Card className="shadow-lg mt-2 border-0">
                         <CardHeader>
                             <CardTitle>Gerador de Relatórios de Frota</CardTitle>
-                            <CardDescription>Selecione o período e deixe a IA analisar os dados de viagem e gerar insights para você.</CardDescription>
+                            <CardDescription>A IA analisa os dados de viagem e gera insights acionáveis sobre anomalias e tendências.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                             <p className="text-sm text-muted-foreground">
-                                A análise usará o período de datas selecionado no filtro de desempenho acima: 
-                                <span className="font-semibold text-foreground">
-                                    {dateRange?.from ? format(dateRange.from, 'dd/MM/yy') : ''} à {dateRange?.to ? format(dateRange.to, 'dd/MM/yy') : ''}
-                                </span>
-                            </p>
-                             <Button onClick={handleGenerateFleetReport} disabled={isFleetLoading} className="w-full sm:w-auto">
-                                {isFleetLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Wand2 className="mr-2 h-4 w-4"/>}
-                                {isFleetLoading ? "Analisando Frota..." : "Gerar Relatório de Frota"}
-                            </Button>
+                            {(records.length === 0 || dieselPrices.length === 0) ? (
+                                <div className="p-4 text-center text-sm text-muted-foreground bg-muted/50 rounded-lg">
+                                    <p>
+                                        <span className="font-semibold text-foreground">Ação necessária:</span> Para gerar o relatório, é preciso ter registros de viagem e pelo menos um preço de diesel cadastrado.
+                                    </p>
+                                    <p className="mt-2">
+                                        Vá para a página de <Button variant="link" className="p-0 h-auto" asChild><a href="/admin/records">Registros</a></Button> para adicionar viagens ou para <Button variant="link" className="p-0 h-auto" asChild><a href="/admin/settings">Configurações</a></Button> para adicionar o preço do diesel.
+                                    </p>
+                                </div>
+                            ) : (
+                                <>
+                                    <p className="text-sm text-muted-foreground">
+                                        A análise usará o período de datas selecionado no filtro de desempenho acima: 
+                                        <span className="font-semibold text-foreground">
+                                            {dateRange?.from ? format(dateRange.from, 'dd/MM/yy') : ''} à {dateRange?.to ? format(dateRange.to, 'dd/MM/yy') : ''}
+                                        </span>
+                                    </p>
+                                    <Button onClick={handleGenerateFleetReport} disabled={isFleetLoading} className="w-full sm:w-auto">
+                                        {isFleetLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Wand2 className="mr-2 h-4 w-4"/>}
+                                        {isFleetLoading ? "Analisando Frota..." : "Gerar Relatório de Frota"}
+                                    </Button>
+                                </>
+                            )}
                              {fleetReport && (
                                 <Card className="mt-6 bg-muted/20">
                                     <CardHeader>
@@ -598,13 +610,13 @@ export default function AdminDashboard() {
                     <AccordionItem value="item-3">
                         <AccordionTrigger className="text-xl font-semibold">
                             <div className="flex items-center gap-2">
-                                <Upload /> Análise de Documentos (OCR)
+                                <FileText /> Análise de Documentos (OCR)
                             </div>
                         </AccordionTrigger>
                         <AccordionContent>
                             <Card className="shadow-lg mt-2 border-0">
                                 <CardHeader>
-                                    <CardTitle>Análise Inteligente de Documentos (OCR)</CardTitle>
+                                    <CardTitle>Análise Inteligente de Documentos</CardTitle>
                                     <CardDescription>
                                         Faça o upload de planilhas, PDFs ou imagens de RH (atestados) ou Manutenção para que a IA identifique anomalias e tendências.
                                     </CardDescription>
@@ -776,3 +788,5 @@ export default function AdminDashboard() {
     </div>
   );
 }
+
+    
