@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Wand2, FileText, Upload, Lightbulb, ListChecks, BarChart, Archive, BrainCircuit, GaugeCircle, AlertTriangle, Fuel, DollarSign, LineChart as LineChartIcon, BarChart2, Calendar as CalendarIcon, FileUp, Map } from "lucide-react";
+import { Loader2, Wand2, FileText, Upload, Lightbulb, ListChecks, BarChart, Archive, BrainCircuit, GaugeCircle, AlertTriangle, Fuel, DollarSign, LineChart as LineChartIcon, BarChart2, Calendar as CalendarIcon, FileUp, Map as MapIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getRecords, type Record } from "@/services/records";
 import { getDieselPrices, type DieselPrice } from "@/services/settings";
@@ -647,7 +647,7 @@ export default function AdminDashboard() {
             <AccordionItem value="item-6">
                 <AccordionTrigger className="text-xl font-semibold">
                     <div className="flex items-center gap-2">
-                        <Map /> Mapeamento de Consumo dos Veículos
+                        <MapIcon /> Mapeamento de Consumo dos Veículos
                     </div>
                 </AccordionTrigger>
                 <AccordionContent>
