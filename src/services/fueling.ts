@@ -2,7 +2,7 @@
 'use server';
 
 import { db } from '@/lib/firebase';
-import { collection, doc, writeBatch } from 'firebase/firestore';
+import { collection, doc, writeBatch, getDocs, query } from 'firebase/firestore';
 
 export interface FuelingRecord {
   id: string;
@@ -24,12 +24,20 @@ export async function addFuelingRecords(records: FuelingRecordPayload[]): Promis
     const fuelingCollection = collection(db, 'fuelingRecords');
 
     records.forEach(record => {
-        // Usa o número do 'car' como o ID do documento para unificar os dados por veículo.
-        // Isso assume que o arquivo de importação pode ter um registro consolidado por carro
-        // ou o último registro para um carro substituirá os anteriores no batch.
         const docRef = doc(fuelingCollection); 
         batch.set(docRef, record);
     });
 
     await batch.commit();
+}
+
+
+/**
+ * Busca todos os registros de abastecimento do Firestore.
+ * @returns Uma lista de todos os registros de abastecimento.
+ */
+export async function getFuelingRecords(): Promise<FuelingRecord[]> {
+    const q = query(collection(db, 'fuelingRecords'));
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FuelingRecord));
 }

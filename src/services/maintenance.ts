@@ -2,7 +2,7 @@
 'use server';
 
 import { db } from '@/lib/firebase';
-import { collection, doc, writeBatch } from 'firebase/firestore';
+import { collection, doc, writeBatch, getDocs, query } from 'firebase/firestore';
 
 export interface MaintenanceRecord {
   id: string;
@@ -24,4 +24,15 @@ export async function addMaintenanceRecords(records: MaintenanceRecordPayload[])
     });
 
     await batch.commit();
+}
+
+
+/**
+ * Busca todos os registros de manutenção do Firestore.
+ * @returns Uma lista de todos os registros de manutenção.
+ */
+export async function getMaintenanceRecords(): Promise<MaintenanceRecord[]> {
+    const q = query(collection(db, 'maintenanceRecords'));
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MaintenanceRecord));
 }

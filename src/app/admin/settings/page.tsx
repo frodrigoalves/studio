@@ -7,24 +7,16 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Save, Loader2, Upload, Wand2, FileUp, Wrench, Fuel, History } from "lucide-react";
+import { Save, Loader2, Upload, FileUp, Wrench, Fuel, History, Database, Car, Droplets, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getDieselPrices, saveDieselPrice, type DieselPrice } from "@/services/settings";
-import { saveVehicleParameters, type VehicleParameters } from "@/services/vehicles";
-import { addFuelingRecords, type FuelingRecordPayload } from "@/services/fueling";
-import { addMaintenanceRecords } from "@/services/maintenance";
+import { saveVehicleParameters, getVehicleParameters, type VehicleParameters } from "@/services/vehicles";
+import { addFuelingRecords, getFuelingRecords, type FuelingRecordPayload } from "@/services/fueling";
+import { addMaintenanceRecords, getMaintenanceRecords } from "@/services/maintenance";
 import * as XLSX from 'xlsx';
 import Papa from 'papaparse';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-
-const fileToDataURI = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (e) => resolve(e.target?.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-    });
-};
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 
 export default function SettingsPage() {
@@ -43,6 +35,14 @@ export default function SettingsPage() {
     
     const [maintenanceFile, setMaintenanceFile] = useState<File | null>(null);
     const [isMaintenanceLoading, setIsMaintenanceLoading] = useState(false);
+    
+    const [dbStats, setDbStats] = useState({
+        vehicles: 0,
+        fueling: 0,
+        maintenance: 0,
+        diesel: 0,
+    });
+    const [isStatsLoading, setIsStatsLoading] = useState(true);
 
 
     const fetchPrices = async () => {
@@ -61,9 +61,33 @@ export default function SettingsPage() {
             setIsLoadingPrices(false);
         }
     };
+    
+    const fetchDbStats = async () => {
+        setIsStatsLoading(true);
+        try {
+            const [vehiclesData, fuelingData, maintenanceData, dieselData] = await Promise.all([
+                getVehicleParameters(),
+                getFuelingRecords(),
+                getMaintenanceRecords(),
+                getDieselPrices()
+            ]);
+            setDbStats({
+                vehicles: vehiclesData.length,
+                fueling: fuelingData.length,
+                maintenance: maintenanceData.length,
+                diesel: dieselData.length
+            });
+        } catch (error) {
+            console.error("Failed to fetch DB stats", error);
+            toast({ variant: 'destructive', title: 'Erro ao carregar status', description: 'Não foi possível buscar as contagens do banco de dados.' });
+        } finally {
+            setIsStatsLoading(false);
+        }
+    }
 
     useEffect(() => {
         fetchPrices();
+        fetchDbStats();
     }, []);
 
     const handleSavePrice = async (e: React.FormEvent) => {
@@ -89,6 +113,7 @@ export default function SettingsPage() {
             setNewPrice('');
             setNewDate(new Date().toISOString().split('T')[0]);
             fetchPrices(); // Refresh data
+            fetchDbStats();
 
             toast({
                 title: "Sucesso!",
@@ -137,7 +162,7 @@ export default function SettingsPage() {
                             },
                             tankCapacity: Number(row['CAPACIDADE TANQUE'] ?? 0) || undefined,
                         }))
-                        .filter(p => p.carId && p.thresholds.green > 0); // Garante que apenas linhas com ID e dados válidos sejam processadas
+                        .filter(p => p.carId && p.thresholds.green > 0); 
 
                     if (vehicleParameters.length === 0) {
                         toast({ variant: 'destructive', title: 'Nenhum dado válido encontrado', description: 'Verifique se a planilha possui as colunas corretas (VEICULO, VERDE, etc.) e se os dados estão preenchidos.'});
@@ -147,6 +172,7 @@ export default function SettingsPage() {
 
                     await saveVehicleParameters(vehicleParameters);
                     toast({ title: 'Parâmetros Salvos', description: `${vehicleParameters.length} parâmetros de veículos foram salvos no banco de dados.`});
+                    fetchDbStats();
 
                     setParametersFile(null);
                     const fileInput = document.getElementById('parameters-upload') as HTMLInputElement;
@@ -196,9 +222,9 @@ export default function SettingsPage() {
                          return;
                     }
                     
-                    // Salva os registros diretamente no banco de dados
                     await addFuelingRecords(fuelingRecords);
                     toast({ title: 'Importação Concluída', description: `${fuelingRecords.length} registros de abastecimento foram salvos no banco de dados.`});
+                    fetchDbStats();
                     setFuelingFile(null);
                     const fileInput = document.getElementById('fueling-upload') as HTMLInputElement;
                     if(fileInput) fileInput.value = '';
@@ -247,9 +273,9 @@ export default function SettingsPage() {
                          return;
                     }
                     
-                    // Salva os registros de manutenção diretamente no banco de dados
                     await addMaintenanceRecords(maintenanceRecords);
                     toast({ title: 'Importação Concluída', description: `${maintenanceRecords.length} registros de manutenção foram salvos no banco de dados.`});
+                    fetchDbStats();
                     setMaintenanceFile(null);
                     const fileInput = document.getElementById('maintenance-upload') as HTMLInputElement;
                     if(fileInput) fileInput.value = '';
@@ -272,6 +298,102 @@ export default function SettingsPage() {
 
     return (
         <div className="grid gap-6 max-w-6xl mx-auto">
+             <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <Database /> Status do Banco de Dados
+                    </CardTitle>
+                    <CardDescription>Visão geral dos dados atualmente salvos no sistema que servem como base para as análises.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {isStatsLoading ? (
+                        <div className="flex justify-center items-center h-24">
+                            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                        </div>
+                    ) : (
+                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                            <Card>
+                                <CardHeader className="pb-2">
+                                    <CardTitle className="text-base font-medium flex items-center justify-between">
+                                        Parâmetros de Veículos
+                                        <Popover>
+                                            <PopoverTrigger>
+                                                <Info className="h-4 w-4 text-muted-foreground cursor-pointer" />
+                                            </PopoverTrigger>
+                                            <PopoverContent className="text-sm">
+                                                Total de veículos com metas de consumo (Amarela, Verde, Dourada) e capacidade do tanque definidos. Essencial para o cálculo de eficiência.
+                                            </PopoverContent>
+                                        </Popover>
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold">{dbStats.vehicles}</div>
+                                    <p className="text-xs text-muted-foreground">Veículos com parâmetros salvos</p>
+                                </CardContent>
+                            </Card>
+                             <Card>
+                                <CardHeader className="pb-2">
+                                    <CardTitle className="text-base font-medium flex items-center justify-between">
+                                        Registros de Abastecimento
+                                         <Popover>
+                                            <PopoverTrigger>
+                                                <Info className="h-4 w-4 text-muted-foreground cursor-pointer" />
+                                            </PopoverTrigger>
+                                            <PopoverContent className="text-sm">
+                                                Total de registros de abastecimento importados. Usado para análises de custo e consumo de combustível.
+                                            </PopoverContent>
+                                        </Popover>
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold">{dbStats.fueling}</div>
+                                    <p className="text-xs text-muted-foreground">Registros importados</p>
+                                </CardContent>
+                            </Card>
+                             <Card>
+                                <CardHeader className="pb-2">
+                                    <CardTitle className="text-base font-medium flex items-center justify-between">
+                                        Registros de Manutenção
+                                         <Popover>
+                                            <PopoverTrigger>
+                                                <Info className="h-4 w-4 text-muted-foreground cursor-pointer" />
+                                            </PopoverTrigger>
+                                            <PopoverContent className="text-sm">
+                                                Total de registros de veículos que entraram em manutenção. Ajuda a correlacionar paradas com desempenho da frota.
+                                            </PopoverContent>
+                                        </Popover>
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold">{dbStats.maintenance}</div>
+                                    <p className="text-xs text-muted-foreground">Registros importados</p>
+                                </CardContent>
+                            </Card>
+                             <Card>
+                                <CardHeader className="pb-2">
+                                    <CardTitle className="text-base font-medium flex items-center justify-between">
+                                        Histórico de Preços
+                                         <Popover>
+                                            <PopoverTrigger>
+                                                <Info className="h-4 w-4 text-muted-foreground cursor-pointer" />
+                                            </PopoverTrigger>
+                                            <PopoverContent className="text-sm">
+                                                Total de atualizações no preço do diesel. O valor mais recente é usado para os cálculos de custo estimado no painel.
+                                            </PopoverContent>
+                                        </Popover>
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold">{dbStats.diesel}</div>
+                                    <p className="text-xs text-muted-foreground">Preços de diesel salvos</p>
+                                </CardContent>
+                            </Card>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+
+
              <Card>
                 <CardHeader>
                     <CardTitle>Valor do Diesel</CardTitle>
