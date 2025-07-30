@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Save, Loader2, Upload, Wand2, FileUp, Wrench, Fuel } from "lucide-react";
+import { Save, Loader2, Upload, Wand2, FileUp, Wrench, Fuel, History } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getDieselPrices, saveDieselPrice, type DieselPrice } from "@/services/settings";
 import { processVehicleParameters, type VehicleParametersOutput } from "@/ai/flows/vehicle-parameters-flow";
@@ -15,6 +15,7 @@ import { saveVehicleParameters } from "@/services/vehicles";
 import { addFuelingRecords, type FuelingRecordPayload } from "@/services/fueling";
 import { addMaintenanceRecords } from "@/services/maintenance";
 import * as XLSX from 'xlsx';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 const fileToDataURI = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -241,77 +242,78 @@ export default function SettingsPage() {
 
 
     return (
-        <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2 max-w-6xl mx-auto">
-            <div className="lg:col-span-2 grid gap-6 md:grid-cols-2">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Valor do Diesel</CardTitle>
-                        <CardDescription>Adicione ou atualize o valor do litro do diesel. O valor mais recente será usado nos cálculos.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <form className="space-y-4" onSubmit={handleSavePrice}>
-                            <div className="space-y-2">
-                                <Label htmlFor="price">Preço por Litro (R$)</Label>
-                                <Input 
-                                    id="price" 
-                                    type="number" 
-                                    step="0.01" 
-                                    placeholder="5.50" 
-                                    value={newPrice}
-                                    onChange={(e) => setNewPrice(e.target.value)}
-                                    disabled={isSavingPrice}
-                                />
-                            </div>
-                             <div className="space-y-2">
-                                <Label htmlFor="date">Data de Vigência</Label>
-                                <Input 
-                                    id="date" 
-                                    type="date" 
-                                    value={newDate}
-                                    onChange={(e) => setNewDate(e.target.value)}
-                                    disabled={isSavingPrice}
-                                />
-                            </div>
-                            <Button type="submit" className="w-full" disabled={isSavingPrice}>
-                                {isSavingPrice ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                                {isSavingPrice ? "Salvando..." : "Salvar Preço"}
-                            </Button>
-                        </form>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Histórico de Preços</CardTitle>
-                        <CardDescription>Valores do diesel registrados anteriormente.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Data</TableHead>
-                                    <TableHead className="text-right">Preço (R$)</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {isLoadingPrices ? (
-                                    <TableRow>
-                                        <TableCell colSpan={2} className="text-center">
-                                            <Loader2 className="mx-auto h-8 w-8 animate-spin" />
-                                        </TableCell>
-                                    </TableRow>
-                                ) : prices.map(item => (
-                                    <TableRow key={item.id}>
-                                        <TableCell>{new Date(item.date).toLocaleDateString('pt-BR', { timeZone: 'UTC'})}</TableCell>
-                                        <TableCell className="text-right font-mono">{Number(item.price).toFixed(2)}</TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </CardContent>
-                </Card>
-            </div>
+        <div className="grid gap-6 max-w-6xl mx-auto">
+             <Card>
+                <CardHeader>
+                    <CardTitle>Valor do Diesel</CardTitle>
+                    <CardDescription>Adicione ou atualize o valor do litro do diesel. O valor mais recente será usado nos cálculos.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <form className="grid sm:grid-cols-3 gap-4" onSubmit={handleSavePrice}>
+                        <div className="space-y-2">
+                            <Label htmlFor="price">Preço por Litro (R$)</Label>
+                            <Input 
+                                id="price" 
+                                type="number" 
+                                step="0.01" 
+                                placeholder="5.50" 
+                                value={newPrice}
+                                onChange={(e) => setNewPrice(e.target.value)}
+                                disabled={isSavingPrice}
+                            />
+                        </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="date">Data de Vigência</Label>
+                            <Input 
+                                id="date" 
+                                type="date" 
+                                value={newDate}
+                                onChange={(e) => setNewDate(e.target.value)}
+                                disabled={isSavingPrice}
+                            />
+                        </div>
+                        <Button type="submit" className="w-full self-end" disabled={isSavingPrice}>
+                            {isSavingPrice ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                            {isSavingPrice ? "Salvando..." : "Salvar Preço"}
+                        </Button>
+                    </form>
+                    <Accordion type="single" collapsible className="w-full mt-4">
+                        <AccordionItem value="item-1">
+                            <AccordionTrigger>
+                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <History className="h-4 w-4" /> Ver Histórico de Preços
+                                </div>
+                            </AccordionTrigger>
+                            <AccordionContent>
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Data</TableHead>
+                                            <TableHead className="text-right">Preço (R$)</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {isLoadingPrices ? (
+                                            <TableRow>
+                                                <TableCell colSpan={2} className="text-center">
+                                                    <Loader2 className="mx-auto h-8 w-8 animate-spin" />
+                                                </TableCell>
+                                            </TableRow>
+                                        ) : prices.map(item => (
+                                            <TableRow key={item.id}>
+                                                <TableCell>{new Date(item.date).toLocaleDateString('pt-BR', { timeZone: 'UTC'})}</TableCell>
+                                                <TableCell className="text-right font-mono">{Number(item.price).toFixed(2)}</TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </AccordionContent>
+                        </AccordionItem>
+                    </Accordion>
+                </CardContent>
+            </Card>
 
-            <Card className="lg:col-span-2">
+            <Card>
                 <CardHeader>
                     <CardTitle>Parâmetros de Consumo por Veículo</CardTitle>
                     <CardDescription>Faça o upload de uma planilha (XLSX ou PDF) com os parâmetros de consumo (metas) para cada veículo.</CardDescription>
@@ -348,78 +350,79 @@ export default function SettingsPage() {
                 </CardContent>
             </Card>
             
-            <Card>
-                <CardHeader>
-                    <CardTitle>Importação de Dados de Abastecimento</CardTitle>
-                    <CardDescription>Faça o upload de uma planilha (XLSX ou CSV) com os registros de abastecimento para calcular o consumo real.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                   <div className="text-sm text-muted-foreground p-4 border-l-4 border-accent bg-accent/10 rounded-r-lg">
-                        <p className="font-semibold">Instruções para a Planilha:</p>
-                        <ul className="list-disc list-inside mt-2">
-                            <li>O arquivo deve ter as colunas: <strong>Data</strong>, <strong>Carro</strong>, <strong>Litros</strong>, <strong>Preço/Litro</strong>.</li>
-                            <li>"Carro" deve ser o número do veículo correspondente aos registros de viagem.</li>
-                        </ul>
-                   </div>
-                   <div className="flex flex-col sm:flex-row gap-4 items-end">
-                        <div className="space-y-2 w-full sm:w-auto flex-grow">
-                            <Label htmlFor="fueling-upload">Planilha de Abastecimento</Label>
-                            <div className="relative">
-                                <Input
-                                    id="fueling-upload"
-                                    type="file"
-                                    accept=".xlsx, .xls, .csv"
-                                    onChange={(e) => handleFileChange(e, setFuelingFile)}
-                                    disabled={isFuelingLoading}
-                                    className="pr-12"
-                                />
-                                <FileUp className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
+            <div className="grid md:grid-cols-2 gap-6">
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Importação de Dados de Abastecimento</CardTitle>
+                        <CardDescription>Faça o upload de uma planilha (XLSX ou CSV) com os registros de abastecimento para calcular o consumo real.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                       <div className="text-sm text-muted-foreground p-4 border-l-4 border-accent bg-accent/10 rounded-r-lg">
+                            <p className="font-semibold">Instruções para a Planilha:</p>
+                            <ul className="list-disc list-inside mt-2">
+                                <li>O arquivo deve ter as colunas: <strong>Data</strong>, <strong>Carro</strong>, <strong>Litros</strong>, <strong>Preço/Litro</strong>.</li>
+                                <li>"Carro" deve ser o número do veículo correspondente aos registros de viagem.</li>
+                            </ul>
+                       </div>
+                       <div className="flex flex-col sm:flex-row gap-4 items-end">
+                            <div className="space-y-2 w-full sm:w-auto flex-grow">
+                                <Label htmlFor="fueling-upload">Planilha de Abastecimento</Label>
+                                <div className="relative">
+                                    <Input
+                                        id="fueling-upload"
+                                        type="file"
+                                        accept=".xlsx, .xls, .csv"
+                                        onChange={(e) => handleFileChange(e, setFuelingFile)}
+                                        disabled={isFuelingLoading}
+                                        className="pr-12"
+                                    />
+                                    <FileUp className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                                </div>
                             </div>
-                        </div>
-                        <Button onClick={handleImportFuelingData} disabled={isFuelingLoading || !fuelingFile}>
-                            {isFuelingLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Fuel className="mr-2 h-4 w-4"/>}
-                            {isFuelingLoading ? "Importando..." : "Importar Abastecimentos"}
-                        </Button>
-                   </div>
-                </CardContent>
-            </Card>
+                            <Button onClick={handleImportFuelingData} disabled={isFuelingLoading || !fuelingFile}>
+                                {isFuelingLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Fuel className="mr-2 h-4 w-4"/>}
+                                {isFuelingLoading ? "Importando..." : "Importar Abastecimentos"}
+                            </Button>
+                       </div>
+                    </CardContent>
+                </Card>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle>Registro de Veículos em Manutenção</CardTitle>
-                    <CardDescription>Faça o upload de uma planilha com a lista de veículos que estão atualmente em manutenção ou reparo.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                   <div className="text-sm text-muted-foreground p-4 border-l-4 border-accent bg-accent/10 rounded-r-lg">
-                        <p className="font-semibold">Instruções para a Planilha:</p>
-                        <ul className="list-disc list-inside mt-2">
-                            <li>O arquivo deve ter as colunas: <strong>Carro</strong>, <strong>Motivo</strong>, <strong>Data Início</strong>.</li>
-                            <li>A coluna "Carro" deve conter o número do veículo.</li>
-                        </ul>
-                   </div>
-                   <div className="flex flex-col sm:flex-row gap-4 items-end">
-                        <div className="space-y-2 w-full sm:w-auto flex-grow">
-                            <Label htmlFor="maintenance-upload">Planilha de Manutenção</Label>
-                            <div className="relative">
-                                <Input
-                                    id="maintenance-upload"
-                                    type="file"
-                                    accept=".xlsx, .xls, .csv"
-                                    onChange={(e) => handleFileChange(e, setMaintenanceFile)}
-                                    disabled={isMaintenanceLoading}
-                                    className="pr-12"
-                                />
-                                <FileUp className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Registro de Veículos em Manutenção</CardTitle>
+                        <CardDescription>Faça o upload de uma planilha com a lista de veículos que estão atualmente em manutenção ou reparo.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                       <div className="text-sm text-muted-foreground p-4 border-l-4 border-accent bg-accent/10 rounded-r-lg">
+                            <p className="font-semibold">Instruções para a Planilha:</p>
+                            <ul className="list-disc list-inside mt-2">
+                                <li>O arquivo deve ter as colunas: <strong>Carro</strong>, <strong>Motivo</strong>, <strong>Data Início</strong>.</li>
+                                <li>A coluna "Carro" deve conter o número do veículo.</li>
+                            </ul>
+                       </div>
+                       <div className="flex flex-col sm:flex-row gap-4 items-end">
+                            <div className="space-y-2 w-full sm:w-auto flex-grow">
+                                <Label htmlFor="maintenance-upload">Planilha de Manutenção</Label>
+                                <div className="relative">
+                                    <Input
+                                        id="maintenance-upload"
+                                        type="file"
+                                        accept=".xlsx, .xls, .csv"
+                                        onChange={(e) => handleFileChange(e, setMaintenanceFile)}
+                                        disabled={isMaintenanceLoading}
+                                        className="pr-12"
+                                    />
+                                    <FileUp className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                                </div>
                             </div>
-                        </div>
-                        <Button onClick={handleImportMaintenanceData} disabled={isMaintenanceLoading || !maintenanceFile}>
-                            {isMaintenanceLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Wrench className="mr-2 h-4 w-4"/>}
-                            {isMaintenanceLoading ? "Importando..." : "Importar Manutenções"}
-                        </Button>
-                   </div>
-                </CardContent>
-            </Card>
-
+                            <Button onClick={handleImportMaintenanceData} disabled={isMaintenanceLoading || !maintenanceFile}>
+                                {isMaintenanceLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Wrench className="mr-2 h-4 w-4"/>}
+                                {isMaintenanceLoading ? "Importando..." : "Importar Manutenções"}
+                            </Button>
+                       </div>
+                    </CardContent>
+                </Card>
+            </div>
         </div>
     )
 }

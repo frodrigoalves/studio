@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Wand2, FileText, Upload, Lightbulb, ListChecks, BarChart, Archive, BrainCircuit, GaugeCircle, AlertTriangle, Fuel, DollarSign, LineChart as LineChartIcon, BarChart2, Calendar as CalendarIcon, FileUp, MapPin } from "lucide-react";
+import { Loader2, Wand2, FileText, Upload, Lightbulb, ListChecks, BarChart, Archive, BrainCircuit, GaugeCircle, AlertTriangle, Fuel, DollarSign, LineChart as LineChartIcon, BarChart2, Calendar as CalendarIcon, FileUp, Info, MapPin } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getRecords, type Record } from "@/services/records";
 import { getDieselPrices, type DieselPrice } from "@/services/settings";
@@ -425,7 +425,17 @@ export default function AdminDashboard() {
                         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                             <Card>
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <h3 className="text-sm font-medium">KM Total</h3>
+                                    <div className="flex items-center gap-2">
+                                        <h3 className="text-sm font-medium">KM Total</h3>
+                                        <Popover>
+                                            <PopoverTrigger>
+                                                <Info className="h-3 w-3 text-muted-foreground cursor-pointer" />
+                                            </PopoverTrigger>
+                                            <PopoverContent className="text-xs">
+                                                Soma de todos os quilômetros rodados (KM Final - KM Inicial) para viagens com status "Finalizado" no período selecionado.
+                                            </PopoverContent>
+                                        </Popover>
+                                    </div>
                                     <GaugeCircle className="h-4 w-4 text-muted-foreground" />
                                 </CardHeader>
                                 <CardContent>
@@ -435,7 +445,17 @@ export default function AdminDashboard() {
                             </Card>
                             <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <h3 className="text-sm font-medium">Custo Total</h3>
+                                <div className="flex items-center gap-2">
+                                    <h3 className="text-sm font-medium">Custo Total</h3>
+                                     <Popover>
+                                        <PopoverTrigger>
+                                            <Info className="h-3 w-3 text-muted-foreground cursor-pointer" />
+                                        </PopoverTrigger>
+                                        <PopoverContent className="text-xs">
+                                           Estimativa de custo calculada usando a fórmula: (KM Total / Consumo Médio) * Último Preço do Diesel. O consumo médio padrão é de 2.5 KM/L.
+                                        </PopoverContent>
+                                    </Popover>
+                                </div>
                                 <DollarSign className="h-4 w-4 text-muted-foreground" />
                             </CardHeader>
                             <CardContent>
@@ -445,7 +465,17 @@ export default function AdminDashboard() {
                             </Card>
                             <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <h3 className="text-sm font-medium">Preço do Diesel</h3>
+                                <div className="flex items-center gap-2">
+                                    <h3 className="text-sm font-medium">Preço do Diesel</h3>
+                                     <Popover>
+                                        <PopoverTrigger>
+                                            <Info className="h-3 w-3 text-muted-foreground cursor-pointer" />
+                                        </PopoverTrigger>
+                                        <PopoverContent className="text-xs">
+                                            Valor mais recente do preço do diesel registrado na aba de Configurações.
+                                        </PopoverContent>
+                                    </Popover>
+                                </div>
                                 <Fuel className="h-4 w-4 text-muted-foreground" />
                             </CardHeader>
                             <CardContent>
@@ -455,7 +485,17 @@ export default function AdminDashboard() {
                             </Card>
                             <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                <h3 className="text-sm font-medium">Alertas de Preenchimento</h3>
+                                <div className="flex items-center gap-2">
+                                    <h3 className="text-sm font-medium">Alertas</h3>
+                                    <Popover>
+                                        <PopoverTrigger>
+                                            <Info className="h-3 w-3 text-muted-foreground cursor-pointer" />
+                                        </PopoverTrigger>
+                                        <PopoverContent className="text-xs">
+                                            Número de viagens "Em Andamento" ou viagens "Finalizadas" que não possuem uma das fotos de odômetro (início ou fim).
+                                        </PopoverContent>
+                                    </Popover>
+                                </div>
                                 <AlertTriangle className="h-4 w-4 text-destructive" />
                             </CardHeader>
                             <CardContent>
