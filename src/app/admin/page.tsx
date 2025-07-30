@@ -7,14 +7,16 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Wand2, FileText, Upload, Lightbulb, ListChecks, BarChart, Archive, BrainCircuit, GaugeCircle, AlertTriangle, Fuel, DollarSign, LineChart as LineChartIcon, BarChart2, Calendar as CalendarIcon, FileUp } from "lucide-react";
+import { Loader2, Wand2, FileText, Upload, Lightbulb, ListChecks, BarChart, Archive, BrainCircuit, GaugeCircle, AlertTriangle, Fuel, DollarSign, LineChart as LineChartIcon, BarChart2, Calendar as CalendarIcon, FileUp, Map } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getRecords, type Record } from "@/services/records";
 import { getDieselPrices, type DieselPrice } from "@/services/settings";
 import { addFuelingRecords, type FuelingRecordPayload } from "@/services/fueling";
+import { saveVehicleParameters } from "@/services/vehicles";
 import { generateReport, type ReportOutput } from "@/ai/flows/report-flow";
 import { analyseSheet, type SheetAnalysisInput, type SheetAnalysisOutput } from "@/ai/flows/sheet-analysis-flow";
 import { generatePresentationSummary, type PresentationInput, type PresentationOutput } from "@/ai/flows/presentation-flow";
+import { processVehicleParameters, type VehicleParametersOutput } from "@/ai/flows/vehicle-parameters-flow";
 import { Input } from "@/components/ui/input";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -99,6 +101,10 @@ export default function AdminDashboard() {
     // Fueling Analysis State
     const [fuelingFile, setFuelingFile] = useState<File | null>(null);
     const [isFuelingLoading, setIsFuelingLoading] = useState(false);
+    
+    // Vehicle Parameters State
+    const [parametersFile, setParametersFile] = useState<File | null>(null);
+    const [isParametersLoading, setIsParametersLoading] = useState(false);
 
     const fetchAndSetData = useCallback(async () => {
         setIsLoading(true);
@@ -270,23 +276,12 @@ export default function AdminDashboard() {
         }
     };
 
-    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>, setFileCallback: (file: File | null) => void) => {
         if (event.target.files) {
-            setFile(event.target.files[0]);
+            setFileCallback(event.target.files[0]);
         }
     };
 
-    const handleRepositoryFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        if (event.target.files) {
-            setRepositoryFile(event.target.files[0]);
-        }
-    };
-    
-    const handleFuelingFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        if (event.target.files) {
-            setFuelingFile(event.target.files[0]);
-        }
-    };
 
     const handleGenerateSheetAnalysis = async () => {
         if (!file) {
@@ -404,7 +399,6 @@ export default function AdminDashboard() {
                     await addFuelingRecords(fuelingRecords);
                     toast({ title: 'Importação Concluída', description: `${fuelingRecords.length} registros de abastecimento foram importados com sucesso.`});
                     setFuelingFile(null);
-                    // Clear the file input
                     const fileInput = document.getElementById('fueling-upload') as HTMLInputElement;
                     if(fileInput) fileInput.value = '';
 
@@ -421,6 +415,35 @@ export default function AdminDashboard() {
             console.error(e);
             toast({ variant: 'destructive', title: 'Erro na importação', description: 'Ocorreu um erro inesperado. Tente novamente.'});
             setIsFuelingLoading(false);
+        }
+    }
+    
+    const handleProcessParameters = async () => {
+        if (!parametersFile) {
+            toast({ variant: 'destructive', title: 'Nenhum arquivo selecionado', description: 'Por favor, selecione um arquivo de mapeamento.'});
+            return;
+        }
+        setIsParametersLoading(true);
+        try {
+            const fileDataUri = await fileToDataURI(parametersFile);
+            const result: VehicleParametersOutput = await processVehicleParameters({ fileDataUri });
+
+            if (result.vehicles.length > 0) {
+                await saveVehicleParameters(result.vehicles);
+                 toast({ title: 'Mapeamento Salvo', description: `${result.vehicles.length} parâmetros de veículos foram salvos com sucesso.`});
+            } else {
+                 toast({ variant: 'destructive', title: 'Nenhum dado encontrado', description: 'A IA não conseguiu extrair parâmetros do arquivo. Verifique o conteúdo e o formato.'});
+            }
+
+            setParametersFile(null);
+            const fileInput = document.getElementById('parameters-upload') as HTMLInputElement;
+            if (fileInput) fileInput.value = '';
+
+        } catch (error) {
+             console.error("Error processing parameters file", error);
+             toast({ variant: 'destructive', title: 'Erro ao processar arquivo', description: 'Ocorreu um erro ao processar o mapeamento. Tente novamente.'});
+        } finally {
+            setIsParametersLoading(false);
         }
     }
 
@@ -620,6 +643,52 @@ export default function AdminDashboard() {
                     </Card>
                 </AccordionContent>
             </AccordionItem>
+            
+            <AccordionItem value="item-6">
+                <AccordionTrigger className="text-xl font-semibold">
+                    <div className="flex items-center gap-2">
+                        <Map /> Mapeamento de Consumo dos Veículos
+                    </div>
+                </AccordionTrigger>
+                <AccordionContent>
+                     <Card className="shadow-lg mt-2 border-0">
+                        <CardHeader>
+                            <CardTitle>Parâmetros de Consumo por Veículo</CardTitle>
+                            <CardDescription>Faça o upload de uma planilha (XLSX ou PDF) com os parâmetros de consumo para cada veículo. Estes dados serão usados como base para a análise de eficiência.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                           <div className="text-sm text-muted-foreground p-4 border-l-4 border-accent bg-accent/10 rounded-r-lg">
+                                <p className="font-semibold">Instruções para a Planilha:</p>
+                                <ul className="list-disc list-inside mt-2">
+                                    <li>O arquivo deve conter as colunas: <strong>VEICULO</strong>, <strong>AMARELA</strong>, <strong>VERDE</strong>, <strong>DOURADA</strong>.</li>
+                                    <li>A coluna "VEICULO" deve ser o número do veículo.</li>
+                                    <li>As colunas de metas (amarela, verde, dourada) devem conter o valor de KM/L esperado.</li>
+                                </ul>
+                           </div>
+                           <div className="flex flex-col sm:flex-row gap-4 items-end">
+                                <div className="space-y-2 w-full sm:w-auto flex-grow">
+                                    <Label htmlFor="parameters-upload">Arquivo de Mapeamento</Label>
+                                    <div className="relative">
+                                        <Input
+                                            id="parameters-upload"
+                                            type="file"
+                                            accept=".xlsx, .xls, .pdf"
+                                            onChange={(e) => handleFileChange(e, setParametersFile)}
+                                            disabled={isParametersLoading}
+                                            className="pr-12"
+                                        />
+                                        <FileUp className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                                    </div>
+                                </div>
+                                <Button onClick={handleProcessParameters} disabled={isParametersLoading || !parametersFile}>
+                                    {isParametersLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Wand2 className="mr-2 h-4 w-4"/>}
+                                    {isParametersLoading ? "Processando..." : "Processar Mapeamento"}
+                                </Button>
+                           </div>
+                        </CardContent>
+                    </Card>
+                </AccordionContent>
+            </AccordionItem>
 
             <AccordionItem value="item-5">
                  <AccordionTrigger className="text-xl font-semibold">
@@ -650,7 +719,7 @@ export default function AdminDashboard() {
                                             id="fueling-upload"
                                             type="file"
                                             accept=".xlsx, .xls, .csv"
-                                            onChange={handleFuelingFileChange}
+                                            onChange={(e) => handleFileChange(e, setFuelingFile)}
                                             disabled={isFuelingLoading}
                                             className="pr-12"
                                         />
@@ -711,7 +780,7 @@ export default function AdminDashboard() {
                                                 id="sheet-upload"
                                                 type="file"
                                                 accept=".xlsx, .xls, .csv, image/*, application/pdf"
-                                                onChange={handleFileChange}
+                                                onChange={(e) => handleFileChange(e, setFile)}
                                                 disabled={isSheetLoading}
                                                 className="pr-12"
                                             />
@@ -797,7 +866,7 @@ export default function AdminDashboard() {
                                                 <Input
                                                     id="repository-upload"
                                                     type="file"
-                                                    onChange={handleRepositoryFileChange}
+                                                    onChange={(e) => handleFileChange(e, setRepositoryFile)}
                                                     className="pr-12"
                                                     disabled={isPresentationLoading}
                                                 />

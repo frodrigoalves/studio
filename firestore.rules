@@ -3,19 +3,24 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // For this prototype, allow read/write access to all collections.
-    // In a production environment, you should secure your data with more specific rules.
     match /{document=**} {
-      allow read, write: if true;
+      allow read, write: if false;
     }
-     match /tripRecords/{recordId} {
-      allow read, write: if true;
+
+    match /tripRecords/{recordId} {
+      allow read, create, update: if true; 
     }
+
     match /dieselPrices/{priceId} {
-      allow read, write: if true;
+        allow read, create: if true;
     }
-     match /fuelingRecords/{fuelingId} {
-      allow read, write: if true;
+
+    match /fuelingRecords/{fuelingId} {
+        allow read, create: if true;
+    }
+
+    match /vehicleParameters/{vehicleId} {
+        allow read, create, update, write: if true;
     }
   }
 }
