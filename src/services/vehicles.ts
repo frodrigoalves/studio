@@ -19,29 +19,61 @@ export interface VehicleParameters {
 /**
  * Salva uma lista de parâmetros de veículos no Firestore.
  * Cada documento terá o ID do veículo como seu ID no Firestore para fácil acesso.
+ * Inclui validação robusta e tratamento de erros.
  * @param parameters A lista de parâmetros de veículos a ser salva.
+ * @returns Uma Promise que resolve quando o commit do lote estiver completo, ou rejeita com um erro.
  */
 export async function saveVehicleParameters(parameters: Omit<VehicleParameters, 'status' | 'lastUpdated'>[]): Promise<void> {
   const batch = writeBatch(db);
   const parametersCollection = collection(db, 'vehicleParameters');
+  const errors: { param: any; error: string }[] = []; // Array para registrar erros de validação
   const now = new Date().toISOString();
 
   parameters.forEach(param => {
-    // Usa o carId como o ID do documento para fácil busca e para evitar duplicatas.
-    if (param.carId) { // Garante que temos um ID antes de tentar salvar
-        const docRef = doc(parametersCollection, param.carId);
-        // Adiciona o status 'active' e a data de atualização
-        const dataToSave: Omit<VehicleParameters, 'carId'> = { 
-            status: 'active' as const,
-            thresholds: param.thresholds,
-            tankCapacity: param.tankCapacity,
-            lastUpdated: now,
-        };
-        batch.set(docRef, dataToSave, { merge: true }); // Usar merge: true para não sobrescrever
+    // Validação robusta
+    if (!param.carId || typeof param.carId !== 'string' || param.carId.trim() === '') {
+      errors.push({ param, error: 'Invalid or missing carId' });
+      return; // Pula este parâmetro
     }
+    if (!param.thresholds || typeof param.thresholds !== 'object') {
+        errors.push({ param, error: `Invalid or missing thresholds for carId: ${param.carId}` });
+        return; // Pula
+    }
+    if (typeof param.thresholds.yellow !== 'number' || typeof param.thresholds.green !== 'number' || typeof param.thresholds.gold !== 'number') {
+        errors.push({ param, error: `Invalid threshold values for carId: ${param.carId}` });
+        return; // Pula
+    }
+    if (param.tankCapacity !== undefined && typeof param.tankCapacity !== 'number') { // tankCapacity é opcional, só valida se existir
+         errors.push({ param, error: `Invalid tankCapacity for carId: ${param.carId}` });
+         return; // Pula
+    }
+
+    const docRef = doc(parametersCollection, param.carId);
+    const dataToSave: Omit<VehicleParameters, 'carId'> = {
+      status: 'active' as const,
+      thresholds: param.thresholds,
+      tankCapacity: param.tankCapacity,
+      lastUpdated: now
+    };
+    batch.set(docRef, dataToSave, { merge: true });
   });
 
-  await batch.commit();
+  if (errors.length > 0) {
+      console.error("Erros de validação durante saveVehicleParameters:", errors);
+      // Você pode querer lançar um erro aqui ou notificar o usuário de forma mais elegante.
+  }
+
+  try {
+    await batch.commit();
+    if(errors.length > 0) {
+        console.log(`Salvo com sucesso ${parameters.length - errors.length} de ${parameters.length} parâmetros de veículos. ${errors.length} foram ignorados devido a erros de validação.`);
+    } else {
+        console.log(`Salvo com sucesso ${parameters.length} parâmetros de veículos.`);
+    }
+  } catch (error) {
+    console.error("Erro ao commitar o lote de parâmetros de veículos:", error);
+    throw new Error("Falha ao salvar parâmetros de veículos. Verifique as permissões do Firestore."); // Lança o erro novamente
+  }
 }
 
 
