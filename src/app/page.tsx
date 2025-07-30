@@ -18,7 +18,7 @@ export default function Home() {
       </div>
       <div className="w-full max-w-md">
         <div className="flex flex-col items-center justify-center mb-6 text-center">
-          <Image src="/logo.png" alt="TopBus Logo" width={200} height={50} priority />
+          <Image src="/logo.jpg" alt="TopBus Logo" width={200} height={50} priority />
         </div>
         <DriverForm />
       </div>

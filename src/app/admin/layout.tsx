@@ -92,8 +92,8 @@ export default function AdminLayout({
     <SidebarProvider>
       <Sidebar>
         <SidebarHeader>
-            <Image src="/logo.png" alt="TopBus Logo" width={140} height={35} className="group-data-[collapsible=icon]:hidden p-2" />
-            <Image src="/logo.png" alt="TopBus Logo" width={32} height={32} className="hidden group-data-[collapsible=icon]:block mx-auto" />
+            <Image src="/logo.jpg" alt="TopBus Logo" width={140} height={35} className="group-data-[collapsible=icon]:hidden p-2" />
+            <Image src="/logo.jpg" alt="TopBus Logo" width={32} height={32} className="hidden group-data-[collapsible=icon]:block mx-auto" />
         </SidebarHeader>
         <SidebarContent>
           <SidebarMenu>
