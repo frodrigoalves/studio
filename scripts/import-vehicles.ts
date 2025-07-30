@@ -72,10 +72,10 @@ async function importVehicles() {
         return; // Pula esta linha
       }
       
-      const vehicleId = String(vehicle['VEICULO']);
+      const carId = String(vehicle['VEICULO']);
       
       const vehicleData = {
-        vehicleId: vehicleId,
+        carId: carId,
         thresholds: {
           yellow: parseFloat(String(vehicle['AMARELA']).replace(',', '.')) || 0,
           green: parseFloat(String(vehicle['VERDE']).replace(',', '.')) || 0,
@@ -85,7 +85,7 @@ async function importVehicles() {
         status: 'active' 
       };
 
-      const docRef = collectionRef.doc(vehicleId);
+      const docRef = collectionRef.doc(carId);
       batch.set(docRef, vehicleData, { merge: true });
     });
 

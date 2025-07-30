@@ -5,7 +5,7 @@ import { db } from '@/lib/firebase';
 import { collection, doc, writeBatch } from 'firebase/firestore';
 
 export interface VehicleParameters {
-  vehicleId: string;
+  carId: string;
   thresholds: {
     yellow: number;
     green: number;
@@ -24,9 +24,9 @@ export async function saveVehicleParameters(parameters: VehicleParameters[]): Pr
   const parametersCollection = collection(db, 'vehicleParameters');
 
   parameters.forEach(param => {
-    // Usa o vehicleId como o ID do documento para fácil busca e para evitar duplicatas.
-    if (param.vehicleId) { // Garante que temos um ID antes de tentar salvar
-        const docRef = doc(parametersCollection, param.vehicleId); 
+    // Usa o carId como o ID do documento para fácil busca e para evitar duplicatas.
+    if (param.carId) { // Garante que temos um ID antes de tentar salvar
+        const docRef = doc(parametersCollection, param.carId); 
         batch.set(docRef, param, { merge: true }); // Usar merge: true para não sobrescrever
     }
   });
