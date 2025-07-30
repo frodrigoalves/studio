@@ -349,13 +349,13 @@ export default function SettingsPage() {
             <Card>
                 <CardHeader>
                     <CardTitle>Parâmetros de Consumo por Veículo</CardTitle>
-                    <CardDescription>Faça o upload de uma planilha (XLSX, PDF) para definir as metas de consumo de cada veículo. A IA irá extrair os dados e salvá-los no banco de dados.</CardDescription>
+                    <CardDescription>Faça o upload de uma planilha (XLSX, PDF). A IA irá extrair os dados e salvá-los como os novos parâmetros oficiais no banco de dados.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                    <div className="text-sm text-muted-foreground p-4 border-l-4 border-accent bg-accent/10 rounded-r-lg">
                         <p className="font-semibold">Instruções para a Planilha:</p>
                         <ul className="list-disc list-inside mt-2">
-                            <li>O arquivo deve conter as colunas: <strong>VEICULO</strong>, <strong>AMARELA</strong>, <strong>VERDE</strong>, <strong>DOURADA</strong>.</li>
+                            <li>O arquivo deve conter as colunas: <strong>VEICULO</strong>, <strong>AMARELA</strong>, <strong>VERDE</strong>, <strong>DOURADA</strong>, e <strong>CAPACIDADE TANQUE</strong>.</li>
                             <li>A coluna "VEICULO" deve ter o número do carro.</li>
                             <li>As colunas de metas devem conter o valor de KM/L esperado para cada faixa.</li>
                         </ul>
@@ -459,5 +459,3 @@ export default function SettingsPage() {
         </div>
     )
 }
-
-    
