@@ -66,7 +66,7 @@ async function importVehicles() {
     console.log(`Importando ${vehiclesJSON.length} veículos para o Firestore...`);
 
     vehiclesJSON.forEach((vehicle: any) => {
-      // Validar se as colunas essenciais existem
+      // Validar se as colunas essenciais existem para pular linhas vazias
       if (!vehicle['VEICULO'] || !vehicle['AMARELA'] || !vehicle['VERDE'] || !vehicle['DOURADA'] || !vehicle['CAPACIDADE TANQUE']) {
         console.warn(`\x1b[33m[AVISO]\x1b[0m Linha ignorada por falta de dados essenciais: ${JSON.stringify(vehicle)}`);
         return; // Pula esta linha

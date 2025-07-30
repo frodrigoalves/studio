@@ -11,6 +11,7 @@ export interface VehicleParameters {
     green: number;
     gold: number;
   };
+  tankCapacity?: number; // Adicionado para armazenar a capacidade do tanque
 }
 
 /**
@@ -24,8 +25,10 @@ export async function saveVehicleParameters(parameters: VehicleParameters[]): Pr
 
   parameters.forEach(param => {
     // Usa o vehicleId como o ID do documento para fácil busca e para evitar duplicatas.
-    const docRef = doc(parametersCollection, param.vehicleId); 
-    batch.set(docRef, param);
+    if (param.vehicleId) { // Garante que temos um ID antes de tentar salvar
+        const docRef = doc(parametersCollection, param.vehicleId); 
+        batch.set(docRef, param, { merge: true }); // Usar merge: true para não sobrescrever
+    }
   });
 
   await batch.commit();
