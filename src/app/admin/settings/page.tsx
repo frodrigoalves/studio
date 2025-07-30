@@ -10,8 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Save, Loader2, Upload, Wand2, FileUp, Wrench, Fuel, History } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getDieselPrices, saveDieselPrice, type DieselPrice } from "@/services/settings";
-import { processVehicleParameters, type VehicleParametersOutput } from "@/ai/flows/vehicle-parameters-flow";
-import { saveVehicleParameters } from "@/services/vehicles";
+import { saveVehicleParameters, type VehicleParameters } from "@/services/vehicles";
 import { addFuelingRecords, type FuelingRecordPayload } from "@/services/fueling";
 import { addMaintenanceRecords } from "@/services/maintenance";
 import * as XLSX from 'xlsx';
@@ -24,36 +23,6 @@ const fileToDataURI = (file: File): Promise<string> => {
         reader.onload = (e) => resolve(e.target?.result as string);
         reader.onerror = reject;
         reader.readAsDataURL(file);
-    });
-};
-
-const processSheetFileToText = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            try {
-                const data = new Uint8Array(e.target?.result as ArrayBuffer);
-                const workbook = XLSX.read(data, { type: 'array' });
-                const sheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[sheetName];
-                const jsonData: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-
-                // Filter out empty rows or rows that don't start with a valid vehicle ID
-                const nonEmptyRows = jsonData.filter(row => row && row[0] && String(row[0]).trim() !== '');
-
-                // Convert to CSV string, which is a text format
-                const csvData = Papa.unparse(nonEmptyRows as Papa.ParseResult<any>['data']);
-
-                // Create a text-based data URI encoded in Base64
-                const dataUri = `data:text/plain;base64,${Buffer.from(csvData).toString('base64')}`;
-                resolve(dataUri);
-            } catch (error) {
-                console.error("Error parsing spreadsheet:", error);
-                reject(new Error("Failed to parse spreadsheet. Ensure it's a valid XLSX/CSV file."));
-            }
-        };
-        reader.onerror = (error) => reject(error);
-        reader.readAsArrayBuffer(file);
     });
 };
 
@@ -149,31 +118,51 @@ export default function SettingsPage() {
         }
         setIsParametersLoading(true);
         try {
-            const fileDataUri = await processSheetFileToText(parametersFile);
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const data = e.target?.result;
+                    const workbook = XLSX.read(data, { type: 'binary' });
+                    const sheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[sheetName];
+                    const json: any[] = XLSX.utils.sheet_to_json(worksheet);
 
-            const result: VehicleParametersOutput = await processVehicleParameters({ fileDataUri });
-            
-            if (result.vehicles && result.vehicles.length > 0) {
-                // Ensure the parameters are correctly typed before saving.
-                const typedParameters = result.vehicles.map(v => ({
-                    ...v,
-                    carId: v.carId, // carId is now part of the schema
-                }));
+                    const vehicleParameters: (Omit<VehicleParameters, 'status'>)[] = json
+                        .map(row => ({
+                            carId: String(row['VEICULO'] ?? '').trim(),
+                            thresholds: {
+                                yellow: parseFloat(String(row['AMARELA'] ?? '0').replace(',', '.')) || 0,
+                                green: parseFloat(String(row['VERDE'] ?? '0').replace(',', '.')) || 0,
+                                gold: parseFloat(String(row['DOURADA'] ?? '0').replace(',', '.')) || 0,
+                            },
+                            tankCapacity: Number(row['CAPACIDADE TANQUE'] ?? 0) || undefined,
+                        }))
+                        .filter(p => p.carId && p.thresholds.green > 0); // Garante que apenas linhas com ID e dados válidos sejam processadas
 
-                await saveVehicleParameters(typedParameters);
-                toast({ title: 'Parâmetros Salvos', description: `${result.vehicles.length} parâmetros de veículos foram salvos no banco de dados.`});
-            } else {
-                 toast({ variant: 'destructive', title: 'Nenhum dado encontrado', description: 'A IA não conseguiu extrair parâmetros do arquivo. Verifique o conteúdo e o formato.'});
-            }
+                    if (vehicleParameters.length === 0) {
+                        toast({ variant: 'destructive', title: 'Nenhum dado válido encontrado', description: 'Verifique se a planilha possui as colunas corretas (VEICULO, VERDE, etc.) e se os dados estão preenchidos.'});
+                        setIsParametersLoading(false);
+                        return;
+                    }
 
-            setParametersFile(null);
-            const fileInput = document.getElementById('parameters-upload') as HTMLInputElement;
-            if (fileInput) fileInput.value = '';
+                    await saveVehicleParameters(vehicleParameters);
+                    toast({ title: 'Parâmetros Salvos', description: `${vehicleParameters.length} parâmetros de veículos foram salvos no banco de dados.`});
 
+                    setParametersFile(null);
+                    const fileInput = document.getElementById('parameters-upload') as HTMLInputElement;
+                    if (fileInput) fileInput.value = '';
+
+                } catch (error) {
+                    console.error("Error processing parameters file", error);
+                    toast({ variant: 'destructive', title: 'Erro ao processar arquivo', description: `Ocorreu um erro ao ler a planilha: ${error instanceof Error ? error.message : String(error)}`});
+                } finally {
+                    setIsParametersLoading(false);
+                }
+            };
+            reader.readAsBinaryString(parametersFile);
         } catch (error) {
-             console.error("Error processing parameters file", error);
-             toast({ variant: 'destructive', title: 'Erro ao processar arquivo', description: `Ocorreu um erro ao processar os parâmetros: ${error instanceof Error ? error.message : String(error)}`});
-        } finally {
+            console.error(error);
+            toast({ variant: 'destructive', title: 'Erro na importação', description: 'Não foi possível iniciar a leitura do arquivo.'});
             setIsParametersLoading(false);
         }
     }
@@ -355,8 +344,8 @@ export default function SettingsPage() {
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Parâmetros de Consumo por Veículo</CardTitle>
-                    <CardDescription>Faça o upload de uma planilha (XLSX, CSV, PDF). A IA irá extrair os dados e salvá-los como os novos parâmetros oficiais no banco de dados.</CardDescription>
+                    <CardTitle>Importar Parâmetros de Veículos</CardTitle>
+                    <CardDescription>Faça o upload de uma planilha (XLSX, CSV) para alimentar o banco de dados com os parâmetros oficiais de consumo e metas de cada veículo.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                    <div className="text-sm text-muted-foreground p-4 border-l-4 border-accent bg-accent/10 rounded-r-lg">
@@ -374,7 +363,7 @@ export default function SettingsPage() {
                                 <Input
                                     id="parameters-upload"
                                     type="file"
-                                    accept=".xlsx, .xls, .csv, .pdf"
+                                    accept=".xlsx, .xls, .csv"
                                     onChange={(e) => handleFileChange(e, setParametersFile)}
                                     disabled={isParametersLoading}
                                     className="pr-12"
@@ -383,8 +372,8 @@ export default function SettingsPage() {
                             </div>
                         </div>
                         <Button onClick={handleProcessParameters} disabled={isParametersLoading || !parametersFile}>
-                            {isParametersLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Wand2 className="mr-2 h-4 w-4"/>}
-                            {isParametersLoading ? "Processando..." : "Salvar Parâmetros no BD"}
+                            {isParametersLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4"/>}
+                            {isParametersLoading ? "Processando..." : "Importar para BD"}
                         </Button>
                    </div>
                 </CardContent>
@@ -466,3 +455,5 @@ export default function SettingsPage() {
         </div>
     )
 }
+
+    
