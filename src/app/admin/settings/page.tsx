@@ -36,10 +36,13 @@ const processSheetFileToText = (file: File): Promise<string> => {
                 const workbook = XLSX.read(data, { type: 'array' });
                 const sheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[sheetName];
-                const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-                
+                const jsonData: any[][] = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+                // Filter out empty rows or rows that don't start with a valid vehicle ID
+                const nonEmptyRows = jsonData.filter(row => row && row[0] && String(row[0]).trim() !== '');
+
                 // Convert to CSV string, which is a text format
-                const csvData = Papa.unparse(jsonData as Papa.ParseResult<any>['data']);
+                const csvData = Papa.unparse(nonEmptyRows as Papa.ParseResult<any>['data']);
 
                 // Create a text-based data URI encoded in Base64
                 const dataUri = `data:text/plain;base64,${Buffer.from(csvData).toString('base64')}`;
@@ -146,15 +149,19 @@ export default function SettingsPage() {
         }
         setIsParametersLoading(true);
         try {
-            // A IA é usada aqui APENAS para extrair dados de um formato complexo (PDF/XLSX)
             const fileDataUri = await processSheetFileToText(parametersFile);
 
             const result: VehicleParametersOutput = await processVehicleParameters({ fileDataUri });
-
-            // Os dados extraídos são salvos no banco de dados para serem usados como parâmetros
+            
             if (result.vehicles && result.vehicles.length > 0) {
-                await saveVehicleParameters(result.vehicles);
-                 toast({ title: 'Parâmetros Salvos', description: `${result.vehicles.length} parâmetros de veículos foram salvos no banco de dados.`});
+                // Ensure the parameters are correctly typed before saving.
+                const typedParameters = result.vehicles.map(v => ({
+                    ...v,
+                    carId: v.carId, // carId is now part of the schema
+                }));
+
+                await saveVehicleParameters(typedParameters);
+                toast({ title: 'Parâmetros Salvos', description: `${result.vehicles.length} parâmetros de veículos foram salvos no banco de dados.`});
             } else {
                  toast({ variant: 'destructive', title: 'Nenhum dado encontrado', description: 'A IA não conseguiu extrair parâmetros do arquivo. Verifique o conteúdo e o formato.'});
             }
@@ -349,7 +356,7 @@ export default function SettingsPage() {
             <Card>
                 <CardHeader>
                     <CardTitle>Parâmetros de Consumo por Veículo</CardTitle>
-                    <CardDescription>Faça o upload de uma planilha (XLSX, PDF). A IA irá extrair os dados e salvá-los como os novos parâmetros oficiais no banco de dados.</CardDescription>
+                    <CardDescription>Faça o upload de uma planilha (XLSX, CSV, PDF). A IA irá extrair os dados e salvá-los como os novos parâmetros oficiais no banco de dados.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                    <div className="text-sm text-muted-foreground p-4 border-l-4 border-accent bg-accent/10 rounded-r-lg">
