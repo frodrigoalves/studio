@@ -11,15 +11,15 @@ import * as path from 'path';
 //    - Vá para o Console do Firebase: https://console.firebase.google.com/
 //    - Selecione seu projeto.
 //    - Clique na engrenagem (Configurações do Projeto) > Contas de serviço.
-//    - Clique em "Gerar nova chave privada" e salve o arquivo JSON na pasta `src/scripts/`.
+//    - Clique em "Gerar nova chave privada" e salve o arquivo JSON nesta pasta `scripts/`.
 //    - **IMPORTANTE:** Renomeie o arquivo para `service-account-key.json`.
 //
-// 2. MOVER ARQUIVO XLSX:
-//    - Coloque seu arquivo `mediaporcarro.xlsx` dentro desta pasta `src/scripts/`.
+// 2. VERIFICAR ARQUIVO XLSX:
+//    - Confirme que seu arquivo `mediaporcarro.xlsx` está dentro desta pasta `scripts/`.
 //
 // 3. EXECUTAR O SCRIPT:
 //    - Abra um terminal na raiz do seu projeto e execute o seguinte comando:
-//      npx tsx src/scripts/import-vehicles.ts
+//      npx tsx scripts/import-vehicles.ts
 //
 // 4. VERIFICAR:
 //    - Após a execução, verifique a coleção "vehicles" no seu Firestore.
@@ -44,7 +44,8 @@ try {
 
 
 const db = getFirestore();
-const vehiclesFilePath = path.resolve(__dirname, './mediaporcarro.xlsx');
+// O nome do arquivo tem espaços, então usamos o nome exato.
+const vehiclesFilePath = path.resolve(__dirname, './media por carro.xlsx');
 
 async function importVehicles() {
   try {
@@ -66,7 +67,7 @@ async function importVehicles() {
 
     vehiclesJSON.forEach((vehicle: any) => {
       // Validar se as colunas essenciais existem
-      if (!vehicle['VEICULO'] || !vehicle['AMARELA'] || !vehicle['VERDE'] || !vehicle['DOURADA'] || !vehicle['CAPACIDADE']) {
+      if (!vehicle['VEICULO'] || !vehicle['AMARELA'] || !vehicle['VERDE'] || !vehicle['DOURADA'] || !vehicle['CAPACIDADE TANQUE']) {
         console.warn(`\x1b[33m[AVISO]\x1b[0m Linha ignorada por falta de dados essenciais: ${JSON.stringify(vehicle)}`);
         return; // Pula esta linha
       }
@@ -76,18 +77,16 @@ async function importVehicles() {
       const vehicleData = {
         vehicleId: vehicleId,
         thresholds: {
-          // A faixa "vermelha" é qualquer valor abaixo da amarela. Não precisa ser armazenada,
-          // pois a lógica de comparação fará isso. Ex: if (consumo < amarela) -> vermelho.
           yellow: parseFloat(String(vehicle['AMARELA']).replace(',', '.')) || 0,
           green: parseFloat(String(vehicle['VERDE']).replace(',', '.')) || 0,
           gold: parseFloat(String(vehicle['DOURADA']).replace(',', '.')) || 0,
         },
-        tankCapacity: Number(vehicle['CAPACIDADE']) || 0,
-        status: 'active' // Define todos como 'ativo' por padrão
+        tankCapacity: Number(vehicle['CAPACIDADE TANQUE']) || 0,
+        status: 'active' 
       };
 
       const docRef = collectionRef.doc(vehicleId);
-      batch.set(docRef, vehicleData, { merge: true }); // Use merge: true para atualizar sem sobrescrever tudo
+      batch.set(docRef, vehicleData, { merge: true });
     });
 
     await batch.commit();
@@ -95,8 +94,8 @@ async function importVehicles() {
 
   } catch (error: any) {
     if (error.code === 'ENOENT') {
-        console.error('\x1b[31m%s\x1b[0m', 'ERRO: Arquivo `mediaporcarro.xlsx` não encontrado na pasta `src/scripts/`.');
-        console.error('Por favor, confirme se o arquivo está no local correto.');
+        console.error('\x1b[31m%s\x1b[0m', 'ERRO: Arquivo `media por carro.xlsx` não encontrado na pasta `scripts/`.');
+        console.error('Por favor, confirme se o arquivo está no local correto e se o nome corresponde exatamente.');
     } else {
         console.error('Erro durante a importação:', error);
     }
