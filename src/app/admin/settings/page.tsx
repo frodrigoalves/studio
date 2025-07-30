@@ -11,9 +11,8 @@ import { Save, Loader2, Upload, FileUp, Wrench, Fuel, History, Database, Car, Dr
 import { useToast } from "@/hooks/use-toast";
 import { getDieselPrices, saveDieselPrice, type DieselPrice } from "@/services/settings";
 import { saveVehicleParameters, getVehicleParameters, getMostRecentVehicleParameter, type VehicleParameters } from "@/services/vehicles";
-import { addFuelingRecords, getFuelingRecords, getMostRecentFuelingRecord } from "@/services/fueling";
-import { addMaintenanceRecords, getMaintenanceRecords, getMostRecentMaintenanceRecord } from "@/services/maintenance";
-import { getRecords as getTripRecords } from "@/services/records";
+import { addFuelingRecords, getFuelingRecords, getMostRecentFuelingRecord, FuelingRecordPayload } from "@/services/fueling";
+import { addMaintenanceRecords, getMaintenanceRecords, getMostRecentMaintenanceRecord, MaintenanceRecordPayload } from "@/services/maintenance";
 import * as XLSX from 'xlsx';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -31,23 +30,45 @@ export default function SettingsPage() {
 
     const [parametersFile, setParametersFile] = useState<File | null>(null);
     const [isParametersLoading, setIsParametersLoading] = useState(false);
+    const [lastParametersImport, setLastParametersImport] = useState<string>('');
+    const [parametersCount, setParametersCount] = useState(0);
 
     const [fuelingFile, setFuelingFile] = useState<File | null>(null);
     const [isFuelingLoading, setIsFuelingLoading] = useState(false);
+    const [lastFuelingImport, setLastFuelingImport] = useState<string>('');
+    const [fuelingCount, setFuelingCount] = useState(0);
     
     const [maintenanceFile, setMaintenanceFile] = useState<File | null>(null);
     const [isMaintenanceLoading, setIsMaintenanceLoading] = useState(false);
-    
-    const [dbStats, setDbStats] = useState({
-        vehicles: { count: 0, lastImport: '' },
-        fueling: { count: 0, lastImport: '' },
-        maintenance: { count: 0, lastImport: '' },
-        diesel: { count: 0, lastImport: '' },
-        tripRecords: 0,
-        tripAlerts: 0,
-    });
-    const [isStatsLoading, setIsStatsLoading] = useState(true);
+    const [lastMaintenanceImport, setLastMaintenanceImport] = useState<string>('');
+    const [maintenanceCount, setMaintenanceCount] = useState(0);
 
+    const fetchImportStats = async () => {
+        try {
+            const [
+                lastVehicle, lastFueling, lastMaintenance,
+                allVehicles, allFueling, allMaintenance
+            ] = await Promise.all([
+                getMostRecentVehicleParameter(),
+                getMostRecentFuelingRecord(),
+                getMostRecentMaintenanceRecord(),
+                getVehicleParameters(),
+                getFuelingRecords(),
+                getMaintenanceRecords()
+            ]);
+            
+            setLastParametersImport(lastVehicle?.lastUpdated || '');
+            setParametersCount(allVehicles.length);
+            setLastFuelingImport(lastFueling?.date || '');
+            setFuelingCount(allFueling.length);
+            setLastMaintenanceImport(lastMaintenance?.startDate || '');
+            setMaintenanceCount(allMaintenance.length);
+
+        } catch (error) {
+            console.error("Failed to fetch import stats", error);
+            toast({ variant: 'destructive', title: 'Erro ao carregar status das importações'});
+        }
+    }
 
     const fetchPrices = async () => {
         setIsLoadingPrices(true);
@@ -66,59 +87,9 @@ export default function SettingsPage() {
         }
     };
     
-    const fetchDbStats = async () => {
-        setIsStatsLoading(true);
-        try {
-            const [
-                vehiclesData, fuelingData, maintenanceData, dieselData, tripData,
-                lastVehicle, lastFueling, lastMaintenance
-            ] = await Promise.all([
-                getVehicleParameters(),
-                getFuelingRecords(),
-                getMaintenanceRecords(),
-                getDieselPrices(),
-                getTripRecords(),
-                getMostRecentVehicleParameter(),
-                getMostRecentFuelingRecord(),
-                getMostRecentMaintenanceRecord()
-            ]);
-
-            const tripAlerts = tripData.filter(r => 
-                r.status === "Em Andamento" || 
-                (r.status === "Finalizado" && (!r.startOdometerPhoto || !r.endOdometerPhoto))
-            ).length;
-
-            setDbStats({
-                vehicles: {
-                    count: vehiclesData.length,
-                    lastImport: lastVehicle?.lastUpdated || ''
-                },
-                fueling: {
-                    count: fuelingData.length,
-                    lastImport: lastFueling?.date || ''
-                },
-                maintenance: {
-                    count: maintenanceData.length,
-                    lastImport: lastMaintenance?.startDate || ''
-                },
-                diesel: {
-                    count: dieselData.length,
-                    lastImport: dieselData[0]?.date || ''
-                },
-                tripRecords: tripData.length,
-                tripAlerts: tripAlerts,
-            });
-        } catch (error) {
-            console.error("Failed to fetch DB stats", error);
-            toast({ variant: 'destructive', title: 'Erro ao carregar status', description: 'Não foi possível buscar as contagens do banco de dados.' });
-        } finally {
-            setIsStatsLoading(false);
-        }
-    }
-
     useEffect(() => {
         fetchPrices();
-        fetchDbStats();
+        fetchImportStats();
     }, []);
 
     const handleSavePrice = async (e: React.FormEvent) => {
@@ -143,8 +114,7 @@ export default function SettingsPage() {
             
             setNewPrice('');
             setNewDate(new Date().toISOString().split('T')[0]);
-            fetchPrices(); // Refresh data
-            fetchDbStats();
+            fetchPrices();
 
             toast({
                 title: "Sucesso!",
@@ -203,7 +173,7 @@ export default function SettingsPage() {
 
                     await saveVehicleParameters(vehicleParameters);
                     toast({ title: 'Parâmetros Salvos', description: `${vehicleParameters.length} parâmetros de veículos foram salvos/atualizados no banco de dados.`});
-                    fetchDbStats();
+                    fetchImportStats();
 
                     setParametersFile(null);
                     const fileInput = document.getElementById('parameters-upload') as HTMLInputElement;
@@ -240,7 +210,7 @@ export default function SettingsPage() {
                     const worksheet = workbook.Sheets[sheetName];
                     const json: any[] = XLSX.utils.sheet_to_json(worksheet);
 
-                    const fuelingRecords: Omit<FuelingRecord, 'id'>[] = json.map(row => ({
+                    const fuelingRecords: FuelingRecordPayload[] = json.map(row => ({
                         date: row['Data'] ? new Date((row['Data'] - (25567 + 1)) * 86400 * 1000).toISOString() : new Date().toISOString(),
                         car: String(row['Carro'] ?? ''),
                         liters: Number(row['Litros'] ?? 0),
@@ -255,7 +225,7 @@ export default function SettingsPage() {
                     
                     await addFuelingRecords(fuelingRecords);
                     toast({ title: 'Importação Concluída', description: `${fuelingRecords.length} registros de abastecimento foram salvos no banco de dados.`});
-                    fetchDbStats();
+                    fetchImportStats();
                     setFuelingFile(null);
                     const fileInput = document.getElementById('fueling-upload') as HTMLInputElement;
                     if(fileInput) fileInput.value = '';
@@ -292,7 +262,7 @@ export default function SettingsPage() {
                     const worksheet = workbook.Sheets[sheetName];
                     const json: any[] = XLSX.utils.sheet_to_json(worksheet);
 
-                    const maintenanceRecords = json.map(row => ({
+                    const maintenanceRecords: MaintenanceRecordPayload[] = json.map(row => ({
                         car: String(row['Carro'] ?? ''),
                         reason: String(row['Motivo'] ?? 'Manutenção'),
                         startDate: row['Data Início'] ? new Date((row['Data Início'] - (25567 + 1)) * 86400 * 1000).toISOString() : new Date().toISOString(),
@@ -306,7 +276,7 @@ export default function SettingsPage() {
                     
                     await addMaintenanceRecords(maintenanceRecords);
                     toast({ title: 'Importação Concluída', description: `${maintenanceRecords.length} registros de manutenção foram salvos no banco de dados.`});
-                    fetchDbStats();
+                    fetchImportStats();
                     setMaintenanceFile(null);
                     const fileInput = document.getElementById('maintenance-upload') as HTMLInputElement;
                     if(fileInput) fileInput.value = '';
@@ -351,88 +321,6 @@ export default function SettingsPage() {
 
     return (
         <div className="grid gap-6 max-w-6xl mx-auto">
-             <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <Database /> Status do Banco de Dados
-                    </CardTitle>
-                    <CardDescription>Visão geral dos dados atualmente salvos no sistema que servem como base para as análises.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    {isStatsLoading ? (
-                        <div className="flex justify-center items-center h-24">
-                            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                        </div>
-                    ) : (
-                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-                            <Card>
-                                <CardHeader className="pb-2">
-                                    <CardTitle className="text-sm font-medium flex items-center justify-between">
-                                        Registros de Viagem
-                                        <FileText className="h-4 w-4 text-muted-foreground" />
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-bold">{dbStats.tripRecords.toLocaleString('pt-BR')}</div>
-                                    <p className="text-xs text-muted-foreground flex items-center gap-1">
-                                       <AlertTriangle className="h-3 w-3 text-destructive" /> {dbStats.tripAlerts.toLocaleString('pt-BR')} Alertas pendentes
-                                    </p>
-                                </CardContent>
-                            </Card>
-                            <Card>
-                                <CardHeader className="pb-2">
-                                    <CardTitle className="text-sm font-medium flex items-center justify-between">
-                                        Parâmetros de Veículos
-                                        <Car className="h-4 w-4 text-muted-foreground" />
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-bold">{dbStats.vehicles.count.toLocaleString('pt-BR')}</div>
-                                    <p className="text-xs text-muted-foreground">Veículos com parâmetros</p>
-                                </CardContent>
-                            </Card>
-                             <Card>
-                                <CardHeader className="pb-2">
-                                    <CardTitle className="text-sm font-medium flex items-center justify-between">
-                                        Abastecimentos
-                                         <Fuel className="h-4 w-4 text-muted-foreground" />
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-bold">{dbStats.fueling.count.toLocaleString('pt-BR')}</div>
-                                    <p className="text-xs text-muted-foreground">Registros importados</p>
-                                </CardContent>
-                            </Card>
-                             <Card>
-                                <CardHeader className="pb-2">
-                                    <CardTitle className="text-sm font-medium flex items-center justify-between">
-                                        Manutenções
-                                         <Wrench className="h-4 w-4 text-muted-foreground" />
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-bold">{dbStats.maintenance.count.toLocaleString('pt-BR')}</div>
-                                    <p className="text-xs text-muted-foreground">Registros importados</p>
-                                </CardContent>
-                            </Card>
-                             <Card>
-                                <CardHeader className="pb-2">
-                                    <CardTitle className="text-sm font-medium flex items-center justify-between">
-                                        Preços do Diesel
-                                         <Droplets className="h-4 w-4 text-muted-foreground" />
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-bold">{dbStats.diesel.count.toLocaleString('pt-BR')}</div>
-                                    <p className="text-xs text-muted-foreground">Preços salvos</p>
-                                </CardContent>
-                            </Card>
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
-
-
              <Card>
                 <CardHeader>
                     <CardTitle>Valor do Diesel</CardTitle>
@@ -505,123 +393,143 @@ export default function SettingsPage() {
 
             <Card>
                 <CardHeader>
-                    <CardTitle>Importar Parâmetros de Veículos</CardTitle>
-                    <CardDescription>Faça o upload de uma planilha (XLSX, CSV) para alimentar o banco de dados com os parâmetros oficiais de consumo e metas de cada veículo.</CardDescription>
+                    <CardTitle>Importação de Dados Essenciais</CardTitle>
+                    <CardDescription>Faça o upload de planilhas (XLSX, CSV) para alimentar o banco de dados com os parâmetros que servem de base para as análises de custo e desempenho.</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                   <div className="text-sm text-muted-foreground p-4 border-l-4 border-accent bg-accent/10 rounded-r-lg">
-                        <p className="font-semibold">Instruções para a Planilha:</p>
-                        <ul className="list-disc list-inside mt-2">
-                            <li>O arquivo deve conter as colunas: <strong>VEICULO</strong>, <strong>AMARELA</strong>, <strong>VERDE</strong>, <strong>DOURADA</strong>, e <strong>CAPACIDADE TANQUE</strong>.</li>
-                            <li>A coluna "VEICULO" deve ter o número do carro.</li>
-                            <li>As colunas de metas devem conter o valor de KM/L esperado para cada faixa.</li>
-                        </ul>
-                   </div>
-                   <div className="flex flex-col sm:flex-row gap-4 items-end">
-                        <div className="space-y-2 w-full sm:w-auto flex-grow">
-                            <Label htmlFor="parameters-upload">Arquivo de Parâmetros</Label>
-                            <div className="relative">
-                                <Input
-                                    id="parameters-upload"
-                                    type="file"
-                                    accept=".xlsx, .xls, .csv"
-                                    onChange={(e) => handleFileChange(e, setParametersFile)}
-                                    disabled={isParametersLoading}
-                                    className="pr-12"
-                                />
-                                <FileUp className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
-                            </div>
-                        </div>
-                        <Button onClick={handleProcessParameters} disabled={isParametersLoading || !parametersFile}>
-                            {isParametersLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4"/>}
-                            {isParametersLoading ? "Processando..." : "Importar para BD"}
-                        </Button>
-                   </div>
-                   <div className="mt-4 p-3 bg-muted/50 rounded-lg border">
-                        {renderImportStatus(dbStats.vehicles.lastImport, dbStats.vehicles.count)}
-                   </div>
+                <CardContent>
+                    <Accordion type="multiple" className="w-full space-y-4">
+                        <AccordionItem value="item-1" className="border rounded-lg px-4">
+                             <AccordionTrigger>
+                                <div className="flex items-center gap-3">
+                                     <Car className="h-6 w-6" />
+                                     <div>
+                                         <h4 className="font-semibold text-base">Parâmetros de Veículos</h4>
+                                         <p className="text-xs text-muted-foreground text-left">Metas de consumo e capacidade do tanque.</p>
+                                     </div>
+                                 </div>
+                            </AccordionTrigger>
+                            <AccordionContent className="pt-4">
+                                <div className="text-sm text-muted-foreground p-4 border-l-4 border-accent bg-accent/10 rounded-r-lg space-y-2">
+                                    <p className="font-semibold text-foreground">Instruções para a Planilha:</p>
+                                    <ul className="list-disc list-inside">
+                                        <li>Colunas necessárias: <strong>VEICULO</strong>, <strong>AMARELA</strong>, <strong>VERDE</strong>, <strong>DOURADA</strong>, e <strong>CAPACIDADE TANQUE</strong>.</li>
+                                        <li>A coluna "VEICULO" deve ter o número do carro, que servirá como identificador único.</li>
+                                    </ul>
+                               </div>
+                               <div className="flex flex-col sm:flex-row gap-4 items-end mt-4">
+                                    <div className="space-y-2 w-full sm:w-auto flex-grow">
+                                        <Label htmlFor="parameters-upload">Arquivo de Parâmetros</Label>
+                                        <div className="relative">
+                                            <Input
+                                                id="parameters-upload"
+                                                type="file"
+                                                accept=".xlsx, .xls, .csv"
+                                                onChange={(e) => handleFileChange(e, setParametersFile)}
+                                                disabled={isParametersLoading}
+                                                className="pr-12"
+                                            />
+                                            <FileUp className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                                        </div>
+                                    </div>
+                                    <Button onClick={handleProcessParameters} disabled={isParametersLoading || !parametersFile} className="w-full sm:w-auto">
+                                        {isParametersLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4"/>}
+                                        {isParametersLoading ? "Processando..." : "Importar"}
+                                    </Button>
+                               </div>
+                               <div className="mt-4 p-3 bg-muted/50 rounded-lg border">
+                                    {renderImportStatus(lastParametersImport, parametersCount)}
+                               </div>
+                            </AccordionContent>
+                        </AccordionItem>
+                        
+                        <AccordionItem value="item-2" className="border rounded-lg px-4">
+                            <AccordionTrigger>
+                                <div className="flex items-center gap-3">
+                                     <Fuel className="h-6 w-6" />
+                                     <div>
+                                         <h4 className="font-semibold text-base">Dados de Abastecimento</h4>
+                                         <p className="text-xs text-muted-foreground text-left">Registros de todos os abastecimentos realizados.</p>
+                                     </div>
+                                 </div>
+                            </AccordionTrigger>
+                            <AccordionContent className="pt-4">
+                                <div className="text-sm text-muted-foreground p-4 border-l-4 border-accent bg-accent/10 rounded-r-lg space-y-2">
+                                     <p className="font-semibold text-foreground">Instruções para a Planilha:</p>
+                                     <ul className="list-disc list-inside">
+                                         <li>Colunas necessárias: <strong>Data</strong>, <strong>Carro</strong>, <strong>Litros</strong>, <strong>Preço/Litro</strong>.</li>
+                                     </ul>
+                                </div>
+                               <div className="flex flex-col sm:flex-row gap-4 items-end mt-4">
+                                    <div className="space-y-2 w-full sm:w-auto flex-grow">
+                                        <Label htmlFor="fueling-upload">Planilha de Abastecimento</Label>
+                                        <div className="relative">
+                                            <Input
+                                                id="fueling-upload"
+                                                type="file"
+                                                accept=".xlsx, .xls, .csv"
+                                                onChange={(e) => handleFileChange(e, setFuelingFile)}
+                                                disabled={isFuelingLoading}
+                                                className="pr-12"
+                                            />
+                                            <FileUp className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                                        </div>
+                                    </div>
+                                    <Button onClick={handleImportFuelingData} disabled={isFuelingLoading || !fuelingFile} className="w-full sm:w-auto">
+                                        {isFuelingLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4"/>}
+                                        {isFuelingLoading ? "Importando..." : "Importar"}
+                                    </Button>
+                               </div>
+                                <div className="mt-4 p-3 bg-muted/50 rounded-lg border">
+                                    {renderImportStatus(lastFuelingImport, fuelingCount)}
+                                </div>
+                            </AccordionContent>
+                        </AccordionItem>
+
+                        <AccordionItem value="item-3" className="border rounded-lg px-4">
+                            <AccordionTrigger>
+                                <div className="flex items-center gap-3">
+                                     <Wrench className="h-6 w-6" />
+                                     <div>
+                                         <h4 className="font-semibold text-base">Veículos em Manutenção</h4>
+                                         <p className="text-xs text-muted-foreground text-left">Lista de veículos que entraram em manutenção.</p>
+                                     </div>
+                                 </div>
+                            </AccordionTrigger>
+                            <AccordionContent className="pt-4">
+                               <div className="text-sm text-muted-foreground p-4 border-l-4 border-accent bg-accent/10 rounded-r-lg space-y-2">
+                                    <p className="font-semibold text-foreground">Instruções para a Planilha:</p>
+                                    <ul className="list-disc list-inside">
+                                        <li>Colunas necessárias: <strong>Carro</strong>, <strong>Motivo</strong>, <strong>Data Início</strong>.</li>
+                                    </ul>
+                               </div>
+                               <div className="flex flex-col sm:flex-row gap-4 items-end mt-4">
+                                    <div className="space-y-2 w-full sm:w-auto flex-grow">
+                                        <Label htmlFor="maintenance-upload">Planilha de Manutenção</Label>
+                                        <div className="relative">
+                                            <Input
+                                                id="maintenance-upload"
+                                                type="file"
+                                                accept=".xlsx, .xls, .csv"
+                                                onChange={(e) => handleFileChange(e, setMaintenanceFile)}
+                                                disabled={isMaintenanceLoading}
+                                                className="pr-12"
+                                            />
+                                            <FileUp className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                                        </div>
+                                    </div>
+                                    <Button onClick={handleImportMaintenanceData} disabled={isMaintenanceLoading || !maintenanceFile} className="w-full sm:w-auto">
+                                        {isMaintenanceLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4"/>}
+                                        {isMaintenanceLoading ? "Importando..." : "Importar"}
+                                    </Button>
+                               </div>
+                                <div className="mt-4 p-3 bg-muted/50 rounded-lg border">
+                                    {renderImportStatus(lastMaintenanceImport, maintenanceCount)}
+                                </div>
+                            </AccordionContent>
+                        </AccordionItem>
+                    </Accordion>
                 </CardContent>
             </Card>
-            
-            <div className="grid md:grid-cols-2 gap-6">
-                 <Card>
-                    <CardHeader>
-                        <CardTitle>Importação de Dados de Abastecimento</CardTitle>
-                        <CardDescription>Faça o upload de uma planilha (XLSX, CSV) para salvar os registros de abastecimento no banco de dados.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                       <div className="text-sm text-muted-foreground p-4 border-l-4 border-accent bg-accent/10 rounded-r-lg">
-                            <p className="font-semibold">Instruções para a Planilha:</p>
-                            <ul className="list-disc list-inside mt-2">
-                                <li>O arquivo deve ter as colunas: <strong>Data</strong>, <strong>Carro</strong>, <strong>Litros</strong>, <strong>Preço/Litro</strong>.</li>
-                                <li>"Carro" deve ser o número do veículo correspondente aos registros de viagem.</li>
-                            </ul>
-                       </div>
-                       <div className="flex flex-col sm:flex-row gap-4 items-end">
-                            <div className="space-y-2 w-full sm:w-auto flex-grow">
-                                <Label htmlFor="fueling-upload">Planilha de Abastecimento</Label>
-                                <div className="relative">
-                                    <Input
-                                        id="fueling-upload"
-                                        type="file"
-                                        accept=".xlsx, .xls, .csv"
-                                        onChange={(e) => handleFileChange(e, setFuelingFile)}
-                                        disabled={isFuelingLoading}
-                                        className="pr-12"
-                                    />
-                                    <FileUp className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
-                                </div>
-                            </div>
-                            <Button onClick={handleImportFuelingData} disabled={isFuelingLoading || !fuelingFile}>
-                                {isFuelingLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Fuel className="mr-2 h-4 w-4"/>}
-                                {isFuelingLoading ? "Importando..." : "Importar para BD"}
-                            </Button>
-                       </div>
-                        <div className="mt-4 p-3 bg-muted/50 rounded-lg border">
-                            {renderImportStatus(dbStats.fueling.lastImport, dbStats.fueling.count)}
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Registro de Veículos em Manutenção</CardTitle>
-                        <CardDescription>Faça o upload de uma planilha para salvar a lista de veículos em manutenção no banco de dados.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                       <div className="text-sm text-muted-foreground p-4 border-l-4 border-accent bg-accent/10 rounded-r-lg">
-                            <p className="font-semibold">Instruções para a Planilha:</p>
-                            <ul className="list-disc list-inside mt-2">
-                                <li>O arquivo deve ter as colunas: <strong>Carro</strong>, <strong>Motivo</strong>, <strong>Data Início</strong>.</li>
-                                <li>A coluna "Carro" deve conter o número do veículo.</li>
-                            </ul>
-                       </div>
-                       <div className="flex flex-col sm:flex-row gap-4 items-end">
-                            <div className="space-y-2 w-full sm:w-auto flex-grow">
-                                <Label htmlFor="maintenance-upload">Planilha de Manutenção</Label>
-                                <div className="relative">
-                                    <Input
-                                        id="maintenance-upload"
-                                        type="file"
-                                        accept=".xlsx, .xls, .csv"
-                                        onChange={(e) => handleFileChange(e, setMaintenanceFile)}
-                                        disabled={isMaintenanceLoading}
-                                        className="pr-12"
-                                    />
-                                    <FileUp className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
-                                </div>
-                            </div>
-                            <Button onClick={handleImportMaintenanceData} disabled={isMaintenanceLoading || !maintenanceFile}>
-                                {isMaintenanceLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Wrench className="mr-2 h-4 w-4"/>}
-                                {isMaintenanceLoading ? "Importando..." : "Importar para BD"}
-                            </Button>
-                       </div>
-                        <div className="mt-4 p-3 bg-muted/50 rounded-lg border">
-                            {renderImportStatus(dbStats.maintenance.lastImport, dbStats.maintenance.count)}
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
         </div>
     )
 }

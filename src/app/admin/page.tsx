@@ -7,11 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Wand2, FileText, Upload, Lightbulb, ListChecks, BarChart, Archive, BrainCircuit, GaugeCircle, AlertTriangle, Fuel, DollarSign, LineChart as LineChartIcon, BarChart2, Calendar as CalendarIcon, FileUp, Info, MapPin as MapIcon } from "lucide-react";
+import { Loader2, Wand2, FileText, Upload, Lightbulb, ListChecks, BarChart, Archive, BrainCircuit, GaugeCircle, AlertTriangle, Fuel, DollarSign, LineChart as LineChartIcon, BarChart2, Calendar as CalendarIcon, FileUp, Info, MapPin as MapIcon, Database, Car, Droplets, Wrench, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getRecords, type Record } from "@/services/records";
 import { getDieselPrices, type DieselPrice } from "@/services/settings";
-import { getVehicleParameters, type VehicleParameters } from "@/services/vehicles";
+import { getVehicleParameters, type VehicleParameters, getMostRecentVehicleParameter } from "@/services/vehicles";
+import { getFuelingRecords, getMostRecentFuelingRecord } from "@/services/fueling";
+import { getMaintenanceRecords, getMostRecentMaintenanceRecord } from "@/services/maintenance";
 import { generateReport, type ReportOutput } from "@/ai/flows/report-flow";
 import { analyseSheet, type SheetAnalysisInput, type SheetAnalysisOutput } from "@/ai/flows/sheet-analysis-flow";
 import { generatePresentationSummary, type PresentationInput, type PresentationOutput } from "@/ai/flows/presentation-flow";
@@ -21,7 +23,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { Bar, BarChart as BarChartComponent, Line, LineChart, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
-import { addDays, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, format, parseISO, compareAsc } from 'date-fns';
+import { addDays, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, format, parseISO, compareAsc, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { DateRange } from "react-day-picker";
 import { cn } from "@/lib/utils";
@@ -78,6 +80,14 @@ export default function AdminDashboard() {
     const [records, setRecords] = useState<Record[]>([]);
     const [dieselPrices, setDieselPrices] = useState<DieselPrice[]>([]);
     const [vehicleParameters, setVehicleParameters] = useState<VehicleParameters[]>([]);
+     const [dbStats, setDbStats] = useState({
+        vehicles: { count: 0, lastImport: '' },
+        fueling: { count: 0, lastImport: '' },
+        maintenance: { count: 0, lastImport: '' },
+        diesel: { count: 0, lastImport: '' },
+        tripRecords: 0,
+        tripAlerts: 0,
+    });
 
 
     // Fleet Report state
@@ -100,14 +110,52 @@ export default function AdminDashboard() {
     const fetchAndSetData = useCallback(async () => {
         setIsLoading(true);
         try {
-            const [allRecords, allPrices, allParameters] = await Promise.all([
+            const [
+                allRecords, allPrices, allParameters,
+                vehiclesData, fuelingData, maintenanceData, tripData,
+                lastVehicle, lastFueling, lastMaintenance
+             ] = await Promise.all([
                 getRecords(),
                 getDieselPrices(),
-                getVehicleParameters()
+                getVehicleParameters(),
+                getVehicleParameters(),
+                getFuelingRecords(),
+                getMaintenanceRecords(),
+                getRecords(),
+                getMostRecentVehicleParameter(),
+                getMostRecentFuelingRecord(),
+                getMostRecentMaintenanceRecord()
             ]);
             setRecords(allRecords);
             setDieselPrices(allPrices);
             setVehicleParameters(allParameters);
+            
+            const tripAlerts = tripData.filter(r => 
+                r.status === "Em Andamento" || 
+                (r.status === "Finalizado" && (!r.startOdometerPhoto || !r.endOdometerPhoto))
+            ).length;
+
+            setDbStats({
+                vehicles: {
+                    count: vehiclesData.length,
+                    lastImport: lastVehicle?.lastUpdated || ''
+                },
+                fueling: {
+                    count: fuelingData.length,
+                    lastImport: lastFueling?.date || ''
+                },
+                maintenance: {
+                    count: maintenanceData.length,
+                    lastImport: lastMaintenance?.startDate || ''
+                },
+                diesel: {
+                    count: allPrices.length,
+                    lastImport: allPrices[0]?.date || ''
+                },
+                tripRecords: tripData.length,
+                tripAlerts: tripAlerts,
+            });
+
         } catch (error) {
             console.error(error);
             toast({
@@ -379,11 +427,93 @@ export default function AdminDashboard() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
+        
+         <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                        <Database /> Status do Banco de Dados
+                    </CardTitle>
+                    <CardDescription>Visão geral dos dados que alimentam o sistema. Para importar, vá para a página de <a href="/admin/settings" className="underline text-primary">Configurações</a>.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {isLoading ? (
+                        <div className="flex justify-center items-center h-24">
+                            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                        </div>
+                    ) : (
+                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+                            <Card>
+                                <CardHeader className="pb-2">
+                                    <CardTitle className="text-sm font-medium flex items-center justify-between">
+                                        Registros de Viagem
+                                        <FileText className="h-4 w-4 text-muted-foreground" />
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold">{dbStats.tripRecords.toLocaleString('pt-BR')}</div>
+                                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                       <AlertTriangle className="h-3 w-3 text-destructive" /> {dbStats.tripAlerts.toLocaleString('pt-BR')} Alertas pendentes
+                                    </p>
+                                </CardContent>
+                            </Card>
+                            <Card>
+                                <CardHeader className="pb-2">
+                                    <CardTitle className="text-sm font-medium flex items-center justify-between">
+                                        Parâmetros de Veículos
+                                        <Car className="h-4 w-4 text-muted-foreground" />
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold">{dbStats.vehicles.count.toLocaleString('pt-BR')}</div>
+                                    <p className="text-xs text-muted-foreground">Veículos com parâmetros</p>
+                                </CardContent>
+                            </Card>
+                             <Card>
+                                <CardHeader className="pb-2">
+                                    <CardTitle className="text-sm font-medium flex items-center justify-between">
+                                        Abastecimentos
+                                         <Fuel className="h-4 w-4 text-muted-foreground" />
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold">{dbStats.fueling.count.toLocaleString('pt-BR')}</div>
+                                    <p className="text-xs text-muted-foreground">Registros importados</p>
+                                </CardContent>
+                            </Card>
+                             <Card>
+                                <CardHeader className="pb-2">
+                                    <CardTitle className="text-sm font-medium flex items-center justify-between">
+                                        Manutenções
+                                         <Wrench className="h-4 w-4 text-muted-foreground" />
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold">{dbStats.maintenance.count.toLocaleString('pt-BR')}</div>
+                                    <p className="text-xs text-muted-foreground">Registros importados</p>
+                                </CardContent>
+                            </Card>
+                             <Card>
+                                <CardHeader className="pb-2">
+                                    <CardTitle className="text-sm font-medium flex items-center justify-between">
+                                        Preços do Diesel
+                                         <Droplets className="h-4 w-4 text-muted-foreground" />
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold">{dbStats.diesel.count.toLocaleString('pt-BR')}</div>
+                                    <p className="text-xs text-muted-foreground">Preços salvos</p>
+                                </CardContent>
+                            </Card>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+
         <Accordion type="multiple" className="w-full" defaultValue={['item-1']}>
              <AccordionItem value="item-1">
                 <AccordionTrigger className="text-xl font-semibold">
                     <div className="flex items-center gap-2">
-                        <BarChart /> Análise de Desempenho
+                        <BarChart /> Análise de Desempenho da Frota
                     </div>
                 </AccordionTrigger>
                 <AccordionContent>
