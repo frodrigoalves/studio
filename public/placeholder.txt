@@ -1,0 +1,1 @@
+This file is a placeholder to ensure the 'public' directory is created. You can delete this file. Place your static assets like images (e.g., logo.png) here.
