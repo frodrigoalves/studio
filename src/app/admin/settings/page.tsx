@@ -7,17 +7,18 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Save, Loader2, Upload, FileUp, Wrench, Fuel, History, Database, Car, Droplets, Info, FileText, AlertTriangle } from "lucide-react";
+import { Save, Loader2, Upload, FileUp, Wrench, Fuel, History, Database, Car, Droplets, Info, FileText, AlertTriangle, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getDieselPrices, saveDieselPrice, type DieselPrice } from "@/services/settings";
-import { saveVehicleParameters, getVehicleParameters, type VehicleParameters } from "@/services/vehicles";
-import { addFuelingRecords, getFuelingRecords, type FuelingRecordPayload } from "@/services/fueling";
-import { addMaintenanceRecords, getMaintenanceRecords } from "@/services/maintenance";
+import { saveVehicleParameters, getVehicleParameters, getMostRecentVehicleParameter, type VehicleParameters } from "@/services/vehicles";
+import { addFuelingRecords, getFuelingRecords, getMostRecentFuelingRecord } from "@/services/fueling";
+import { addMaintenanceRecords, getMaintenanceRecords, getMostRecentMaintenanceRecord } from "@/services/maintenance";
 import { getRecords as getTripRecords } from "@/services/records";
 import * as XLSX from 'xlsx';
-import Papa from 'papaparse';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { differenceInDays, parseISO, format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 
 export default function SettingsPage() {
@@ -38,10 +39,10 @@ export default function SettingsPage() {
     const [isMaintenanceLoading, setIsMaintenanceLoading] = useState(false);
     
     const [dbStats, setDbStats] = useState({
-        vehicles: 0,
-        fueling: 0,
-        maintenance: 0,
-        diesel: 0,
+        vehicles: { count: 0, lastImport: '' },
+        fueling: { count: 0, lastImport: '' },
+        maintenance: { count: 0, lastImport: '' },
+        diesel: { count: 0, lastImport: '' },
         tripRecords: 0,
         tripAlerts: 0,
     });
@@ -68,12 +69,18 @@ export default function SettingsPage() {
     const fetchDbStats = async () => {
         setIsStatsLoading(true);
         try {
-            const [vehiclesData, fuelingData, maintenanceData, dieselData, tripData] = await Promise.all([
+            const [
+                vehiclesData, fuelingData, maintenanceData, dieselData, tripData,
+                lastVehicle, lastFueling, lastMaintenance
+            ] = await Promise.all([
                 getVehicleParameters(),
                 getFuelingRecords(),
                 getMaintenanceRecords(),
                 getDieselPrices(),
-                getTripRecords()
+                getTripRecords(),
+                getMostRecentVehicleParameter(),
+                getMostRecentFuelingRecord(),
+                getMostRecentMaintenanceRecord()
             ]);
 
             const tripAlerts = tripData.filter(r => 
@@ -82,10 +89,22 @@ export default function SettingsPage() {
             ).length;
 
             setDbStats({
-                vehicles: vehiclesData.length,
-                fueling: fuelingData.length,
-                maintenance: maintenanceData.length,
-                diesel: dieselData.length,
+                vehicles: {
+                    count: vehiclesData.length,
+                    lastImport: lastVehicle?.lastUpdated || ''
+                },
+                fueling: {
+                    count: fuelingData.length,
+                    lastImport: lastFueling?.date || ''
+                },
+                maintenance: {
+                    count: maintenanceData.length,
+                    lastImport: lastMaintenance?.startDate || ''
+                },
+                diesel: {
+                    count: dieselData.length,
+                    lastImport: dieselData[0]?.date || ''
+                },
                 tripRecords: tripData.length,
                 tripAlerts: tripAlerts,
             });
@@ -164,7 +183,7 @@ export default function SettingsPage() {
                     const worksheet = workbook.Sheets[sheetName];
                     const json: any[] = XLSX.utils.sheet_to_json(worksheet);
 
-                    const vehicleParameters: (Omit<VehicleParameters, 'status'>)[] = json
+                    const vehicleParameters: Omit<VehicleParameters, 'status' | 'lastUpdated'>[] = json
                         .map(row => ({
                             carId: String(row['VEICULO'] ?? '').trim(),
                             thresholds: {
@@ -183,7 +202,7 @@ export default function SettingsPage() {
                     }
 
                     await saveVehicleParameters(vehicleParameters);
-                    toast({ title: 'Parâmetros Salvos', description: `${vehicleParameters.length} parâmetros de veículos foram salvos no banco de dados.`});
+                    toast({ title: 'Parâmetros Salvos', description: `${vehicleParameters.length} parâmetros de veículos foram salvos/atualizados no banco de dados.`});
                     fetchDbStats();
 
                     setParametersFile(null);
@@ -221,8 +240,8 @@ export default function SettingsPage() {
                     const worksheet = workbook.Sheets[sheetName];
                     const json: any[] = XLSX.utils.sheet_to_json(worksheet);
 
-                    const fuelingRecords: FuelingRecordPayload[] = json.map(row => ({
-                        date: row['Data'] ? new Date((row['Data'] - (25567 + 1)) * 86400 * 1000).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+                    const fuelingRecords: Omit<FuelingRecord, 'id'>[] = json.map(row => ({
+                        date: row['Data'] ? new Date((row['Data'] - (25567 + 1)) * 86400 * 1000).toISOString() : new Date().toISOString(),
                         car: String(row['Carro'] ?? ''),
                         liters: Number(row['Litros'] ?? 0),
                         pricePerLiter: Number(row['Preço/Litro'] ?? 0),
@@ -305,8 +324,30 @@ export default function SettingsPage() {
             toast({ variant: 'destructive', title: 'Erro na importação', description: 'Ocorreu um erro inesperado. Tente novamente.'});
             setIsMaintenanceLoading(false);
         }
-    }
+    };
 
+    const renderImportStatus = (lastImportDate: string, recordCount: number) => {
+        if (!lastImportDate) {
+            return <p className="text-xs text-muted-foreground">Nenhuma importação encontrada.</p>;
+        }
+
+        const daysSinceImport = differenceInDays(new Date(), parseISO(lastImportDate));
+        const formattedDate = format(parseISO(lastImportDate), "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
+
+        return (
+            <div className="space-y-1">
+                <p className="text-xs text-muted-foreground">
+                    Última importação em: <span className="font-semibold">{formattedDate}</span> ({recordCount.toLocaleString('pt-BR')} registros).
+                </p>
+                {daysSinceImport > 30 && (
+                    <div className="flex items-center gap-2 text-amber-600">
+                        <AlertTriangle className="h-4 w-4" />
+                        <p className="text-xs font-semibold">Atenção: Os dados estão há mais de 30 dias sem atualização.</p>
+                    </div>
+                )}
+            </div>
+        );
+    };
 
     return (
         <div className="grid gap-6 max-w-6xl mx-auto">
@@ -332,9 +373,9 @@ export default function SettingsPage() {
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="text-2xl font-bold">{dbStats.tripRecords}</div>
+                                    <div className="text-2xl font-bold">{dbStats.tripRecords.toLocaleString('pt-BR')}</div>
                                     <p className="text-xs text-muted-foreground flex items-center gap-1">
-                                       <AlertTriangle className="h-3 w-3 text-destructive" /> {dbStats.tripAlerts} Alertas pendentes
+                                       <AlertTriangle className="h-3 w-3 text-destructive" /> {dbStats.tripAlerts.toLocaleString('pt-BR')} Alertas pendentes
                                     </p>
                                 </CardContent>
                             </Card>
@@ -346,7 +387,7 @@ export default function SettingsPage() {
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="text-2xl font-bold">{dbStats.vehicles}</div>
+                                    <div className="text-2xl font-bold">{dbStats.vehicles.count.toLocaleString('pt-BR')}</div>
                                     <p className="text-xs text-muted-foreground">Veículos com parâmetros</p>
                                 </CardContent>
                             </Card>
@@ -358,7 +399,7 @@ export default function SettingsPage() {
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="text-2xl font-bold">{dbStats.fueling}</div>
+                                    <div className="text-2xl font-bold">{dbStats.fueling.count.toLocaleString('pt-BR')}</div>
                                     <p className="text-xs text-muted-foreground">Registros importados</p>
                                 </CardContent>
                             </Card>
@@ -370,7 +411,7 @@ export default function SettingsPage() {
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="text-2xl font-bold">{dbStats.maintenance}</div>
+                                    <div className="text-2xl font-bold">{dbStats.maintenance.count.toLocaleString('pt-BR')}</div>
                                     <p className="text-xs text-muted-foreground">Registros importados</p>
                                 </CardContent>
                             </Card>
@@ -382,7 +423,7 @@ export default function SettingsPage() {
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="text-2xl font-bold">{dbStats.diesel}</div>
+                                    <div className="text-2xl font-bold">{dbStats.diesel.count.toLocaleString('pt-BR')}</div>
                                     <p className="text-xs text-muted-foreground">Preços salvos</p>
                                 </CardContent>
                             </Card>
@@ -496,6 +537,9 @@ export default function SettingsPage() {
                             {isParametersLoading ? "Processando..." : "Importar para BD"}
                         </Button>
                    </div>
+                   <div className="mt-4 p-3 bg-muted/50 rounded-lg border">
+                        {renderImportStatus(dbStats.vehicles.lastImport, dbStats.vehicles.count)}
+                   </div>
                 </CardContent>
             </Card>
             
@@ -533,6 +577,9 @@ export default function SettingsPage() {
                                 {isFuelingLoading ? "Importando..." : "Importar para BD"}
                             </Button>
                        </div>
+                        <div className="mt-4 p-3 bg-muted/50 rounded-lg border">
+                            {renderImportStatus(dbStats.fueling.lastImport, dbStats.fueling.count)}
+                        </div>
                     </CardContent>
                 </Card>
 
@@ -569,11 +616,12 @@ export default function SettingsPage() {
                                 {isMaintenanceLoading ? "Importando..." : "Importar para BD"}
                             </Button>
                        </div>
+                        <div className="mt-4 p-3 bg-muted/50 rounded-lg border">
+                            {renderImportStatus(dbStats.maintenance.lastImport, dbStats.maintenance.count)}
+                        </div>
                     </CardContent>
                 </Card>
             </div>
         </div>
     )
 }
-
-    

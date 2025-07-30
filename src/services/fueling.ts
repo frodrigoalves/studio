@@ -2,7 +2,7 @@
 'use server';
 
 import { db } from '@/lib/firebase';
-import { collection, doc, writeBatch, getDocs, query } from 'firebase/firestore';
+import { collection, doc, writeBatch, getDocs, query, orderBy, limit } from 'firebase/firestore';
 
 export interface FuelingRecord {
   id: string;
@@ -37,7 +37,21 @@ export async function addFuelingRecords(records: FuelingRecordPayload[]): Promis
  * @returns Uma lista de todos os registros de abastecimento.
  */
 export async function getFuelingRecords(): Promise<FuelingRecord[]> {
-    const q = query(collection(db, 'fuelingRecords'));
+    const q = query(collection(db, 'fuelingRecords'), orderBy("date", "desc"));
     const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FuelingRecord));
+}
+
+/**
+ * Busca o registro de abastecimento mais recente.
+ * @returns O registro de abastecimento mais recente ou null se não houver nenhum.
+ */
+export async function getMostRecentFuelingRecord(): Promise<FuelingRecord | null> {
+    const q = query(collection(db, "fuelingRecords"), orderBy("date", "desc"), limit(1));
+    const querySnapshot = await getDocs(q);
+    if (querySnapshot.empty) {
+        return null;
+    }
+    const doc = querySnapshot.docs[0];
+    return { id: doc.id, ...doc.data() } as FuelingRecord;
 }
