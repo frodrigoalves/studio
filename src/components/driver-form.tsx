@@ -22,8 +22,6 @@ import { useToast } from "@/hooks/use-toast";
 import { addRecord, getRecordByPlateAndStatus, updateRecord, RecordUpdatePayload, Record } from "@/services/records";
 import { getActiveVehicles, type VehicleParameters } from "@/services/vehicles";
 import { cn } from "@/lib/utils";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
 
 const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -34,14 +32,21 @@ const fileToBase64 = (file: File): Promise<string> => {
     });
 };
 
-const startFormSchema = z.object({
-  chapa: z.string().min(1, "Chapa é obrigatória."),
-  name: z.string().min(1, "Nome é obrigatório."),
-  car: z.string().min(1, "Carro é obrigatório."),
-  line: z.string().min(1, "Linha é obrigatória."),
-  initialKm: z.coerce.number({ required_error: "Km Inicial é obrigatório."}).min(1, "Km Inicial é obrigatório."),
-  startOdometerPhoto: z.any().refine(file => file, "Foto é obrigatória."),
-});
+const createStartFormSchema = (activeVehicles: VehicleParameters[]) => {
+    const activeVehicleIds = activeVehicles.map(v => v.carId);
+    
+    return z.object({
+        chapa: z.string().min(1, "Chapa é obrigatória."),
+        name: z.string().min(1, "Nome é obrigatório."),
+        car: z.string().min(1, "Carro é obrigatório.").refine(
+            (carId) => activeVehicleIds.includes(carId),
+            { message: "Veículo não encontrado ou inativo. Verifique o número digitado." }
+        ),
+        line: z.string().min(1, "Linha é obrigatória."),
+        initialKm: z.coerce.number({ required_error: "Km Inicial é obrigatório."}).min(1, "Km Inicial é obrigatório."),
+        startOdometerPhoto: z.any().refine(file => file, "Foto é obrigatória."),
+    });
+}
 
 const endFormSchema = z.object({
   chapa: z.string().min(1, "Chapa é obrigatória."),
@@ -53,10 +58,9 @@ const endFormSchema = z.object({
 });
 
 
-type StartFormValues = z.infer<typeof startFormSchema>;
 type EndFormValues = z.infer<typeof endFormSchema>;
 
-const initialStartValues: Omit<StartFormValues, 'initialKm'> & { initialKm: string | number } = { chapa: "", name: "", car: "", line: "", initialKm: '', startOdometerPhoto: null };
+const initialStartValues = { chapa: "", name: "", car: "", line: "", initialKm: '', startOdometerPhoto: null };
 const initialEndValues: Omit<EndFormValues, 'finalKm' | 'name' | 'car' | 'line'> & { finalKm: string | number, name: string, car: string, line: string } = { chapa: "", name: "", car: "", line: "", finalKm: '', endOdometerPhoto: null };
 
 
@@ -70,12 +74,15 @@ export function DriverForm() {
   
   const startFileInputRef = useRef<HTMLInputElement>(null);
   const endFileInputRef = useRef<HTMLInputElement>(null);
+  
+  const [startFormSchema, setStartFormSchema] = useState(() => createStartFormSchema([]));
 
   useEffect(() => {
     async function fetchActiveVehicles() {
         try {
             const vehicles = await getActiveVehicles();
             setActiveVehicles(vehicles);
+            setStartFormSchema(createStartFormSchema(vehicles));
         } catch (error) {
             console.error("Failed to fetch active vehicles", error);
             toast({
@@ -87,16 +94,26 @@ export function DriverForm() {
     }
     fetchActiveVehicles();
   }, [toast]);
+  
+  type StartFormValues = z.infer<typeof startFormSchema>;
 
   const startForm = useForm<StartFormValues>({
     resolver: zodResolver(startFormSchema),
     defaultValues: initialStartValues,
+    // Re-validate on blur to give immediate feedback on the "car" field
+    mode: "onBlur"
   });
 
   const endForm = useForm<EndFormValues>({
     resolver: zodResolver(endFormSchema),
     defaultValues: initialEndValues,
   });
+  
+   // Update resolver when schema changes
+  useEffect(() => {
+    startForm.reset(undefined, { keepValues: true }); // Keep the form values
+  }, [startFormSchema, startForm]);
+
 
   const handleChapaBlur = useCallback(async (chapa: string) => {
     if(!chapa || activeTab !== 'end') return;
@@ -288,24 +305,9 @@ export function DriverForm() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Carro</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione um veículo ativo" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                            {activeVehicles.length === 0 ? (
-                                <SelectItem value="loading" disabled>Carregando veículos...</SelectItem>
-                            ) : (
-                                activeVehicles.map((vehicle) => (
-                                    <SelectItem key={vehicle.carId} value={vehicle.carId}>
-                                        {vehicle.carId}
-                                    </SelectItem>
-                                ))
-                            )}
-                        </SelectContent>
-                      </Select>
+                       <FormControl>
+                          <Input placeholder="Digite o número do veículo" {...field} />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -359,9 +361,9 @@ export function DriverForm() {
                     </FormItem>
                   )}
                 />
-                <Button type="submit" className="w-full bg-green-600 hover:bg-green-700" disabled={isSubmitting}>
+                <Button type="submit" className="w-full bg-green-600 hover:bg-green-700" disabled={isSubmitting || activeVehicles.length === 0}>
                   {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                  {isSubmitting ? "Registrando..." : "Registrar Início"}
+                  {isSubmitting ? "Registrando..." : (activeVehicles.length === 0 ? "Carregando veículos..." : "Registrar Início")}
                 </Button>
               </form>
             </Form>
