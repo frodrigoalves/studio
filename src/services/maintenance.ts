@@ -19,8 +19,8 @@ export async function addMaintenanceRecords(records: MaintenanceRecordPayload[])
     const maintenanceCollection = collection(db, 'maintenanceRecords');
 
     records.forEach(record => {
-        const docRef = doc(maintenanceCollection, record.car); 
-        batch.set(docRef, record, { merge: true });
+        const docRef = doc(maintenanceCollection); 
+        batch.set(docRef, record);
     });
 
     await batch.commit();

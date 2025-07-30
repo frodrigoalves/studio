@@ -27,8 +27,8 @@ export async function addFuelingRecords(records: FuelingRecordPayload[]): Promis
         // Usa o número do 'car' como o ID do documento para unificar os dados por veículo.
         // Isso assume que o arquivo de importação pode ter um registro consolidado por carro
         // ou o último registro para um carro substituirá os anteriores no batch.
-        const docRef = doc(fuelingCollection, record.car); 
-        batch.set(docRef, record, { merge: true }); // Use merge: true para não sobrescrever dados existentes não relacionados
+        const docRef = doc(fuelingCollection); 
+        batch.set(docRef, record);
     });
 
     await batch.commit();
