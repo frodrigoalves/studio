@@ -41,8 +41,8 @@ const processSheetFileToText = (file: File): Promise<string> => {
                 // Convert to CSV string, which is a text format
                 const csvData = Papa.unparse(jsonData as Papa.ParseResult<any>['data']);
 
-                // Create a text-based data URI
-                const dataUri = `data:text/plain;charset=utf-8,${encodeURIComponent(csvData)}`;
+                // Create a text-based data URI encoded in Base64
+                const dataUri = `data:text/plain;base64,${Buffer.from(csvData).toString('base64')}`;
                 resolve(dataUri);
             } catch (error) {
                 console.error("Error parsing spreadsheet:", error);
