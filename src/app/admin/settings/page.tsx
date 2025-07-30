@@ -7,12 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Save, Loader2, Upload, FileUp, Wrench, Fuel, History, Database, Car, Droplets, Info } from "lucide-react";
+import { Save, Loader2, Upload, FileUp, Wrench, Fuel, History, Database, Car, Droplets, Info, FileText, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getDieselPrices, saveDieselPrice, type DieselPrice } from "@/services/settings";
 import { saveVehicleParameters, getVehicleParameters, type VehicleParameters } from "@/services/vehicles";
 import { addFuelingRecords, getFuelingRecords, type FuelingRecordPayload } from "@/services/fueling";
 import { addMaintenanceRecords, getMaintenanceRecords } from "@/services/maintenance";
+import { getRecords as getTripRecords } from "@/services/records";
 import * as XLSX from 'xlsx';
 import Papa from 'papaparse';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -41,6 +42,8 @@ export default function SettingsPage() {
         fueling: 0,
         maintenance: 0,
         diesel: 0,
+        tripRecords: 0,
+        tripAlerts: 0,
     });
     const [isStatsLoading, setIsStatsLoading] = useState(true);
 
@@ -65,17 +68,26 @@ export default function SettingsPage() {
     const fetchDbStats = async () => {
         setIsStatsLoading(true);
         try {
-            const [vehiclesData, fuelingData, maintenanceData, dieselData] = await Promise.all([
+            const [vehiclesData, fuelingData, maintenanceData, dieselData, tripData] = await Promise.all([
                 getVehicleParameters(),
                 getFuelingRecords(),
                 getMaintenanceRecords(),
-                getDieselPrices()
+                getDieselPrices(),
+                getTripRecords()
             ]);
+
+            const tripAlerts = tripData.filter(r => 
+                r.status === "Em Andamento" || 
+                (r.status === "Finalizado" && (!r.startOdometerPhoto || !r.endOdometerPhoto))
+            ).length;
+
             setDbStats({
                 vehicles: vehiclesData.length,
                 fueling: fuelingData.length,
                 maintenance: maintenanceData.length,
-                diesel: dieselData.length
+                diesel: dieselData.length,
+                tripRecords: tripData.length,
+                tripAlerts: tripAlerts,
             });
         } catch (error) {
             console.error("Failed to fetch DB stats", error);
@@ -311,38 +323,38 @@ export default function SettingsPage() {
                             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                         </div>
                     ) : (
-                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
                             <Card>
                                 <CardHeader className="pb-2">
-                                    <CardTitle className="text-base font-medium flex items-center justify-between">
+                                    <CardTitle className="text-sm font-medium flex items-center justify-between">
+                                        Registros de Viagem
+                                        <FileText className="h-4 w-4 text-muted-foreground" />
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold">{dbStats.tripRecords}</div>
+                                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                       <AlertTriangle className="h-3 w-3 text-destructive" /> {dbStats.tripAlerts} Alertas pendentes
+                                    </p>
+                                </CardContent>
+                            </Card>
+                            <Card>
+                                <CardHeader className="pb-2">
+                                    <CardTitle className="text-sm font-medium flex items-center justify-between">
                                         Parâmetros de Veículos
-                                        <Popover>
-                                            <PopoverTrigger>
-                                                <Info className="h-4 w-4 text-muted-foreground cursor-pointer" />
-                                            </PopoverTrigger>
-                                            <PopoverContent className="text-sm">
-                                                Total de veículos com metas de consumo (Amarela, Verde, Dourada) e capacidade do tanque definidos. Essencial para o cálculo de eficiência.
-                                            </PopoverContent>
-                                        </Popover>
+                                        <Car className="h-4 w-4 text-muted-foreground" />
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent>
                                     <div className="text-2xl font-bold">{dbStats.vehicles}</div>
-                                    <p className="text-xs text-muted-foreground">Veículos com parâmetros salvos</p>
+                                    <p className="text-xs text-muted-foreground">Veículos com parâmetros</p>
                                 </CardContent>
                             </Card>
                              <Card>
                                 <CardHeader className="pb-2">
-                                    <CardTitle className="text-base font-medium flex items-center justify-between">
-                                        Registros de Abastecimento
-                                         <Popover>
-                                            <PopoverTrigger>
-                                                <Info className="h-4 w-4 text-muted-foreground cursor-pointer" />
-                                            </PopoverTrigger>
-                                            <PopoverContent className="text-sm">
-                                                Total de registros de abastecimento importados. Usado para análises de custo e consumo de combustível.
-                                            </PopoverContent>
-                                        </Popover>
+                                    <CardTitle className="text-sm font-medium flex items-center justify-between">
+                                        Abastecimentos
+                                         <Fuel className="h-4 w-4 text-muted-foreground" />
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent>
@@ -352,16 +364,9 @@ export default function SettingsPage() {
                             </Card>
                              <Card>
                                 <CardHeader className="pb-2">
-                                    <CardTitle className="text-base font-medium flex items-center justify-between">
-                                        Registros de Manutenção
-                                         <Popover>
-                                            <PopoverTrigger>
-                                                <Info className="h-4 w-4 text-muted-foreground cursor-pointer" />
-                                            </PopoverTrigger>
-                                            <PopoverContent className="text-sm">
-                                                Total de registros de veículos que entraram em manutenção. Ajuda a correlacionar paradas com desempenho da frota.
-                                            </PopoverContent>
-                                        </Popover>
+                                    <CardTitle className="text-sm font-medium flex items-center justify-between">
+                                        Manutenções
+                                         <Wrench className="h-4 w-4 text-muted-foreground" />
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent>
@@ -371,21 +376,14 @@ export default function SettingsPage() {
                             </Card>
                              <Card>
                                 <CardHeader className="pb-2">
-                                    <CardTitle className="text-base font-medium flex items-center justify-between">
-                                        Histórico de Preços
-                                         <Popover>
-                                            <PopoverTrigger>
-                                                <Info className="h-4 w-4 text-muted-foreground cursor-pointer" />
-                                            </PopoverTrigger>
-                                            <PopoverContent className="text-sm">
-                                                Total de atualizações no preço do diesel. O valor mais recente é usado para os cálculos de custo estimado no painel.
-                                            </PopoverContent>
-                                        </Popover>
+                                    <CardTitle className="text-sm font-medium flex items-center justify-between">
+                                        Preços do Diesel
+                                         <Droplets className="h-4 w-4 text-muted-foreground" />
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent>
                                     <div className="text-2xl font-bold">{dbStats.diesel}</div>
-                                    <p className="text-xs text-muted-foreground">Preços de diesel salvos</p>
+                                    <p className="text-xs text-muted-foreground">Preços salvos</p>
                                 </CardContent>
                             </Card>
                         </div>
@@ -577,3 +575,5 @@ export default function SettingsPage() {
         </div>
     )
 }
+
+    
