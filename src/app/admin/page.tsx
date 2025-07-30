@@ -11,6 +11,7 @@ import { Loader2, Wand2, FileText, Upload, Lightbulb, ListChecks, BarChart, Arch
 import { useToast } from "@/hooks/use-toast";
 import { getRecords, type Record } from "@/services/records";
 import { getDieselPrices, type DieselPrice } from "@/services/settings";
+import { getVehicleParameters, type VehicleParameters } from "@/services/vehicles";
 import { generateReport, type ReportOutput } from "@/ai/flows/report-flow";
 import { analyseSheet, type SheetAnalysisInput, type SheetAnalysisOutput } from "@/ai/flows/sheet-analysis-flow";
 import { generatePresentationSummary, type PresentationInput, type PresentationOutput } from "@/ai/flows/presentation-flow";
@@ -28,7 +29,6 @@ import * as XLSX from 'xlsx';
 import Papa from 'papaparse';
 
 
-type Period = "daily" | "weekly" | "monthly";
 const AVERAGE_KM_PER_LITER = 2.5;
 
 const fileToDataURI = (file: File): Promise<string> => {
@@ -77,6 +77,8 @@ export default function AdminDashboard() {
     });
     const [records, setRecords] = useState<Record[]>([]);
     const [dieselPrices, setDieselPrices] = useState<DieselPrice[]>([]);
+    const [vehicleParameters, setVehicleParameters] = useState<VehicleParameters[]>([]);
+
 
     // Fleet Report state
     const [isFleetLoading, setIsFleetLoading] = useState(false);
@@ -98,12 +100,14 @@ export default function AdminDashboard() {
     const fetchAndSetData = useCallback(async () => {
         setIsLoading(true);
         try {
-            const [allRecords, allPrices] = await Promise.all([
+            const [allRecords, allPrices, allParameters] = await Promise.all([
                 getRecords(),
-                getDieselPrices()
+                getDieselPrices(),
+                getVehicleParameters()
             ]);
             setRecords(allRecords);
             setDieselPrices(allPrices);
+            setVehicleParameters(allParameters);
         } catch (error) {
             console.error(error);
             toast({
@@ -160,7 +164,16 @@ export default function AdminDashboard() {
             (r.status === "Finalizado" && (!r.startOdometerPhoto || !r.endOdometerPhoto))
         ).length;
         
-        const totalCost = (totalKm / AVERAGE_KM_PER_LITER) * latestPrice;
+        const totalCost = filteredRecords
+            .filter(r => r.status === 'Finalizado' && r.kmEnd && r.kmStart)
+            .reduce((sum, r) => {
+                const km = r.kmEnd! - r.kmStart!;
+                const vehicleParam = vehicleParameters.find(p => p.carId === r.car);
+                const consumption = vehicleParam?.thresholds.green || AVERAGE_KM_PER_LITER;
+                const cost = (km / consumption) * latestPrice;
+                return sum + cost;
+            }, 0);
+
 
         const performanceData = (() => {
             if (!startDate || !endDate) return [];
@@ -210,7 +223,7 @@ export default function AdminDashboard() {
 
         return { totalKm, alerts, performanceData, topVehicles, totalCost, latestDieselPrice: latestPrice };
 
-    }, [records, dateRange, dieselPrices]);
+    }, [records, dateRange, dieselPrices, vehicleParameters]);
 
     const handleGenerateFleetReport = async () => {
         setIsFleetLoading(true);
@@ -451,7 +464,7 @@ export default function AdminDashboard() {
                                             <Info className="h-3 w-3 text-muted-foreground cursor-pointer" />
                                         </PopoverTrigger>
                                         <PopoverContent className="text-xs">
-                                           Estimativa de custo calculada usando a fórmula: (KM Total / Consumo Médio) * Último Preço do Diesel. O consumo médio padrão é de 2.5 KM/L.
+                                           Estimativa de custo calculada usando a fórmula: (KM Total / Consumo do Veículo) * Último Preço do Diesel. O consumo é a meta 'Verde' específica de cada veículo, ou 2.5 KM/L se não houver parâmetro.
                                         </PopoverContent>
                                     </Popover>
                                 </div>
@@ -788,5 +801,3 @@ export default function AdminDashboard() {
     </div>
   );
 }
-
-    

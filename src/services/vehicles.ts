@@ -2,7 +2,7 @@
 'use server';
 
 import { db } from '@/lib/firebase';
-import { collection, doc, writeBatch } from 'firebase/firestore';
+import { collection, doc, writeBatch, getDocs } from 'firebase/firestore';
 
 export interface VehicleParameters {
   carId: string;
@@ -11,7 +11,7 @@ export interface VehicleParameters {
     green: number;
     gold: number;
   };
-  tankCapacity?: number; // Adicionado para armazenar a capacidade do tanque
+  tankCapacity?: number;
 }
 
 /**
@@ -19,7 +19,7 @@ export interface VehicleParameters {
  * Cada documento terá o ID do veículo como seu ID no Firestore para fácil acesso.
  * @param parameters A lista de parâmetros de veículos a ser salva.
  */
-export async function saveVehicleParameters(parameters: VehicleParameters[]): Promise<void> {
+export async function saveVehicleParameters(parameters: Omit<VehicleParameters, 'tankCapacity'>[]): Promise<void> {
   const batch = writeBatch(db);
   const parametersCollection = collection(db, 'vehicleParameters');
 
@@ -32,4 +32,14 @@ export async function saveVehicleParameters(parameters: VehicleParameters[]): Pr
   });
 
   await batch.commit();
+}
+
+
+/**
+ * Busca todos os parâmetros de veículos do Firestore.
+ * @returns Uma lista de todos os parâmetros de veículos.
+ */
+export async function getVehicleParameters(): Promise<VehicleParameters[]> {
+    const querySnapshot = await getDocs(collection(db, 'vehicleParameters'));
+    return querySnapshot.docs.map(doc => ({ carId: doc.id, ...doc.data() } as VehicleParameters));
 }
