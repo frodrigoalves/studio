@@ -141,24 +141,20 @@ export default function SettingsPage() {
 
     const handleProcessParameters = async () => {
         if (!parametersFile) {
-            toast({ variant: 'destructive', title: 'Nenhum arquivo selecionado', description: 'Por favor, selecione um arquivo de mapeamento.'});
+            toast({ variant: 'destructive', title: 'Nenhum arquivo selecionado', description: 'Por favor, selecione um arquivo de parâmetros.'});
             return;
         }
         setIsParametersLoading(true);
         try {
-            let fileDataUri: string;
-            // Check if file is PDF, otherwise process as sheet
-            if (parametersFile.type === 'application/pdf') {
-                fileDataUri = await fileToDataURI(parametersFile);
-            } else {
-                fileDataUri = await processSheetFileToText(parametersFile);
-            }
+            // A IA é usada aqui APENAS para extrair dados de um formato complexo (PDF/XLSX)
+            const fileDataUri = await processSheetFileToText(parametersFile);
 
             const result: VehicleParametersOutput = await processVehicleParameters({ fileDataUri });
 
+            // Os dados extraídos são salvos no banco de dados para serem usados como parâmetros
             if (result.vehicles && result.vehicles.length > 0) {
                 await saveVehicleParameters(result.vehicles);
-                 toast({ title: 'Mapeamento Salvo', description: `${result.vehicles.length} parâmetros de veículos foram salvos com sucesso.`});
+                 toast({ title: 'Parâmetros Salvos', description: `${result.vehicles.length} parâmetros de veículos foram salvos no banco de dados.`});
             } else {
                  toast({ variant: 'destructive', title: 'Nenhum dado encontrado', description: 'A IA não conseguiu extrair parâmetros do arquivo. Verifique o conteúdo e o formato.'});
             }
@@ -169,7 +165,7 @@ export default function SettingsPage() {
 
         } catch (error) {
              console.error("Error processing parameters file", error);
-             toast({ variant: 'destructive', title: 'Erro ao processar arquivo', description: `Ocorreu um erro ao processar o mapeamento: ${error instanceof Error ? error.message : String(error)}`});
+             toast({ variant: 'destructive', title: 'Erro ao processar arquivo', description: `Ocorreu um erro ao processar os parâmetros: ${error instanceof Error ? error.message : String(error)}`});
         } finally {
             setIsParametersLoading(false);
         }
@@ -204,8 +200,9 @@ export default function SettingsPage() {
                          return;
                     }
                     
+                    // Salva os registros diretamente no banco de dados
                     await addFuelingRecords(fuelingRecords);
-                    toast({ title: 'Importação Concluída', description: `${fuelingRecords.length} registros de abastecimento foram importados com sucesso.`});
+                    toast({ title: 'Importação Concluída', description: `${fuelingRecords.length} registros de abastecimento foram salvos no banco de dados.`});
                     setFuelingFile(null);
                     const fileInput = document.getElementById('fueling-upload') as HTMLInputElement;
                     if(fileInput) fileInput.value = '';
@@ -254,8 +251,9 @@ export default function SettingsPage() {
                          return;
                     }
                     
+                    // Salva os registros de manutenção diretamente no banco de dados
                     await addMaintenanceRecords(maintenanceRecords);
-                    toast({ title: 'Importação Concluída', description: `${maintenanceRecords.length} registros de manutenção foram importados com sucesso.`});
+                    toast({ title: 'Importação Concluída', description: `${maintenanceRecords.length} registros de manutenção foram salvos no banco de dados.`});
                     setMaintenanceFile(null);
                     const fileInput = document.getElementById('maintenance-upload') as HTMLInputElement;
                     if(fileInput) fileInput.value = '';
@@ -281,7 +279,7 @@ export default function SettingsPage() {
              <Card>
                 <CardHeader>
                     <CardTitle>Valor do Diesel</CardTitle>
-                    <CardDescription>Adicione ou atualize o valor do litro do diesel. O valor mais recente será usado nos cálculos.</CardDescription>
+                    <CardDescription>Adicione ou atualize o valor do litro do diesel. O valor mais recente será usado nos cálculos do sistema.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <form className="grid sm:grid-cols-3 gap-4" onSubmit={handleSavePrice}>
@@ -351,7 +349,7 @@ export default function SettingsPage() {
             <Card>
                 <CardHeader>
                     <CardTitle>Parâmetros de Consumo por Veículo</CardTitle>
-                    <CardDescription>Faça o upload de uma planilha (XLSX ou PDF) com os parâmetros de consumo (metas) para cada veículo.</CardDescription>
+                    <CardDescription>Faça o upload de uma planilha (XLSX, PDF) para definir as metas de consumo de cada veículo. A IA irá extrair os dados e salvá-los no banco de dados.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                    <div className="text-sm text-muted-foreground p-4 border-l-4 border-accent bg-accent/10 rounded-r-lg">
@@ -364,7 +362,7 @@ export default function SettingsPage() {
                    </div>
                    <div className="flex flex-col sm:flex-row gap-4 items-end">
                         <div className="space-y-2 w-full sm:w-auto flex-grow">
-                            <Label htmlFor="parameters-upload">Arquivo de Mapeamento</Label>
+                            <Label htmlFor="parameters-upload">Arquivo de Parâmetros</Label>
                             <div className="relative">
                                 <Input
                                     id="parameters-upload"
@@ -379,7 +377,7 @@ export default function SettingsPage() {
                         </div>
                         <Button onClick={handleProcessParameters} disabled={isParametersLoading || !parametersFile}>
                             {isParametersLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Wand2 className="mr-2 h-4 w-4"/>}
-                            {isParametersLoading ? "Processando..." : "Processar Parâmetros"}
+                            {isParametersLoading ? "Processando..." : "Salvar Parâmetros no BD"}
                         </Button>
                    </div>
                 </CardContent>
@@ -389,7 +387,7 @@ export default function SettingsPage() {
                  <Card>
                     <CardHeader>
                         <CardTitle>Importação de Dados de Abastecimento</CardTitle>
-                        <CardDescription>Faça o upload de uma planilha (XLSX ou CSV) com os registros de abastecimento para calcular o consumo real.</CardDescription>
+                        <CardDescription>Faça o upload de uma planilha (XLSX, CSV) para salvar os registros de abastecimento no banco de dados.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                        <div className="text-sm text-muted-foreground p-4 border-l-4 border-accent bg-accent/10 rounded-r-lg">
@@ -416,7 +414,7 @@ export default function SettingsPage() {
                             </div>
                             <Button onClick={handleImportFuelingData} disabled={isFuelingLoading || !fuelingFile}>
                                 {isFuelingLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Fuel className="mr-2 h-4 w-4"/>}
-                                {isFuelingLoading ? "Importando..." : "Importar Abastecimentos"}
+                                {isFuelingLoading ? "Importando..." : "Importar para BD"}
                             </Button>
                        </div>
                     </CardContent>
@@ -425,7 +423,7 @@ export default function SettingsPage() {
                 <Card>
                     <CardHeader>
                         <CardTitle>Registro de Veículos em Manutenção</CardTitle>
-                        <CardDescription>Faça o upload de uma planilha com a lista de veículos que estão atualmente em manutenção ou reparo.</CardDescription>
+                        <CardDescription>Faça o upload de uma planilha para salvar a lista de veículos em manutenção no banco de dados.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                        <div className="text-sm text-muted-foreground p-4 border-l-4 border-accent bg-accent/10 rounded-r-lg">
@@ -452,7 +450,7 @@ export default function SettingsPage() {
                             </div>
                             <Button onClick={handleImportMaintenanceData} disabled={isMaintenanceLoading || !maintenanceFile}>
                                 {isMaintenanceLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Wrench className="mr-2 h-4 w-4"/>}
-                                {isMaintenanceLoading ? "Importando..." : "Importar Manutenções"}
+                                {isMaintenanceLoading ? "Importando..." : "Importar para BD"}
                             </Button>
                        </div>
                     </CardContent>
@@ -461,3 +459,5 @@ export default function SettingsPage() {
         </div>
     )
 }
+
+    
