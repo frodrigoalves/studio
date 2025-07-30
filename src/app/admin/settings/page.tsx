@@ -15,6 +15,7 @@ import { saveVehicleParameters } from "@/services/vehicles";
 import { addFuelingRecords, type FuelingRecordPayload } from "@/services/fueling";
 import { addMaintenanceRecords } from "@/services/maintenance";
 import * as XLSX from 'xlsx';
+import Papa from 'papaparse';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 const fileToDataURI = (file: File): Promise<string> => {
@@ -23,6 +24,33 @@ const fileToDataURI = (file: File): Promise<string> => {
         reader.onload = (e) => resolve(e.target?.result as string);
         reader.onerror = reject;
         reader.readAsDataURL(file);
+    });
+};
+
+const processSheetFileToText = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = new Uint8Array(e.target?.result as ArrayBuffer);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                
+                // Convert to CSV string, which is a text format
+                const csvData = Papa.unparse(jsonData as Papa.ParseResult<any>['data']);
+
+                // Create a text-based data URI
+                const dataUri = `data:text/plain;charset=utf-8,${encodeURIComponent(csvData)}`;
+                resolve(dataUri);
+            } catch (error) {
+                console.error("Error parsing spreadsheet:", error);
+                reject(new Error("Failed to parse spreadsheet. Ensure it's a valid XLSX/CSV file."));
+            }
+        };
+        reader.onerror = (error) => reject(error);
+        reader.readAsArrayBuffer(file);
     });
 };
 
@@ -118,10 +146,17 @@ export default function SettingsPage() {
         }
         setIsParametersLoading(true);
         try {
-            const fileDataUri = await fileToDataURI(parametersFile);
+            let fileDataUri: string;
+            // Check if file is PDF, otherwise process as sheet
+            if (parametersFile.type === 'application/pdf') {
+                fileDataUri = await fileToDataURI(parametersFile);
+            } else {
+                fileDataUri = await processSheetFileToText(parametersFile);
+            }
+
             const result: VehicleParametersOutput = await processVehicleParameters({ fileDataUri });
 
-            if (result.vehicles.length > 0) {
+            if (result.vehicles && result.vehicles.length > 0) {
                 await saveVehicleParameters(result.vehicles);
                  toast({ title: 'Mapeamento Salvo', description: `${result.vehicles.length} parâmetros de veículos foram salvos com sucesso.`});
             } else {
@@ -134,7 +169,7 @@ export default function SettingsPage() {
 
         } catch (error) {
              console.error("Error processing parameters file", error);
-             toast({ variant: 'destructive', title: 'Erro ao processar arquivo', description: 'Ocorreu um erro ao processar o mapeamento. Tente novamente.'});
+             toast({ variant: 'destructive', title: 'Erro ao processar arquivo', description: `Ocorreu um erro ao processar o mapeamento: ${error instanceof Error ? error.message : String(error)}`});
         } finally {
             setIsParametersLoading(false);
         }
@@ -334,7 +369,7 @@ export default function SettingsPage() {
                                 <Input
                                     id="parameters-upload"
                                     type="file"
-                                    accept=".xlsx, .xls, .pdf"
+                                    accept=".xlsx, .xls, .csv, .pdf"
                                     onChange={(e) => handleFileChange(e, setParametersFile)}
                                     disabled={isParametersLoading}
                                     className="pr-12"

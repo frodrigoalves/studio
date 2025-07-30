@@ -13,7 +13,7 @@ import { z } from 'zod';
 
 
 const VehicleParametersInputSchema = z.object({
-  fileDataUri: z.string().describe("O conteúdo do arquivo (PDF, XLSX) como uma URI de dados."),
+  fileDataUri: z.string().describe("O conteúdo de texto do arquivo (PDF, XLSX, CSV) como uma URI de dados."),
 });
 export type VehicleParametersInput = z.infer<typeof VehicleParametersInputSchema>;
 
@@ -41,10 +41,10 @@ const parametersPrompt = ai.definePrompt({
   output: { schema: VehicleParametersOutputSchema },
   prompt: `
     Você é um assistente de extração de dados para a empresa TopBus Transportes.
-    Sua tarefa é analisar o documento fornecido e extrair os parâmetros de consumo para cada veículo.
+    Sua tarefa é analisar o conteúdo textual do documento fornecido e extrair os parâmetros de consumo para cada veículo.
 
     **Instruções Cruciais:**
-    1.  **Foco nas Colunas Relevantes:** Analise o documento e encontre as colunas: "VEICULO", "AMARELA", "VERDE" e "DOURADA". Ignore todas as outras colunas.
+    1.  **Foco nas Colunas Relevantes:** Analise o texto e encontre as colunas: "VEICULO", "AMARELA", "VERDE" e "DOURADA". Ignore todas as outras colunas. O texto pode estar em formato CSV ou extraído de um PDF.
     2.  **Extração de Dados:** Para cada linha da tabela:
         *   Extraia o número do veículo da coluna "VEICULO" e coloque no campo 'vehicleId'.
         *   Extraia o valor numérico da coluna "AMARELA" e coloque no campo 'thresholds.yellow'.
@@ -52,7 +52,7 @@ const parametersPrompt = ai.definePrompt({
         *   Extraia o valor numérico da coluna "DOURADA" e coloque no campo 'thresholds.gold'.
     3.  **Formato de Saída:** Retorne os dados extraídos como uma lista de objetos no formato JSON especificado. Certifique-se de que os valores de consumo sejam números (float), não strings. Substitua vírgulas por pontos nos decimais se necessário.
 
-    **Dados do Documento:**
+    **Dados do Documento (em formato texto/csv):**
     {{media url=fileDataUri}}
 
     Agora, gere a lista de parâmetros de veículos no formato de saída JSON especificado.
