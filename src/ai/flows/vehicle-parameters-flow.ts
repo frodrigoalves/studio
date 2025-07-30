@@ -46,13 +46,14 @@ const parametersPrompt = ai.definePrompt({
 
     **Instruções Cruciais:**
     1.  **Foco nas Colunas Relevantes:** Analise o texto e encontre as colunas: "VEICULO", "AMARELA", "VERDE", "DOURADA", e "CAPACIDADE TANQUE". Ignore todas as outras colunas. O texto pode estar em formato CSV ou extraído de um PDF.
-    2.  **Extração de Dados:** Para cada linha da tabela:
+    2.  **Ignorar Linhas Inválidas:** Ignore completamente quaisquer linhas que estejam em branco ou que não contenham um valor válido na coluna "VEICULO". Se uma linha não tiver um identificador de veículo, simplesmente pule para a próxima e não a inclua na saída.
+    3.  **Extração de Dados:** Para cada linha válida:
         *   Extraia o número do veículo da coluna "VEICULO" e coloque no campo 'carId'.
         *   Extraia o valor numérico da coluna "AMARELA" e coloque no campo 'thresholds.yellow'.
         *   Extraia o valor numérico da coluna "VERDE" e coloque no campo 'thresholds.green'.
         *   Extraia o valor numérico da coluna "DOURADA" e coloque no campo 'thresholds.gold'.
         *   Extraia o valor numérico da coluna "CAPACIDADE TANQUE" e coloque no campo 'tankCapacity'.
-    3.  **Formato de Saída:** Retorne os dados extraídos como uma lista de objetos no formato JSON especificado. Certifique-se de que os valores de consumo sejam números (float), não strings. Substitua vírgulas por pontos nos decimais se necessário.
+    4.  **Formato de Saída:** Retorne os dados extraídos como uma lista de objetos no formato JSON especificado. Certifique-se de que os valores de consumo sejam números (float), não strings. Substitua vírgulas por pontos nos decimais se necessário.
 
     **Dados do Documento (em formato texto/csv):**
     {{media url=fileDataUri}}
@@ -72,3 +73,4 @@ const vehicleParametersFlow = ai.defineFlow(
     return output!;
   }
 );
+
