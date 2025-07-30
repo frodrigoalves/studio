@@ -35,13 +35,20 @@ const fileToBase64 = (file: File): Promise<string> => {
 const createStartFormSchema = (activeVehicles: VehicleParameters[]) => {
     const activeVehicleIds = activeVehicles.map(v => v.carId);
     
+    let carSchema = z.string().min(1, "Carro é obrigatório.");
+
+    // Only add the refinement if there are active vehicles to validate against
+    if (activeVehicleIds.length > 0) {
+        carSchema = carSchema.refine(
+            (carId) => activeVehicleIds.includes(carId),
+            { message: "Veículo não encontrado ou inativo. Verifique o número digitado." }
+        );
+    }
+    
     return z.object({
         chapa: z.string().min(1, "Chapa é obrigatória."),
         name: z.string().min(1, "Nome é obrigatório."),
-        car: z.string().min(1, "Carro é obrigatório.").refine(
-            (carId) => activeVehicleIds.includes(carId),
-            { message: "Veículo não encontrado ou inativo. Verifique o número digitado." }
-        ),
+        car: carSchema,
         line: z.string().min(1, "Linha é obrigatória."),
         initialKm: z.coerce.number({ required_error: "Km Inicial é obrigatório."}).min(1, "Km Inicial é obrigatório."),
         startOdometerPhoto: z.any().refine(file => file, "Foto é obrigatória."),
@@ -486,3 +493,4 @@ export function DriverForm() {
     </Card>
   );
 }
+
