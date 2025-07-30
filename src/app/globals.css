@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    --background: 207 70% 95.5%; /* #EBF4FA */
+    --background: 210 40% 98%; /* Very Light Blue (#F8F9FA) - Similar to EBF4FA but more standard */
     --foreground: 223 39% 11%; /* Dark Blue */
 
     --card: 0 0% 100%;
@@ -13,56 +13,56 @@
     --popover: 0 0% 100%;
     --popover-foreground: 223 39% 11%;
 
-    --primary: 223 39% 25%; /* #293855 - Dark Blue from Logo */
-    --primary-foreground: 0 0% 98%;
+    --primary: 212 98% 74%; /* Soft Blue (#77B5FE) */
+    --primary-foreground: 223 39% 11%;
 
-    --secondary: 220 13% 91%;
-    --secondary-foreground: 224 71% 4%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222 47.4% 11.2%;
 
-    --muted: 220 13% 91%;
-    --muted-foreground: 220 9% 46%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
 
-    --accent: 30 96% 58%; /* #FC8A1D - Orange from Logo */
-    --accent-foreground: 223 39% 11%;
+    --accent: 120 73% 75%; /* Light Green (#90EE90) */
+    --accent-foreground: 222.2 47.4% 11.2%;
 
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive-foreground: 210 40% 98%;
 
-    --border: 220 13% 89%;
-    --input: 220 13% 89%;
-    --ring: 30 96% 58%; /* Orange for focus rings */
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 212 98% 74%; /* Soft Blue for focus rings */
 
     --radius: 0.5rem;
   }
 
   .dark {
-    --background: 224 71% 4%;
-    --foreground: 210 20% 98%;
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
 
-    --card: 224 71% 4%;
-    --card-foreground: 210 20% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
 
-    --popover: 224 71% 4%;
-    --popover-foreground: 210 20% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
 
-    --primary: 30 96% 58%;
-    --primary-foreground: 224 71% 4%;
+    --primary: 212 98% 74%;
+    --primary-foreground: 222.2 47.4% 11.2%;
 
-    --secondary: 215 28% 17%;
-    --secondary-foreground: 210 20% 98%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
 
-    --muted: 215 28% 17%;
-    --muted-foreground: 218 11% 65%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
 
-    --accent: 30 96% 58%;
-    --accent-foreground: 224 71% 4%;
+    --accent: 120 73% 75%;
+    --accent-foreground: 210 40% 98%;
 
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 210 20% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
 
-    --border: 215 28% 17%;
-    --input: 215 28% 17%;
-    --ring: 30 96% 58%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212 98% 74%;
   }
 }
 
@@ -72,6 +72,6 @@
   }
   body {
     @apply bg-background text-foreground;
-     background-image: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23293855' fill-opacity='0.08' fill-rule='evenodd'%3E%3Cpath d='M19 11h-8v8h-2v-8H1v-2h8V1h2v8h8z'/%3E%3C/g%3E%3C/svg%3E");
+     background-image: url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%2377B5FE' fill-opacity='0.1' fill-rule='evenodd'%3E%3Cpath d='M19 11h-8v8h-2v-8H1v-2h8V1h2v8h8z'/%3E%3C/g%3E%3C/svg%3E");
   }
 }

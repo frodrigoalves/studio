@@ -31,7 +31,6 @@ async function uploadPhoto(photoBase64: string | null, recordId: string, type: '
 
     const storageRef = ref(storage, `odometer_photos/${recordId}-${type}-${uuidv4()}.jpg`);
     
-    // O uploadString espera a string base64 pura, então removemos o prefixo.
     const base64String = photoBase64.split(',')[1];
     
     await uploadString(storageRef, base64String, 'base64');
@@ -65,7 +64,7 @@ export async function addRecord(record: RecordAddPayload): Promise<Record> {
       ...record,
       kmStart: record.kmStart ? Number(record.kmStart) : null,
       kmEnd: record.kmEnd ? Number(record.kmEnd) : null,
-      date: new Date(record.date).toISOString().split('T')[0],
+      date: new Date(record.date).toISOString(),
       startOdometerPhoto: startOdometerPhotoUrl,
       endOdometerPhoto: endOdometerPhotoUrl,
   };
@@ -102,11 +101,9 @@ export async function updateRecord(id: string, data: RecordUpdatePayload): Promi
 export async function deleteRecord(id: string, startPhotoUrl: string | null, endPhotoUrl: string | null): Promise<void> {
     const recordRef = doc(db, "tripRecords", id);
     
-    // Delete photos from Storage first
     await deletePhoto(startPhotoUrl);
     await deletePhoto(endPhotoUrl);
 
-    // Then delete the document from Firestore
     await deleteDoc(recordRef);
 }
 
@@ -128,7 +125,6 @@ export async function getRecordByPlateAndStatus(plate: string, status: "Em Andam
         return null;
     }
 
-    // Sort by date descending in-memory to find the most recent record
     const records = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Record));
     records.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     

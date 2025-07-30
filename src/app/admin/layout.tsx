@@ -32,7 +32,7 @@ interface User {
 const pageTitles: { [key: string]: string } = {
     '/admin': 'Painel BI',
     '/admin/records': 'Registros de Viagens',
-    '/admin/settings': 'Configurações',
+    '/admin/settings': 'Configurações e Importação',
 };
 
 
@@ -75,7 +75,7 @@ export default function AdminLayout({
     e.preventDefault();
     toast({
         title: "Em Breve",
-        description: "Esta função está em desenvolvimento.",
+        description: "Esta funcionalidade está em desenvolvimento e será liberada em breve.",
     });
   }
 
@@ -92,8 +92,10 @@ export default function AdminLayout({
     <SidebarProvider>
       <Sidebar>
         <SidebarHeader>
-            <Image src="/logo.jpeg" alt="TopBus Logo" width={140} height={35} className="group-data-[collapsible=icon]:hidden p-2" />
-            <Image src="/logo.jpeg" alt="TopBus Logo" width={32} height={32} className="hidden group-data-[collapsible=icon]:block mx-auto" />
+            <div className="p-2 flex justify-center">
+                 <Image src="/logo.jpeg" alt="TopBus Logo" width={140} height={35} className="group-data-[collapsible=icon]:hidden" />
+                 <Image src="/logo.jpeg" alt="TopBus Logo" width={32} height={32} className="hidden group-data-[collapsible=icon]:block" />
+            </div>
         </SidebarHeader>
         <SidebarContent>
           <SidebarMenu>
@@ -190,7 +192,7 @@ export default function AdminLayout({
         </header>
         <main className="p-4 lg:p-6 flex-1 overflow-y-auto">{children}</main>
         <footer className="p-4 text-center text-xs text-muted-foreground border-t">
-            <div>Institutional MVP developed by Rodrigo Alves</div>
+            <div>MVP Institucional desenvolvido por Rodrigo Alves para TopBus</div>
         </footer>
       </div>
     </SidebarProvider>
