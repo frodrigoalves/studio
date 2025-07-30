@@ -16,7 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const [name, setName] = useState('');
+  const [sector, setSector] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -28,17 +28,20 @@ export default function LoginPage() {
 
     let userRole: 'diretor' | 'analyst' | null = null;
     let loginSuccess = false;
+    let userName = '';
 
     if (password === 'diretoria') {
         userRole = 'diretor';
+        userName = 'Diretor';
         loginSuccess = true;
     } else if (password === 'analise2024') {
         userRole = 'analyst';
+        userName = 'Analista';
         loginSuccess = true;
     }
 
     if (loginSuccess && userRole) {
-      localStorage.setItem('user', JSON.stringify({ name: name || (userRole === 'diretor' ? 'Diretor' : 'Analista'), role: userRole }));
+      localStorage.setItem('user', JSON.stringify({ name: userName, role: userRole }));
       
       toast({
         title: "Login bem-sucedido!",
@@ -50,7 +53,7 @@ export default function LoginPage() {
       toast({
         variant: "destructive",
         title: "Erro no login",
-        description: "Nome de usuário ou senha incorretos.",
+        description: "Credenciais incorretas.",
       });
       setIsLoading(false);
     }
@@ -68,13 +71,13 @@ export default function LoginPage() {
         <Card>
             <CardHeader>
                 <CardTitle>Login</CardTitle>
-                <CardDescription>Insira seu nome e a senha de acesso.</CardDescription>
+                <CardDescription>Insira suas credenciais</CardDescription>
             </CardHeader>
             <CardContent>
                 <form onSubmit={handleLogin} className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="name">Nome</Label>
-                        <Input id="name" placeholder="Seu nome" value={name} onChange={(e) => setName(e.target.value)} required disabled={isLoading}/>
+                        <Label htmlFor="sector">Setor</Label>
+                        <Input id="sector" placeholder="Seu setor" value={sector} onChange={(e) => setSector(e.target.value)} required disabled={isLoading}/>
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="password">Senha</Label>
