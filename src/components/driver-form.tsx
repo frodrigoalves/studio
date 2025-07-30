@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useTransition, useCallback, useRef, useEffect } from "react";
+import { useState, useTransition, useCallback, useRef, useEffect, useMemo } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -59,8 +59,10 @@ const endFormSchema = z.object({
 
 
 type EndFormValues = z.infer<typeof endFormSchema>;
+type StartFormValues = z.infer<ReturnType<typeof createStartFormSchema>>;
 
-const initialStartValues = { chapa: "", name: "", car: "", line: "", initialKm: '', startOdometerPhoto: null };
+
+const initialStartValues: Omit<StartFormValues, 'initialKm' | 'startOdometerPhoto'> & { initialKm: string | number, startOdometerPhoto: null } = { chapa: "", name: "", car: "", line: "", initialKm: '', startOdometerPhoto: null };
 const initialEndValues: Omit<EndFormValues, 'finalKm' | 'name' | 'car' | 'line'> & { finalKm: string | number, name: string, car: string, line: string } = { chapa: "", name: "", car: "", line: "", finalKm: '', endOdometerPhoto: null };
 
 
@@ -71,18 +73,31 @@ export function DriverForm() {
   const [isSearching, setIsSearching] = useState(false);
   const [recordToEnd, setRecordToEnd] = useState<Record | null>(null);
   const [activeVehicles, setActiveVehicles] = useState<VehicleParameters[]>([]);
+  const [isSchemaReady, setIsSchemaReady] = useState(false);
   
   const startFileInputRef = useRef<HTMLInputElement>(null);
   const endFileInputRef = useRef<HTMLInputElement>(null);
   
-  const [startFormSchema, setStartFormSchema] = useState(() => createStartFormSchema([]));
+  const startFormSchema = useMemo(() => {
+    return createStartFormSchema(activeVehicles);
+  }, [activeVehicles]);
+  
+  const startForm = useForm<StartFormValues>({
+    resolver: zodResolver(startFormSchema),
+    defaultValues: initialStartValues,
+    mode: "onBlur",
+  });
+  
+  const endForm = useForm<EndFormValues>({
+    resolver: zodResolver(endFormSchema),
+    defaultValues: initialEndValues,
+  });
 
   useEffect(() => {
     async function fetchActiveVehicles() {
         try {
             const vehicles = await getActiveVehicles();
             setActiveVehicles(vehicles);
-            setStartFormSchema(createStartFormSchema(vehicles));
         } catch (error) {
             console.error("Failed to fetch active vehicles", error);
             toast({
@@ -90,28 +105,18 @@ export function DriverForm() {
                 title: "Erro ao carregar veículos",
                 description: "Não foi possível buscar a lista de veículos ativos. Tente recarregar a página."
             });
+        } finally {
+            setIsSchemaReady(true);
         }
     }
     fetchActiveVehicles();
   }, [toast]);
   
-  type StartFormValues = z.infer<typeof startFormSchema>;
-
-  const startForm = useForm<StartFormValues>({
-    resolver: zodResolver(startFormSchema),
-    defaultValues: initialStartValues,
-    // Re-validate on blur to give immediate feedback on the "car" field
-    mode: "onBlur"
-  });
-
-  const endForm = useForm<EndFormValues>({
-    resolver: zodResolver(endFormSchema),
-    defaultValues: initialEndValues,
-  });
-  
-   // Update resolver when schema changes
+  // Re-initializes the resolver when the schema changes.
   useEffect(() => {
-    startForm.reset(undefined, { keepValues: true }); // Keep the form values
+      startForm.reset(undefined, {
+          keepValues: true,
+      });
   }, [startFormSchema, startForm]);
 
 
@@ -271,102 +276,109 @@ export function DriverForm() {
             <TabsTrigger value="end">Finalizar Viagem</TabsTrigger>
           </TabsList>
           <TabsContent value="start" className="pt-4">
-            <Form {...startForm}>
-              <form onSubmit={startForm.handleSubmit(onStartSubmit)} className="space-y-4 px-2">
-                <FormField
-                  control={startForm.control}
-                  name="chapa"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Chapa</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Sua matrícula" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={startForm.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nome do Motorista</FormLabel>
-                      <FormControl>
-                          <Input placeholder="Seu nome" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={startForm.control}
-                  name="car"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Carro</FormLabel>
-                       <FormControl>
-                          <Input placeholder="Digite o número do veículo" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={startForm.control}
-                  name="line"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Linha</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Número da linha" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={startForm.control}
-                  name="initialKm"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Km Inicial</FormLabel>
-                      <FormControl>
-                        <Input type="number" placeholder="123456" {...field} value={field.value ?? ''} onChange={(e) => field.onChange(e.target.value === '' ? null : e.target.valueAsNumber)} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={startForm.control}
-                  name="startOdometerPhoto"
-                  render={({ field: { onChange, value, ...rest }}) => (
-                    <FormItem>
-                      <FormLabel>Foto do Odômetro (Início)</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Input type="file" accept="image/*" capture="camera" className="pr-12"
-                            {...rest}
-                            ref={startFileInputRef}
-                            onChange={(e) => {
-                              const file = e.target.files ? e.target.files[0] : null;
-                              onChange(file);
-                            }}
-                          />
-                          <Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button type="submit" className="w-full bg-green-600 hover:bg-green-700" disabled={isSubmitting || activeVehicles.length === 0}>
-                  {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                  {isSubmitting ? "Registrando..." : (activeVehicles.length === 0 ? "Carregando veículos..." : "Registrar Início")}
-                </Button>
-              </form>
-            </Form>
+             {!isSchemaReady ? (
+                <div className="flex flex-col items-center justify-center space-y-4 p-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">Carregando lista de veículos...</p>
+                </div>
+             ) : (
+                <Form {...startForm}>
+                  <form onSubmit={startForm.handleSubmit(onStartSubmit)} className="space-y-4 px-2">
+                    <FormField
+                      control={startForm.control}
+                      name="chapa"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Chapa</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Sua matrícula" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={startForm.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nome do Motorista</FormLabel>
+                          <FormControl>
+                              <Input placeholder="Seu nome" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={startForm.control}
+                      name="car"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Carro</FormLabel>
+                           <FormControl>
+                              <Input placeholder="Digite o número do veículo" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={startForm.control}
+                      name="line"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Linha</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Número da linha" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={startForm.control}
+                      name="initialKm"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Km Inicial</FormLabel>
+                          <FormControl>
+                            <Input type="number" placeholder="123456" {...field} value={field.value ?? ''} onChange={(e) => field.onChange(e.target.value === '' ? null : e.target.valueAsNumber)} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={startForm.control}
+                      name="startOdometerPhoto"
+                      render={({ field: { onChange, value, ...rest }}) => (
+                        <FormItem>
+                          <FormLabel>Foto do Odômetro (Início)</FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <Input type="file" accept="image/*" capture="camera" className="pr-12"
+                                {...rest}
+                                ref={startFileInputRef}
+                                onChange={(e) => {
+                                  const file = e.target.files ? e.target.files[0] : null;
+                                  onChange(file);
+                                }}
+                              />
+                              <Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <Button type="submit" className="w-full bg-green-600 hover:bg-green-700" disabled={isSubmitting}>
+                      {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                      {isSubmitting ? "Registrando..." : "Registrar Início"}
+                    </Button>
+                  </form>
+                </Form>
+            )}
           </TabsContent>
           <TabsContent value="end" className="pt-4">
             <Form {...endForm}>
