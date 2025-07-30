@@ -3,7 +3,7 @@ import { DriverForm } from '@/components/driver-form';
 import { UserCog } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Logo } from '@/components/logo';
+import Image from 'next/image';
 
 export default function Home() {
   return (
@@ -18,12 +18,10 @@ export default function Home() {
       </div>
       <div className="w-full max-w-md">
         <div className="flex flex-col items-center justify-center mb-6 text-center">
-          <Logo className="w-auto h-12" />
+          <Image src="/logo.png" alt="TopBus Logo" width={200} height={50} priority />
         </div>
         <DriverForm />
       </div>
     </main>
   );
 }
-
-    

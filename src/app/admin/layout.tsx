@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import {
   SidebarProvider,
@@ -20,7 +21,6 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Settings, FileText, LogOut, BrainCircuit, Loader2, Clock4, FileHeart, Wrench, ClipboardList, Users } from "lucide-react";
-import { Logo } from "@/components/logo";
 import { useToast } from "@/hooks/use-toast";
 
 
@@ -93,10 +93,8 @@ export default function AdminLayout({
       <Sidebar>
         <SidebarHeader>
           <div className="flex items-center gap-3 p-2">
-            <Logo className="w-auto h-10" />
-            <div className="group-data-[collapsible=icon]:hidden">
-              <h2 className="font-semibold text-lg">Painel Gestor</h2>
-            </div>
+             <Image src="/logo.png" alt="TopBus Logo" width={140} height={35} className="group-data-[collapsible=icon]:hidden" />
+             <Image src="/logo.png" alt="TopBus Logo" width={32} height={32} className="hidden group-data-[collapsible=icon]:block" />
           </div>
         </SidebarHeader>
         <SidebarContent>

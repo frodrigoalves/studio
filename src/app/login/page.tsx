@@ -4,13 +4,13 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { Logo } from '@/components/logo';
 
 
 export default function LoginPage() {
@@ -60,12 +60,7 @@ export default function LoginPage() {
     <main className="flex min-h-screen flex-col items-center justify-center p-4 bg-background">
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center justify-center mb-6 text-center">
-          <Logo 
-            className="w-auto h-12 mb-2 transition-all duration-500"
-            iconFill={isLoading ? '#F29100' : '#A0A0A0'}
-            textFill={isLoading ? 'currentColor' : '#A0A0A0'}
-            transportesFill={isLoading ? 'currentColor' : '#A0A0A0'}
-          />
+          <Image src="/logo.png" alt="TopBus Logo" width={200} height={50} priority />
           <p className="mt-2 text-lg text-muted-foreground">
             Acesso ao Painel de Gestor
           </p>
