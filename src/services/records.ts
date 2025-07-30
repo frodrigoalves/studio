@@ -2,8 +2,8 @@
 'use server';
 
 import { db, storage } from '@/lib/firebase';
-import { collection, addDoc, getDocs, doc, updateDoc, query, where, getDoc, orderBy, limit } from 'firebase/firestore';
-import { ref, uploadString, getDownloadURL } from 'firebase/storage';
+import { collection, addDoc, getDocs, doc, updateDoc, query, where, getDoc, orderBy, limit, deleteDoc } from 'firebase/firestore';
+import { ref, uploadString, getDownloadURL, deleteObject } from 'firebase/storage';
 import { v4 as uuidv4 } from 'uuid';
 
 
@@ -26,7 +26,6 @@ export type RecordUpdatePayload = Partial<Omit<Record, 'id' | 'driver' | 'car' |
 
 async function uploadPhoto(photoBase64: string | null, recordId: string, type: 'start' | 'end'): Promise<string | null> {
     if (!photoBase64 || !photoBase64.startsWith('data:image')) {
-        console.log(`Skipping upload for ${type}, invalid photo format.`);
         return null;
     }
 
@@ -38,6 +37,20 @@ async function uploadPhoto(photoBase64: string | null, recordId: string, type: '
     await uploadString(storageRef, base64String, 'base64');
     const downloadURL = await getDownloadURL(storageRef);
     return downloadURL;
+}
+
+async function deletePhoto(photoUrl: string | null) {
+    if (!photoUrl) return;
+    try {
+        const photoRef = ref(storage, photoUrl);
+        await deleteObject(photoRef);
+    } catch (error: any) {
+        if (error.code === 'storage/object-not-found') {
+            console.log(`Photo not found, skipping delete: ${photoUrl}`);
+        } else {
+            console.error(`Failed to delete photo: ${photoUrl}`, error);
+        }
+    }
 }
 
 
@@ -84,6 +97,17 @@ export async function updateRecord(id: string, data: RecordUpdatePayload): Promi
     }
 
     await updateDoc(recordRef, dataToUpdate);
+}
+
+export async function deleteRecord(id: string, startPhotoUrl: string | null, endPhotoUrl: string | null): Promise<void> {
+    const recordRef = doc(db, "tripRecords", id);
+    
+    // Delete photos from Storage first
+    await deletePhoto(startPhotoUrl);
+    await deletePhoto(endPhotoUrl);
+
+    // Then delete the document from Firestore
+    await deleteDoc(recordRef);
 }
 
 

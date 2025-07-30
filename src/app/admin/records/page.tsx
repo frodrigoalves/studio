@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { MoreHorizontal, PlusCircle, FileUp, Camera, AlertCircle, KeyRound, Loader2, Upload, FileDown, FileText, Send } from "lucide-react";
+import { MoreHorizontal, PlusCircle, FileUp, Camera, AlertCircle, KeyRound, Loader2, Upload, FileDown, FileText, Send, Trash2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import {
   Dialog,
@@ -18,10 +18,21 @@ import {
   DialogFooter,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from '@/hooks/use-toast';
-import { getRecords, addRecord, updateRecord, type Record, type RecordAddPayload } from '@/services/records';
+import { getRecords, addRecord, updateRecord, deleteRecord, type Record, type RecordAddPayload } from '@/services/records';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -49,10 +60,13 @@ export default function RecordsPage() {
     const [isPhotosDialogOpen, setPhotosDialogOpen] = useState(false);
     const [isEditDialogOpen, setEditDialogOpen] = useState(false);
     const [isAuthDialogOpen, setAuthDialogOpen] = useState(false);
+    const [isDeleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [selectedRecord, setSelectedRecord] = useState<Record | null>(null);
     const [authPassword, setAuthPassword] = useState('');
+    const [authAction, setAuthAction] = useState<'edit' | 'delete' | null>(null);
     const [isAuthorizing, setIsAuthorizing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
     
     const startPhotoInputRef = useRef<HTMLInputElement>(null);
     const endPhotoInputRef = useRef<HTMLInputElement>(null);
@@ -154,14 +168,32 @@ export default function RecordsPage() {
             setIsSaving(false);
         }
     }
+    
+    const handleDeleteRecord = async () => {
+        if (!selectedRecord) return;
+        setIsDeleting(true);
+        try {
+            await deleteRecord(selectedRecord.id, selectedRecord.startOdometerPhoto, selectedRecord.endOdometerPhoto);
+            setDeleteDialogOpen(false);
+            setSelectedRecord(null);
+            fetchRecords();
+            toast({ title: "Registro Apagado", description: "O registro foi apagado permanentemente."});
+        } catch (error) {
+            console.error("Failed to delete record", error);
+            toast({ variant: 'destructive', title: "Erro ao Apagar", description: "Não foi possível apagar o registro." });
+        } finally {
+            setIsDeleting(false);
+        }
+    }
 
     const openPhotosDialog = (record: Record) => {
         setSelectedRecord(record);
         setPhotosDialogOpen(true);
     };
     
-    const openEditDialog = (record: Record) => {
+    const openAuthDialog = (record: Record, action: 'edit' | 'delete') => {
         setSelectedRecord(record);
+        setAuthAction(action);
         setAuthDialogOpen(true);
     }
     
@@ -173,9 +205,11 @@ export default function RecordsPage() {
         if (authPassword === 'diretoria') {
             setAuthDialogOpen(false);
             setAuthPassword('');
-            if (selectedRecord) {
+            if (authAction === 'edit' && selectedRecord) {
                 setEditRecordData(selectedRecord);
                 setEditDialogOpen(true);
+            } else if (authAction === 'delete' && selectedRecord) {
+                setDeleteDialogOpen(true);
             }
         } else {
             toast({
@@ -411,8 +445,13 @@ export default function RecordsPage() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                      <DropdownMenuItem onClick={() => openEditDialog(record)}>Editar</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => openAuthDialog(record, 'edit')}>Editar</DropdownMenuItem>
                       <DropdownMenuItem onClick={() => openPhotosDialog(record)}>Ver Fotos</DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem className="text-destructive" onClick={() => openAuthDialog(record, 'delete')}>
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Apagar
+                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>
@@ -483,7 +522,7 @@ export default function RecordsPage() {
                     </div>
                 </DialogTitle>
                 <DialogDescription>
-                   Para editar este registro, por favor, insira a senha da diretoria.
+                   Para {authAction === 'edit' ? 'editar' : 'apagar'} este registro, por favor, insira a senha da diretoria.
                 </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
@@ -501,6 +540,27 @@ export default function RecordsPage() {
             </DialogFooter>
         </DialogContent>
     </Dialog>
+    
+    <AlertDialog open={isDeleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    Esta ação não pode ser desfeita. Isso apagará permanentemente o registro de viagem de{' '}
+                    <span className="font-semibold">{selectedRecord?.driver}</span> com o carro{' '}
+                    <span className="font-semibold">{selectedRecord?.car}</span>.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setSelectedRecord(null)}>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDeleteRecord} className="bg-destructive hover:bg-destructive/90" disabled={isDeleting}>
+                     {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {isDeleting ? 'Apagando...' : 'Apagar Permanentemente'}
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+
 
     <Dialog open={isEditDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent className="sm:max-w-2xl">
@@ -554,9 +614,3 @@ export default function RecordsPage() {
     </>
   );
 }
-
-    
-
-    
-
-    
