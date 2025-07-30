@@ -20,7 +20,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { addRecord, getRecordByPlateAndStatus, updateRecord, RecordUpdatePayload, Record } from "@/services/records";
+import { getActiveVehicles, type VehicleParameters } from "@/services/vehicles";
 import { cn } from "@/lib/utils";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 
 const fileToBase64 = (file: File): Promise<string> => {
@@ -64,9 +66,27 @@ export function DriverForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [recordToEnd, setRecordToEnd] = useState<Record | null>(null);
+  const [activeVehicles, setActiveVehicles] = useState<VehicleParameters[]>([]);
   
   const startFileInputRef = useRef<HTMLInputElement>(null);
   const endFileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    async function fetchActiveVehicles() {
+        try {
+            const vehicles = await getActiveVehicles();
+            setActiveVehicles(vehicles);
+        } catch (error) {
+            console.error("Failed to fetch active vehicles", error);
+            toast({
+                variant: "destructive",
+                title: "Erro ao carregar veículos",
+                description: "Não foi possível buscar a lista de veículos ativos. Tente recarregar a página."
+            });
+        }
+    }
+    fetchActiveVehicles();
+  }, [toast]);
 
   const startForm = useForm<StartFormValues>({
     resolver: zodResolver(startFormSchema),
@@ -268,9 +288,24 @@ export function DriverForm() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Carro</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Número do ônibus" {...field} />
-                      </FormControl>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione um veículo ativo" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            {activeVehicles.length === 0 ? (
+                                <SelectItem value="loading" disabled>Carregando veículos...</SelectItem>
+                            ) : (
+                                activeVehicles.map((vehicle) => (
+                                    <SelectItem key={vehicle.carId} value={vehicle.carId}>
+                                        {vehicle.carId}
+                                    </SelectItem>
+                                ))
+                            )}
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -437,7 +472,3 @@ export function DriverForm() {
     </Card>
   );
 }
-
-    
-
-    
