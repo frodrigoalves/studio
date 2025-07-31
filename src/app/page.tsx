@@ -8,7 +8,7 @@ const menuOptions = [
   { href: '/registro-km', label: 'REGISTRO DE KM', icon: FileText, available: true },
   { href: '#', label: 'ABASTECIMENTO', icon: Fuel, available: false },
   { href: '#', label: 'CHECKLIST', icon: ListChecks, available: false },
-  { href: '#', label: 'OCORRÊNCIAS', icon: AlertTriangle, available: false },
+  { href: '#', label: '', icon: AlertTriangle, available: false },
 ];
 
 export default function Home() {
