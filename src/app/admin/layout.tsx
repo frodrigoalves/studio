@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Settings, FileText, LogOut, BrainCircuit, Loader2, Clock4, FileHeart, Wrench, ClipboardList, Users } from "lucide-react";
+import { Settings, FileText, LogOut, BrainCircuit, Loader2, Clock4, FileHeart, Wrench, ClipboardList, Users, Fuel, ClipboardCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 
@@ -31,7 +31,7 @@ interface User {
 
 const pageTitles: { [key: string]: string } = {
     '/admin': 'Painel BI',
-    '/admin/records': 'Registros de Viagens',
+    '/admin/records': 'Registros de KM',
     '/admin/settings': 'Configurações e Importação',
 };
 
@@ -92,7 +92,7 @@ export default function AdminLayout({
     <SidebarProvider>
       <Sidebar>
         <SidebarHeader>
-            <div className="p-2 flex justify-center">
+            <div className="p-4 flex justify-center">
                  <Image src="/logo.jpeg" alt="TopBus Logo" width={140} height={35} className="group-data-[collapsible=icon]:hidden" />
                  <Image src="/logo.jpeg" alt="TopBus Logo" width={32} height={32} className="hidden group-data-[collapsible=icon]:block" />
             </div>
@@ -107,15 +107,32 @@ export default function AdminLayout({
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
+            
+            <SidebarSeparator />
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
                 <Link href="/admin/records">
                   <FileText />
-                  Registros
+                  Registros KM
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
-            
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild>
+                <Link href="#" onClick={handleDevelopmentClick}>
+                  <Fuel />
+                  Registros Abastecimento
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+             <SidebarMenuItem>
+              <SidebarMenuButton asChild>
+                <Link href="#" onClick={handleDevelopmentClick}>
+                  <ClipboardCheck />
+                  Registros Checklist
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
             <SidebarSeparator />
 
             <SidebarMenuItem>

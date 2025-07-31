@@ -243,7 +243,7 @@ export default function RecordsPage() {
         const worksheet = XLSX.utils.json_to_sheet(data);
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, "Registros");
-        XLSX.writeFile(workbook, "registros_viagens.xlsx");
+        XLSX.writeFile(workbook, "registros_km.xlsx");
         toast({ title: "Exportação Concluída", description: "O arquivo XLSX foi baixado."});
     };
     
@@ -262,10 +262,10 @@ export default function RecordsPage() {
             body: tableRows,
             didDrawPage: (data: any) => {
                 doc.setFontSize(20);
-                doc.text("Relatório de Registros de Viagem", data.settings.margin.left, 15);
+                doc.text("Relatório de Registros de KM", data.settings.margin.left, 15);
             },
         });
-        doc.save('registros_viagens.pdf');
+        doc.save('registros_km.pdf');
         toast({ title: "Exportação Concluída", description: "O arquivo PDF foi baixado."});
     };
 
@@ -275,7 +275,7 @@ export default function RecordsPage() {
             return;
         }
         const data = getExportData();
-        const subject = "Relatório de Registros de Viagens";
+        const subject = "Relatório de Registros de KM";
         let body = "Segue o relatório de registros de viagens:\n\n";
         
         const headers = Object.keys(data[0]);
@@ -297,7 +297,7 @@ export default function RecordsPage() {
       <CardHeader>
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-                <CardTitle>Registros de Viagens</CardTitle>
+                <CardTitle>Registros de KM</CardTitle>
                 <CardDescription>Visualize e gerencie todos os registros de hodômetro.</CardDescription>
             </div>
             <div className="flex gap-2 w-full sm:w-auto">
