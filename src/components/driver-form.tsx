@@ -31,6 +31,7 @@ import { Textarea } from "./ui/textarea";
 import { SignaturePad } from "./ui/signature-pad";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 
+
 const fileToBase64 = (file: File | null): Promise<string | null> => {
     if (!file) return Promise.resolve(null);
     return new Promise((resolve, reject) => {
