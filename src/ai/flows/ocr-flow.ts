@@ -12,10 +12,15 @@ import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 
 const OcrInputSchema = z.object({
-  photoDataUri: z
+  odometerPhotoDataUri: z
     .string()
     .describe(
       "A photo of a vehicle's dashboard, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
+    ),
+   fuelGaugePhotoDataUri: z
+    .string()
+    .describe(
+        "A photo of the vehicle's fuel gauge, as a data URI."
     ),
 });
 export type OcrInput = z.infer<typeof OcrInputSchema>;
@@ -35,29 +40,35 @@ const prompt = ai.definePrompt({
   input: { schema: OcrInputSchema },
   output: { schema: OcrOutputSchema },
   prompt: `
-    You are a highly specialized vehicle dashboard analysis assistant. Your task is to analyze the provided image and extract two key pieces of information: the odometer reading and the fuel level.
+    You are a highly specialized vehicle dashboard analysis assistant. Your task is to analyze the provided images and extract two key pieces of information: the odometer reading and the fuel level.
 
     Instructions:
-    1.  **Odometer Extraction:**
-        *   Analyze the image to find the main numerical display of the odometer.
+    1.  **Odometer Extraction (from Odometer Photo):**
+        *   Analyze the odometer photo to find the main numerical display.
         *   Extract ONLY the numbers. Ignore any other text, symbols, or units (like "km" or "mi").
         *   If the number has decimal points or commas, remove them. For example, "123,456.7" should become "123456".
-        *   Return the final number in the 'odometer' field of the JSON output.
-        *   If you cannot find a clear number or if the image is not a dashboard, return 'null' for the 'odometer' field.
+        *   Return the final number in the 'odometer' field.
+        *   If you cannot find a clear number, return 'null' for the 'odometer' field.
 
-    2.  **Fuel Level Estimation:**
-        *   Locate the fuel gauge in the image. It might be an analog needle gauge or a digital display.
-        *   Estimate the fuel level based on the gauge's reading.
-        *   Express the level as a descriptive string percentage (e.g., "10%", "25%", "50%", "75%", "100%"). Use "0%" for empty and "100%" for full.
+    2.  **Fuel Level Estimation (from Fuel Gauge Photo):**
+        *   Analyze the fuel gauge photo. The gauge uses 'E' on the left for Empty and 'F' on the right for Full.
+        *   The main gauge to analyze is the smaller circular one, usually below the larger rev counter, identified by a fuel pump icon.
+        *   Estimate the fuel level based on the needle's position.
+        *   Express the level as a percentage string (e.g., "0%", "25%", "50%", "75%", "100%").
         *   Return this string in the 'fuelLevel' field.
         *   If the fuel gauge is not visible or its level cannot be determined, return 'null' for the 'fuelLevel' field.
 
-    Image to analyze:
-    {{media url=photoDataUri}}
+    **Images to analyze:**
+    Odometer Photo:
+    {{media url=odometerPhotoDataUri}}
+
+    Fuel Gauge Photo:
+    {{media url=fuelGaugePhotoDataUri}}
 
     Provide the result in the specified JSON format.
   `,
 });
+
 
 const ocrFlow = ai.defineFlow(
   {
