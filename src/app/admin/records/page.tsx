@@ -233,6 +233,18 @@ export default function RecordsPage() {
             'Status': r.status,
         }));
     };
+    
+    const formatDataAsText = (data: ReturnType<typeof getExportData>) => {
+        if (data.length === 0) return "";
+        let text = "";
+        const headers = Object.keys(data[0]);
+        text += headers.join('\t') + '\r\n';
+        data.forEach(row => {
+            text += headers.map(header => row[header as keyof typeof row] ?? '').join('\t') + '\r\n';
+        });
+        return text;
+    };
+
 
     const handleExportXLSX = () => {
         if (records.length === 0) {
@@ -268,6 +280,25 @@ export default function RecordsPage() {
         doc.save('registros_km.pdf');
         toast({ title: "Exportação Concluída", description: "O arquivo PDF foi baixado."});
     };
+    
+    const handleExportTXT = () => {
+        if (records.length === 0) {
+            toast({ title: "Nenhum dado para exportar" });
+            return;
+        }
+        const data = getExportData();
+        const textData = formatDataAsText(data);
+        const blob = new Blob([textData], { type: 'text/plain;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", "registros_km.txt");
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        toast({ title: "Exportação Concluída", description: "O arquivo TXT foi baixado." });
+    };
 
     const handleSendEmail = () => {
         if (records.length === 0) {
@@ -276,15 +307,7 @@ export default function RecordsPage() {
         }
         const data = getExportData();
         const subject = "Relatório de Registros de KM";
-        let body = "Segue o relatório de registros de viagens:\n\n";
-        
-        const headers = Object.keys(data[0]);
-        body += headers.join('\t|\t') + '\n';
-        body += '-'.repeat(headers.join('\t|\t').length * 1.5) + '\n';
-        
-        data.forEach(row => {
-            body += Object.values(row).join('\t|\t') + '\n';
-        });
+        const body = formatDataAsText(data);
 
         window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
         toast({ title: "E-mail Pronto", description: "Seu cliente de e-mail foi aberto."});
@@ -315,10 +338,15 @@ export default function RecordsPage() {
                             <FileText className="mr-2 h-4 w-4" />
                             Exportar para XLSX
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={handleExportPDF}>
+                         <DropdownMenuItem onClick={handleExportPDF}>
                             <FileText className="mr-2 h-4 w-4" />
                             Exportar para PDF
                         </DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleExportTXT}>
+                            <FileText className="mr-2 h-4 w-4" />
+                            Exportar para TXT
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={handleSendEmail}>
                             <Send className="mr-2 h-4 w-4" />
                             Enviar por Email
@@ -614,3 +642,5 @@ export default function RecordsPage() {
     </>
   );
 }
+
+    
