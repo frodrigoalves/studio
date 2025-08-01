@@ -64,23 +64,14 @@ export function FuelingForm() {
             form.setValue('odometer', lastRecord.kmEnd);
         } else {
             form.setValue('odometer', '');
-             toast({
-                variant: "default",
-                title: "Hodômetro não encontrado",
-                description: "Nenhum KM final registrado para este veículo. Por favor, insira manualmente.",
-            });
         }
     } catch (e) {
         console.error("Failed to fetch last record for car", e);
-        toast({
-            variant: "destructive",
-            title: "Erro ao buscar hodômetro",
-            description: "Não foi possível verificar o último registro. Tente novamente.",
-        });
+        form.setValue('odometer', '');
     } finally {
         setIsSearching(false);
     }
-  }, [form, toast]);
+  }, [form]);
 
   async function onSubmit(data: FuelingFormValues) {
     setIsSubmitting(true);
