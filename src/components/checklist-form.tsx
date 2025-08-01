@@ -24,19 +24,21 @@ import { addChecklistRecord, type ChecklistRecordPayload, type ChecklistItemStat
 import { Textarea } from "./ui/textarea";
 import { cn } from "@/lib/utils";
 
-const checklistItems = [
-  "Adesivos", "Ar Condicionado", "Bancos", "Carroceria", "Cinto de Segurança", "Direção", 
-  "Documentos", "Elevador", "Extintor", "Freios", "Gaveta Cobrador", "Janelas", 
-  "Letreiro", "Limpador Pára-Brisa", "Molas", "Parte Elétrica", "Placas", "Pneus", 
-  "Portas", "Selo de Roleta", "Suspensão a Ar", "Tacógrafo", "Validador", "Vazamento de ar"
-] as const;
+const checklistSections = {
+  "Estrutura Externa e Segurança": ["Adesivos", "Carroceria", "Janelas", "Placas", "Pneus", "Molas", "Suspensão a Ar", "Vazamento de ar"],
+  "Cabine e Componentes Internos": ["Bancos", "Cinto de Segurança", "Direção", "Extintor", "Limpador Pára-Brisa", "Portas", "Painel"],
+  "Sistemas Eletrônicos e Operacionais": ["Ar Condicionado", "Freios", "Parte Elétrica", "Letreiro", "Tacógrafo"],
+  "Acessibilidade e Passageiros": ["Documentos", "Elevador", "Gaveta Cobrador", "Selo de Roleta", "Validador"],
+};
 
-type ItemId = typeof checklistItems[number];
+const allChecklistItems = Object.values(checklistSections).flat();
+
+type ItemId = typeof allChecklistItems[number];
 
 const itemSchema = z.enum(["ok", "avaria", "na"]);
 
 // Cria um objeto Zod dinamicamente com todos os itens do checklist
-const itemsShape = checklistItems.reduce((acc, item) => {
+const itemsShape = allChecklistItems.reduce((acc, item) => {
   acc[item] = itemSchema;
   return acc;
 }, {} as Record<ItemId, typeof itemSchema>);
@@ -67,7 +69,7 @@ const initialValues: ChecklistFormValues = {
   driverChapa: "",
   driverName: "",
   carId: "",
-  items: checklistItems.reduce((acc, item) => ({...acc, [item]: "ok" }), {} as Record<ItemId, ChecklistItemStatus>),
+  items: allChecklistItems.reduce((acc, item) => ({...acc, [item]: "ok" }), {} as Record<ItemId, ChecklistItemStatus>),
   observations: "",
 };
 
@@ -171,27 +173,26 @@ export function ChecklistForm() {
                 />
             </div>
             
-            <div className="space-y-4">
-                <CardTitle className="text-lg">Itens de Vistoria</CardTitle>
-                <FormDescription>
-                    Marque a condição de cada item abaixo.
-                </FormDescription>
-                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {checklistItems.map((item) => (
-                     <FormField
+             <div className="space-y-6">
+              {Object.entries(checklistSections).map(([sectionTitle, items]) => (
+                <div key={sectionTitle} className="space-y-4">
+                  <CardTitle className="text-lg">{sectionTitle}</CardTitle>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {items.map((item) => (
+                      <FormField
                         key={item}
                         control={form.control}
                         name={`items.${item}`}
                         render={({ field }) => (
                           <FormItem className={cn(
                                 "space-y-2 p-3 rounded-lg border transition-all",
-                                watchItems[item] === 'avaria' ? 'border-destructive bg-destructive/10' : 'bg-muted/30'
+                                watchItems[item as ItemId] === 'avaria' ? 'border-destructive bg-destructive/10' : 'bg-muted/30'
                             )}>
                             <FormLabel className="text-base font-semibold flex items-center justify-between w-full">
                                 <span>{item}</span>
-                                {watchItems[item] === 'avaria' && <span className="text-xs font-bold text-destructive">AVARIA</span>}
-                                {watchItems[item] === 'ok' && <span className="text-xs font-bold text-green-600">OK</span>}
-                                {watchItems[item] === 'na' && <span className="text-xs font-medium text-muted-foreground">N/A</span>}
+                                {watchItems[item as ItemId] === 'avaria' && <span className="text-xs font-bold text-destructive">AVARIA</span>}
+                                {watchItems[item as ItemId] === 'ok' && <span className="text-xs font-bold text-green-600">OK</span>}
+                                {watchItems[item as ItemId] === 'na' && <span className="text-xs font-medium text-muted-foreground">N/A</span>}
                             </FormLabel>
                             <FormControl>
                                <RadioGroup
@@ -231,8 +232,10 @@ export function ChecklistForm() {
                           </FormItem>
                         )}
                       />
-                  ))}
+                    ))}
                   </div>
+                </div>
+              ))}
             </div>
             
             <FormField
