@@ -31,7 +31,13 @@ export default function InicioJornadaPage() {
           <Image src="/logo.jpeg" alt="TopBus Logo" width={200} height={50} priority />
            <h1 className="text-xl font-semibold mt-4">Vistoria e registro de km</h1>
         </div>
-        <JourneyStartForm />
+        {/* O conteúdo complexo foi movido para o DriverForm. Esta página pode ser removida/alterada. */}
+        <p className="text-center text-muted-foreground">Esta funcionalidade foi integrada ao Registro de KM.</p>
+        <div className="mt-4 flex justify-center">
+            <Button asChild>
+                <Link href="/registro-km">Ir para Registro de KM</Link>
+            </Button>
+        </div>
       </div>
     </main>
   );

@@ -57,8 +57,11 @@ export async function addRecord(record: RecordAddPayload): Promise<Record> {
   
   const tempDocRef = doc(collection(db, "tripRecords"));
   
-  const startOdometerPhotoUrl = await uploadPhoto(record.startOdometerPhoto, tempDocRef.id, 'start-odometer');
-  const endOdometerPhotoUrl = await uploadPhoto(record.endOdometerPhoto, tempDocRef.id, 'end-odometer');
+  // No longer uploading photos here as it's part of the checklist service now,
+  // but we still need to handle the URL if it's passed in.
+  // This logic assumes the photo URL is generated elsewhere and passed in the payload.
+  const startOdometerPhotoUrl = record.startOdometerPhoto;
+  const endOdometerPhotoUrl = record.endOdometerPhoto;
 
   const dataToSave: Omit<Record, 'id'> = {
       ...record,
@@ -102,6 +105,7 @@ export async function deleteRecord(id: string, startPhotoUrl: string | null, end
     const recordRef = doc(db, "tripRecords", id);
     
     const recordSnap = await getDoc(recordRef);
+    if (!recordSnap.exists()) return;
     const recordData = recordSnap.data() as Record;
 
     // Delete all associated photos

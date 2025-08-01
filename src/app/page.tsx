@@ -5,9 +5,9 @@ import { UserCog, Fuel, ClipboardCheck, FileText, CircleDot, PlayCircle } from '
 import Image from 'next/image';
 
 const menuOptions = [
-  { href: '/inicio-jornada', label: 'INÍCIO DE JORNADA', icon: PlayCircle, available: true, highlight: true },
+  { href: '/registro-km', label: 'INÍCIO DE JORNADA', icon: PlayCircle, available: true, highlight: true },
   { href: '/abastecimento', label: 'ABASTECIMENTO', icon: Fuel, available: true },
-  { href: '/vistoria', label: 'VISTORIA', icon: ClipboardCheck, available: true },
+  { href: '/vistoria', label: 'VISTORIA (INDIVIDUAL)', icon: ClipboardCheck, available: true },
   { href: '/gestao-pneu', label: 'GESTÃO DE PNEU', icon: CircleDot, available: false },
 ];
 
@@ -56,27 +56,6 @@ export default function Home() {
               </div>
             );
           })}
-        </div>
-        <div className="mt-4 border-t pt-4">
-            <p className="text-center text-xs text-muted-foreground mb-2">Outros Formulários</p>
-             <div className="grid grid-cols-2 gap-4">
-                 <Link href="/registro-km">
-                    <Card className="aspect-video flex items-center justify-center p-2 hover:bg-accent/50 transition-colors duration-200">
-                        <CardContent className="p-0 flex flex-col items-center justify-center gap-1 text-center">
-                        <FileText className="h-8 w-8 text-primary/80" />
-                        <span className="font-semibold text-xs">REGISTRO DE KM</span>
-                        </CardContent>
-                    </Card>
-                </Link>
-                 <Link href="/vistoria">
-                    <Card className="aspect-video flex items-center justify-center p-2 hover:bg-accent/50 transition-colors duration-200">
-                        <CardContent className="p-0 flex flex-col items-center justify-center gap-1 text-center">
-                        <ClipboardCheck className="h-8 w-8 text-primary/80" />
-                        <span className="font-semibold text-xs">VISTORIA (INDIVIDUAL)</span>
-                        </CardContent>
-                    </Card>
-                </Link>
-            </div>
         </div>
       </div>
     </main>
