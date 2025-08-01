@@ -91,12 +91,12 @@ const journeyFormSchema = z.object({
 
 type JourneyFormValues = z.infer<typeof journeyFormSchema>;
 
-const initialValues: JourneyFormValues = {
+const initialValues: Omit<JourneyFormValues, 'initialKm'> & { initialKm: string | number } = {
   driverChapa: "",
   driverName: "",
   carId: "",
   line: "",
-  initialKm: '' as unknown as number,
+  initialKm: '',
   odometerPhoto: null,
   fuelGaugePhoto: null,
   frontDiagonalPhoto: null,
@@ -282,6 +282,7 @@ export function JourneyStartForm() {
                                                     width={300} 
                                                     height={200} 
                                                     className="rounded-md"
+                                                    data-ai-hint="bus exterior"
                                                 />
                                                 <h4 className="font-semibold mt-2">{photo.title}</h4>
                                                 <p className="text-xs text-muted-foreground text-center">{photo.description}</p>
