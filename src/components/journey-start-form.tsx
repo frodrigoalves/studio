@@ -82,7 +82,13 @@ const step4Schema = z.object({
   signature: z.string().refine(sig => sig && sig.length > 0, { message: "A assinatura é obrigatória." }),
 });
 
-const journeyFormSchema = step1Schema.merge(step2Schema).merge(step3Schema).merge(step4Schema);
+const journeyFormSchema = z.object({
+  ...step1Schema.shape,
+  ...step2Schema.shape,
+  ...step3Schema.shape,
+  ...step4Schema.shape,
+});
+
 type JourneyFormValues = z.infer<typeof journeyFormSchema>;
 
 const initialValues: JourneyFormValues = {
@@ -378,3 +384,5 @@ export function JourneyStartForm() {
     </Card>
   );
 }
+
+    
