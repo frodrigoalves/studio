@@ -35,7 +35,7 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 const step1Schema = z.object({
   driverChapa: z.string().min(1, "Chapa é obrigatória."),
   driverName: z.string().min(1, "Nome é obrigatório."),
-  carId: z.string().min(1, "Carro é obrigatório."),
+  car: z.string().min(1, "Carro é obrigatório."),
   line: z.string().min(1, "Linha é obrigatória."),
 });
 
@@ -94,7 +94,7 @@ type JourneyFormValues = z.infer<typeof journeyFormSchema>;
 const initialValues: Omit<JourneyFormValues, 'initialKm'> & { initialKm: string | number } = {
   driverChapa: "",
   driverName: "",
-  carId: "",
+  car: "",
   line: "",
   initialKm: '',
   odometerPhoto: null,
@@ -171,7 +171,7 @@ export function JourneyStartForm() {
       const checklistPayload: ChecklistRecordPayload = {
         driverChapa: data.driverChapa,
         driverName: data.driverName,
-        carId: data.carId,
+        carId: data.car,
         items: data.items,
         observations: data.observations || null,
         hasIssue: hasAvaria,
@@ -196,7 +196,7 @@ export function JourneyStartForm() {
       const recordPayload: RecordAddPayload = {
         date: new Date().toISOString().split('T')[0],
         driver: data.driverName,
-        car: data.carId,
+        car: data.car,
         plate: data.driverChapa,
         line: data.line,
         kmStart: data.initialKm,
@@ -254,7 +254,7 @@ export function JourneyStartForm() {
                     <h3 className="text-lg font-semibold flex items-center gap-2"><User className="w-5 h-5 text-primary"/> Identificação</h3>
                     <FormField control={form.control} name="driverChapa" render={({ field }) => (<FormItem><FormLabel>Chapa do Motorista</FormLabel><FormControl><Input placeholder="Sua matrícula" {...field} /></FormControl><FormMessage /></FormItem>)}/>
                     <FormField control={form.control} name="driverName" render={({ field }) => (<FormItem><FormLabel>Nome do Motorista</FormLabel><FormControl><Input placeholder="Seu nome completo" {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                    <FormField control={form.control} name="carId" render={({ field }) => (<FormItem><FormLabel>Carro</FormLabel><FormControl><Input placeholder="Número do veículo" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                    <FormField control={form.control} name="car" render={({ field }) => (<FormItem><FormLabel>Carro</FormLabel><FormControl><Input placeholder="Número do veículo" {...field} /></FormControl><FormMessage /></FormItem>)}/>
                     <FormField control={form.control} name="line" render={({ field }) => (<FormItem><FormLabel>Linha</FormLabel><FormControl><Input placeholder="Número da linha" {...field} /></FormControl><FormMessage /></FormItem>)}/>
                  </div>
             )}
@@ -282,7 +282,6 @@ export function JourneyStartForm() {
                                                     width={300} 
                                                     height={200} 
                                                     className="rounded-md"
-                                                    data-ai-hint="bus exterior"
                                                 />
                                                 <h4 className="font-semibold mt-2">{photo.title}</h4>
                                                 <p className="text-xs text-muted-foreground text-center">{photo.description}</p>
@@ -382,3 +381,5 @@ export function JourneyStartForm() {
     </Card>
   );
 }
+
+    
