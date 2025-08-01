@@ -30,7 +30,6 @@ import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 import { Textarea } from "./ui/textarea";
 import { SignaturePad } from "./ui/signature-pad";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
-import { FuelGauge } from "./ui/fuel-gauge";
 
 const fileToBase64 = (file: File | null): Promise<string | null> => {
     if (!file) return Promise.resolve(null);
@@ -68,7 +67,7 @@ const startTripSchema = z.object({
     
     // Step 2
     kmStart: z.coerce.number({ required_error: "Km Inicial é obrigatório."}).min(1, "Km Inicial é obrigatório."),
-    fuelLevel: z.coerce.number({ required_error: "Nível de combustível é obrigatório."}).min(0).max(100),
+    fuelLevel: z.string({ required_error: "Nível de combustível é obrigatório." }).min(1, "É obrigatório confirmar o nível de combustível."),
 
     // Step 3
     items: z.object(itemsShape),
@@ -107,13 +106,13 @@ const stepFields: (keyof StartTripFormValues)[][] = [
 ];
 
 
-const initialStartValues: Omit<StartTripFormValues, 'kmStart' | 'fuelLevel'> & { kmStart: string; fuelLevel: number } = { 
-    plate: "", 
-    driver: "", 
-    car: "", 
-    line: "", 
+const initialStartValues: Omit<StartTripFormValues, 'kmStart' | 'fuelLevel'> & { kmStart: string, fuelLevel: string } = {
+    plate: "",
+    driver: "",
+    car: "",
+    line: "",
     kmStart: '',
-    fuelLevel: 50, // Default to 50%
+    fuelLevel: '',
     items: allChecklistItems.reduce((acc, item) => ({...acc, [item]: "ok" }), {} as Record<ItemId, ChecklistItemStatus>),
     observations: "",
     signature: ""
@@ -126,6 +125,22 @@ const initialEndValues: Omit<EndFormValues, 'kmEnd'> & { kmEnd: string } = {
     line: "", 
     kmEnd: '', 
 };
+
+const fuelLevelMapping: Record<string, string> = {
+    "0%": "vazio",
+    "25%": "1/4",
+    "50%": "1/2",
+    "75%": "3/4",
+    "100%": "cheio",
+};
+
+const fuelOptions = [
+    { value: "vazio", label: "Vazio" },
+    { value: "1/4", label: "1/4" },
+    { value: "1/2", label: "1/2" },
+    { value: "3/4", label: "3/4" },
+    { value: "cheio", label: "Cheio" },
+];
 
 
 export function DriverForm() {
@@ -157,7 +172,6 @@ export function DriverForm() {
   });
   
   const watchItems = startForm.watch('items');
-  const watchFuelLevel = startForm.watch('fuelLevel');
 
   const handleChapaBlur = useCallback(async (plate: string) => {
     if(!plate || activeTab !== 'end') return;
@@ -191,30 +205,42 @@ export function DriverForm() {
     }
   }, [activeTab, endForm, toast]);
   
-  const handleOcr = async (file: File | null, type: 'odometer' | 'fuel') => {
-    if (!file) return;
+  const handleOcr = async () => {
+    const odometerFile = odometerPhotoRef.current?.files?.[0];
+    const fuelFile = fuelGaugePhotoRef.current?.files?.[0];
+
+    if (!odometerFile || !fuelFile) {
+        toast({
+            variant: 'destructive',
+            title: 'Fotos Obrigatórias',
+            description: 'É necessário enviar a foto do hodômetro e do medidor de combustível.',
+        });
+        return;
+    }
     setIsOcrLoading(true);
 
     try {
-      const dataUri = await fileToBase64(file);
-      if (!dataUri) throw new Error("Could not convert file to data URI");
+        const [odomB64, fuelB64] = await Promise.all([
+            fileToBase64(odometerFile),
+            fileToBase64(fuelFile)
+        ]);
+        
+      if (!odomB64 || !fuelB64) throw new Error("Could not convert files to data URI");
       
-      const ocrInput: OcrInput = {};
-      if(type === 'odometer') {
-          ocrInput.odometerPhotoDataUri = dataUri;
-      } else {
-          ocrInput.fuelGaugePhotoDataUri = dataUri;
-      }
+      const ocrInput: OcrInput = {
+          odometerPhotoDataUri: odomB64,
+          fuelGaugePhotoDataUri: fuelB64,
+      };
 
       const result = await extractOdometerFromImage(ocrInput);
 
-      if (type === 'odometer' && result.odometer) {
+      if (result.odometer) {
         startForm.setValue('kmStart', result.odometer, { shouldValidate: true });
         toast({
-          title: "KM Extraído com Sucesso!",
-          description: `Valor do hodômetro preenchido: ${result.odometer}. Por favor, confirme se está correto.`,
+          title: "KM Extraído!",
+          description: `Valor preenchido: ${result.odometer}. Por favor, confirme se está correto.`,
         });
-      } else if (type === 'odometer') {
+      } else {
         toast({
           variant: 'destructive',
           title: "Leitura do Hodômetro Falhou",
@@ -222,21 +248,20 @@ export function DriverForm() {
         });
       }
 
-      if(type === 'fuel' && result.fuelLevel) {
-        // Example: "75%" -> 75
-        const fuelPercent = parseInt(result.fuelLevel.replace('%', ''), 10);
-        if (!isNaN(fuelPercent)) {
-            startForm.setValue('fuelLevel', fuelPercent, { shouldValidate: true });
+      if(result.fuelLevel) {
+        const mappedLevel = fuelLevelMapping[result.fuelLevel];
+        if (mappedLevel) {
+            startForm.setValue('fuelLevel', mappedLevel, { shouldValidate: true });
              toast({
                 title: "Nível de Combustível Estimado!",
-                description: `Nível estimado em ${result.fuelLevel}. Por favor, confirme ou ajuste a agulha.`,
+                description: `Nível sugerido: ${mappedLevel}. Por favor, confirme sua seleção.`,
             });
         }
-      } else if (type === 'fuel') {
+      } else {
          toast({
           variant: 'destructive',
           title: "Leitura do Combustível Falhou",
-          description: "Não foi possível estimar o nível de combustível. Por favor, ajuste a agulha manualmente.",
+          description: "Não foi possível estimar o nível de combustível. Por favor, selecione manually.",
         });
       }
 
@@ -245,7 +270,7 @@ export function DriverForm() {
       toast({
         variant: 'destructive',
         title: "Erro na Leitura da Imagem",
-        description: "Ocorreu um problema ao processar a foto. Tente novamente ou insira os valores manualmente.",
+        description: "Ocorreu um problema ao processar as fotos. Tente novamente ou insira os valores manualmente.",
       });
     } finally {
       setIsOcrLoading(false);
@@ -317,8 +342,6 @@ export function DriverForm() {
         status: "Em Andamento",
         startOdometerPhoto: odometerPhotoB64, // Use a foto específica do odômetro
         endOdometerPhoto: null,
-        // Você pode querer salvar a foto do combustível no registro de viagem também
-        // fuelGaugePhoto: fuelGaugePhotoB64 
       };
       await addRecord(recordPayload);
   
@@ -328,7 +351,6 @@ export function DriverForm() {
       });
       startForm.reset(initialStartValues);
       
-      // Reset file inputs
       if (odometerPhotoRef.current) odometerPhotoRef.current.value = "";
       if (fuelGaugePhotoRef.current) fuelGaugePhotoRef.current.value = "";
       if (frontDiagonalPhotoRef.current) frontDiagonalPhotoRef.current.value = "";
@@ -482,12 +504,11 @@ export function DriverForm() {
                                             capture="camera" 
                                             className="pr-12" 
                                             ref={odometerPhotoRef}
-                                            onChange={(e) => handleOcr(e.target.files?.[0] ?? null, 'odometer')}
+                                            onChange={handleOcr}
                                         />
                                         <Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
                                     </div>
                                 </FormControl>
-                                <FormMessage />
                             </FormItem>
                              <FormItem>
                                 <FormLabel>2. Foto do Combustível</FormLabel>
@@ -499,12 +520,11 @@ export function DriverForm() {
                                             capture="camera" 
                                             className="pr-12" 
                                             ref={fuelGaugePhotoRef}
-                                            onChange={(e) => handleOcr(e.target.files?.[0] ?? null, 'fuel')}
+                                            onChange={handleOcr}
                                         />
                                         <Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
                                     </div>
                                 </FormControl>
-                                <FormMessage />
                             </FormItem>
                         </div>
                         <FormField 
@@ -532,14 +552,38 @@ export function DriverForm() {
                           name="fuelLevel"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>4. Confirmar Nível de Combustível</FormLabel>
-                              <FormControl>
-                                <FuelGauge 
-                                    value={field.value} 
-                                    onValueChange={field.onChange} 
-                                    disabled={isOcrLoading}
-                                />
-                              </FormControl>
+                                <FormLabel>4. Confirmar Nível de Combustível</FormLabel>
+                                <FormControl>
+                                    <RadioGroup
+                                        onValueChange={field.onChange}
+                                        value={field.value}
+                                        className="grid grid-cols-5 gap-2 pt-2"
+                                    >
+                                        {fuelOptions.map((opt, index) => {
+                                            const colorClass = 
+                                                index === 0 ? "bg-red-200 border-red-400 text-red-800" :
+                                                index === 1 ? "bg-yellow-200 border-yellow-400 text-yellow-800" :
+                                                index === 2 ? "bg-blue-200 border-blue-400 text-blue-800" :
+                                                index === 3 ? "bg-green-200 border-green-400 text-green-800" :
+                                                "bg-emerald-300 border-emerald-500 text-emerald-900";
+
+                                            return (
+                                                <FormItem key={opt.value}>
+                                                    <FormControl>
+                                                         <RadioGroupItem value={opt.value} className="sr-only" />
+                                                    </FormControl>
+                                                    <FormLabel className={cn(
+                                                        "flex flex-col items-center justify-center rounded-md border-2 p-3 hover:bg-accent hover:text-accent-foreground cursor-pointer transition-all",
+                                                        field.value === opt.value && `${colorClass} font-bold shadow-md scale-105`
+                                                    )}>
+                                                        <Fuel className="mb-2 h-6 w-6" />
+                                                        <span className="text-xs">{opt.label}</span>
+                                                    </FormLabel>
+                                                </FormItem>
+                                            )
+                                        })}
+                                    </RadioGroup>
+                                </FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
@@ -714,5 +758,3 @@ export function DriverForm() {
     </Card>
   );
 }
-
-    
