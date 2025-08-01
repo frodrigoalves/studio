@@ -138,27 +138,6 @@ export default function AdminDashboard() {
                 (r.status === "Finalizado" && (!r.startOdometerPhoto || !r.endOdometerPhoto))
             ).length;
 
-            const tripRecordsByCar = new Map<string, Record[]>();
-            tripData.forEach(trip => {
-                if (!tripRecordsByCar.has(trip.car)) {
-                    tripRecordsByCar.set(trip.car, []);
-                }
-                tripRecordsByCar.get(trip.car)!.push(trip);
-            });
-             tripRecordsByCar.forEach(trips => trips.sort((a, b) => compareAsc(parseISO(a.date), parseISO(b.date))));
-
-            let fuelingDiscrepancies = 0;
-            allFuelingRecords.forEach(fuelingRecord => {
-                const carTrips = tripRecordsByCar.get(fuelingRecord.carId) || [];
-                const fuelingDate = parseISO(fuelingRecord.date);
-                const previousTrip = carTrips.filter(trip => trip.kmEnd && isBefore(parseISO(trip.date), fuelingDate)).pop();
-                const nextTrip = carTrips.find(trip => trip.kmStart && isAfter(parseISO(trip.date), fuelingDate));
-                if ((previousTrip?.kmEnd != null && fuelingRecord.odometer !== previousTrip.kmEnd) || (nextTrip?.kmStart != null && fuelingRecord.odometer !== nextTrip.kmStart)) {
-                    fuelingDiscrepancies++;
-                }
-            });
-
-
             setDbStats({
                 vehicles: {
                     count: vehiclesData.length,
@@ -178,7 +157,7 @@ export default function AdminDashboard() {
                 },
                 tripRecords: tripData.length,
                 tripAlerts: tripAlerts,
-                fuelingDiscrepancies: fuelingDiscrepancies,
+                fuelingDiscrepancies: 0, // Logic disabled
             });
 
         } catch (error) {
@@ -483,7 +462,7 @@ export default function AdminDashboard() {
                             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                         </div>
                     ) : (
-                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
                             <Card>
                                 <CardHeader className="pb-2">
                                     <CardTitle className="text-sm font-medium flex items-center justify-between">
@@ -496,18 +475,6 @@ export default function AdminDashboard() {
                                     <p className="text-xs text-muted-foreground flex items-center gap-1">
                                        <AlertTriangle className="h-3 w-3 text-destructive" /> {dbStats.tripAlerts.toLocaleString('pt-BR')} Alertas pendentes
                                     </p>
-                                </CardContent>
-                            </Card>
-                            <Card>
-                                 <CardHeader className="pb-2">
-                                    <CardTitle className="text-sm font-medium flex items-center justify-between">
-                                        Auditoria Abastecimento
-                                         <ClipboardCheck className="h-4 w-4 text-muted-foreground" />
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-bold">{dbStats.fuelingDiscrepancies.toLocaleString('pt-BR')}</div>
-                                    <a href="/admin/fueling" className="text-xs text-muted-foreground underline">Divergências encontradas</a>
                                 </CardContent>
                             </Card>
                             <Card>
