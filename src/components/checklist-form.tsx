@@ -23,6 +23,8 @@ import { useToast } from "@/hooks/use-toast";
 import { addChecklistRecord, type ChecklistRecordPayload, type ChecklistItemStatus } from "@/services/checklist";
 import { Textarea } from "./ui/textarea";
 import { cn } from "@/lib/utils";
+import { SignaturePad } from "./ui/signature-pad";
+
 
 const checklistSections = {
   "Estrutura Externa e Segurança": ["Adesivos", "Carroceria", "Janelas", "Placas", "Pneus", "Molas", "Suspensão a Ar", "Vazamento de ar"],
@@ -49,6 +51,7 @@ const checklistFormSchema = z.object({
   carId: z.string().min(1, "Carro é obrigatório."),
   items: z.object(itemsShape),
   observations: z.string().optional(),
+  signature: z.string().refine(sig => sig && sig.length > 0, { message: "A assinatura é obrigatória." }),
 }).refine(data => {
     const hasAvaria = Object.values(data.items).some(status => status === 'avaria');
     // If there is an 'avaria', observations must not be empty.
@@ -71,6 +74,7 @@ const initialValues: ChecklistFormValues = {
   carId: "",
   items: allChecklistItems.reduce((acc, item) => ({...acc, [item]: "ok" }), {} as Record<ItemId, ChecklistItemStatus>),
   observations: "",
+  signature: "",
 };
 
 export function ChecklistForm() {
@@ -95,7 +99,8 @@ export function ChecklistForm() {
         carId: data.carId,
         items: data.items,
         observations: data.observations || null,
-        hasIssue: hasAvaria
+        hasIssue: hasAvaria,
+        signature: data.signature,
       };
       
       await addChecklistRecord(payload);
@@ -253,6 +258,26 @@ export function ChecklistForm() {
                       className="resize-none"
                       rows={4}
                       {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="signature"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-lg font-semibold">Assinatura do Motorista</FormLabel>
+                  <FormDescription>
+                    Assine no campo abaixo para confirmar a veracidade das informações.
+                  </FormDescription>
+                  <FormControl>
+                    <SignaturePad
+                        onSignatureEnd={(signature) => field.onChange(signature)}
+                        className="w-full h-48 border rounded-lg bg-background"
                     />
                   </FormControl>
                   <FormMessage />

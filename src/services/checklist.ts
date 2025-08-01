@@ -15,6 +15,7 @@ export interface ChecklistRecord {
   items: Record<string, ChecklistItemStatus>;
   observations: string | null;
   hasIssue: boolean;
+  signature: string | null;
 }
 
 export type ChecklistRecordPayload = Omit<ChecklistRecord, 'id' | 'date'>;
