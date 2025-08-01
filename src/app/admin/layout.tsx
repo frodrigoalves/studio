@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Settings, FileText, LogOut, BrainCircuit, Loader2, Clock4, FileHeart, Wrench, ClipboardList, Users, Fuel, ClipboardCheck } from "lucide-react";
+import { Settings, FileText, LogOut, BrainCircuit, Loader2, Clock4, FileHeart, Wrench, Users, Fuel, ClipboardCheck, CircleDot } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 
@@ -129,7 +129,7 @@ export default function AdminLayout({
               <SidebarMenuButton asChild>
                 <Link href="#" onClick={handleDevelopmentClick}>
                   <ClipboardCheck />
-                  Registros Checklist
+                  Vistoria
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -162,8 +162,8 @@ export default function AdminLayout({
              <SidebarMenuItem>
               <SidebarMenuButton asChild>
                 <Link href="#" onClick={handleDevelopmentClick}>
-                  <ClipboardList />
-                  Ocorrências
+                  <CircleDot />
+                  Gestão de Pneu
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
