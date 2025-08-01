@@ -1,14 +1,14 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { UserCog, Fuel, ListChecks, FileText, AlertTriangle } from 'lucide-react';
+import { UserCog, Fuel, ClipboardCheck, FileText, CircleDot } from 'lucide-react';
 import Image from 'next/image';
 
 const menuOptions = [
   { href: '/registro-km', label: 'REGISTRO DE KM', icon: FileText, available: true },
   { href: '#', label: 'ABASTECIMENTO', icon: Fuel, available: false },
-  { href: '#', label: 'CHECKLIST', icon: ListChecks, available: false },
-  { href: '#', label: '', icon: AlertTriangle, available: false },
+  { href: '#', label: 'VISTORIA', icon: ClipboardCheck, available: false },
+  { href: '#', label: 'GESTÃO DE PNEU', icon: CircleDot, available: false },
 ];
 
 export default function Home() {
