@@ -7,7 +7,6 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Loader2, Send, ArrowLeft, ArrowRight, Camera, Car, ClipboardCheck, Signature, User, Milestone, Phone, GaugeCircle, Fuel } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import Image from 'next/image';
 import {
   Form,
   FormControl,
@@ -135,7 +134,8 @@ const initialValues: JourneyFormValues = {
 
 const stepSchemas = [step1Schema, step2Schema, step3Schema, step4Schema];
 
-const fileToBase64 = (file: File): Promise<string> => {
+const fileToBase64 = (file: File): Promise<string | null> => {
+    if (!file) return Promise.resolve(null);
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.readAsDataURL(file);
@@ -152,6 +152,7 @@ export function JourneyStartForm() {
   const form = useForm<JourneyFormValues>({
     resolver: zodResolver(journeyFormSchema),
     defaultValues: initialValues,
+    mode: 'onChange',
   });
   
   const watchItems = form.watch('items');
@@ -187,12 +188,12 @@ export function JourneyStartForm() {
           odometerPhotoB64, fuelGaugePhotoB64, frontDiagonalPhotoB64,
           rearDiagonalPhotoB64, leftSidePhotoB64, rightSidePhotoB64
       ] = await Promise.all([
-          data.odometerPhoto ? fileToBase64(data.odometerPhoto) : Promise.resolve(null),
-          data.fuelGaugePhoto ? fileToBase64(data.fuelGaugePhoto) : Promise.resolve(null),
-          data.frontDiagonalPhoto ? fileToBase64(data.frontDiagonalPhoto) : Promise.resolve(null),
-          data.rearDiagonalPhoto ? fileToBase64(data.rearDiagonalPhoto) : Promise.resolve(null),
-          data.leftSidePhoto ? fileToBase64(data.leftSidePhoto) : Promise.resolve(null),
-          data.rightSidePhoto ? fileToBase64(data.rightSidePhoto) : Promise.resolve(null),
+          fileToBase64(data.odometerPhoto),
+          fileToBase64(data.fuelGaugePhoto),
+          fileToBase64(data.frontDiagonalPhoto),
+          fileToBase64(data.rearDiagonalPhoto),
+          fileToBase64(data.leftSidePhoto),
+          fileToBase64(data.rightSidePhoto),
       ]);
 
       // 2. Preparar e salvar checklist
@@ -224,7 +225,7 @@ export function JourneyStartForm() {
         kmStart: data.initialKm,
         kmEnd: null,
         status: "Em Andamento",
-        startOdometerPhoto: odometerPhotoB64,
+        startOdometerPhoto: odometerPhotoB64, // Using the same photo as the checklist for consistency
         endOdometerPhoto: null,
       };
       await addRecord(recordPayload);
@@ -307,7 +308,25 @@ export function JourneyStartForm() {
                     </Card>
 
 
-                    <FormField control={form.control} name="initialKm" render={({ field }) => (<FormItem><FormLabel>KM Inicial do Veículo</FormLabel><FormControl><Input type="number" placeholder="123456" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? null : e.target.valueAsNumber)} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField
+                      control={form.control}
+                      name="initialKm"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>KM Inicial do Veículo</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              placeholder="123456"
+                              {...field}
+                              onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                              value={field.value ?? ''}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <FormField control={form.control} name="odometerPhoto" render={({ field: { onChange, ...rest }}) => (<FormItem><FormLabel>1. Foto do Hodômetro</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" onChange={(e) => onChange(e.target.files?.[0])} {...rest} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl><FormMessage /></FormItem>)}/>
