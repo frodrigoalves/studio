@@ -55,13 +55,8 @@ async function deletePhoto(photoUrl: string | null) {
 
 export async function addRecord(record: RecordAddPayload): Promise<Record> {
   
-  const tempDocRef = doc(collection(db, "tripRecords"));
-  
-  // No longer uploading photos here as it's part of the checklist service now,
-  // but we still need to handle the URL if it's passed in.
-  // This logic assumes the photo URL is generated elsewhere and passed in the payload.
+  // The startOdometerPhoto URL is now passed directly from the checklist service logic
   const startOdometerPhotoUrl = record.startOdometerPhoto;
-  const endOdometerPhotoUrl = record.endOdometerPhoto;
 
   const dataToSave: Omit<Record, 'id'> = {
       ...record,
@@ -69,7 +64,7 @@ export async function addRecord(record: RecordAddPayload): Promise<Record> {
       kmEnd: record.kmEnd ? Number(record.kmEnd) : null,
       date: new Date(record.date).toISOString(),
       startOdometerPhoto: startOdometerPhotoUrl,
-      endOdometerPhoto: endOdometerPhotoUrl,
+      endOdometerPhoto: null, // End photo is added on update
   };
 
   if(isNaN(dataToSave.kmStart!)) dataToSave.kmStart = null;

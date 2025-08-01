@@ -127,14 +127,6 @@ const initialEndValues: EndFormValues = {
     kmEnd: 0, 
 };
 
-const fuelLevelMapping: Record<string, string> = {
-    "0%": "vazio",
-    "25%": "1/4",
-    "50%": "1/2",
-    "75%": "3/4",
-    "100%": "cheio",
-};
-
 const fuelOptions = [
     { value: "vazio", label: "Vazio" },
     { value: "1/4", label: "1/4" },
@@ -154,7 +146,6 @@ export function DriverForm() {
   const [startTripStep, setStartTripStep] = useState(0);
 
   const odometerPhotoRef = useRef<HTMLInputElement>(null);
-  const fuelGaugePhotoRef = useRef<HTMLInputElement>(null);
   const frontDiagonalPhotoRef = useRef<HTMLInputElement>(null);
   const rearDiagonalPhotoRef = useRef<HTMLInputElement>(null);
   const leftSidePhotoRef = useRef<HTMLInputElement>(null);
@@ -208,29 +199,24 @@ export function DriverForm() {
   
   const handleOcr = async () => {
     const odometerFile = odometerPhotoRef.current?.files?.[0];
-    const fuelFile = fuelGaugePhotoRef.current?.files?.[0];
 
-    if (!odometerFile || !fuelFile) {
+    if (!odometerFile) {
         toast({
             variant: 'destructive',
-            title: 'Fotos Obrigatórias',
-            description: 'É necessário enviar a foto do hodômetro e do medidor de combustível.',
+            title: 'Foto Obrigatória',
+            description: 'É necessário enviar a foto do hodômetro.',
         });
         return;
     }
     setIsOcrLoading(true);
 
     try {
-        const [odomB64, fuelB64] = await Promise.all([
-            fileToBase64(odometerFile),
-            fileToBase64(fuelFile)
-        ]);
+        const odomB64 = await fileToBase64(odometerFile);
         
-      if (!odomB64 || !fuelB64) throw new Error("Could not convert files to data URI");
+      if (!odomB64) throw new Error("Could not convert file to data URI");
       
       const ocrInput: OcrInput = {
           odometerPhotoDataUri: odomB64,
-          fuelGaugePhotoDataUri: fuelB64,
       };
 
       const result = await extractOdometerFromImage(ocrInput);
@@ -248,30 +234,12 @@ export function DriverForm() {
           description: "Não foi possível extrair o KM da imagem. Por favor, insira o valor manualmente.",
         });
       }
-
-      if(result.fuelLevel) {
-        const mappedLevel = fuelLevelMapping[result.fuelLevel];
-        if (mappedLevel) {
-            startForm.setValue('fuelLevel', mappedLevel, { shouldValidate: true });
-             toast({
-                title: "Nível de Combustível Estimado!",
-                description: `Nível sugerido: ${mappedLevel}. Por favor, confirme sua seleção.`,
-            });
-        }
-      } else {
-         toast({
-          variant: 'destructive',
-          title: "Leitura do Combustível Falhou",
-          description: "Não foi possível estimar o nível de combustível. Por favor, selecione manually.",
-        });
-      }
-
     } catch (error) {
       console.error("OCR failed", error);
       toast({
         variant: 'destructive',
         title: "Erro na Leitura da Imagem",
-        description: "Ocorreu um problema ao processar as fotos. Tente novamente ou insira os valores manualmente.",
+        description: "Ocorreu um problema ao processar a foto. Tente novamente ou insira o valor manualmente.",
       });
     } finally {
       setIsOcrLoading(false);
@@ -282,10 +250,9 @@ export function DriverForm() {
     setIsSubmitting(true);
     try {
         const odometerPhoto = odometerPhotoRef.current?.files?.[0] ?? null;
-        const fuelGaugePhoto = fuelGaugePhotoRef.current?.files?.[0] ?? null;
         
-        if (!odometerPhoto || !fuelGaugePhoto) {
-            toast({ variant: 'destructive', title: 'Fotos Obrigatórias', description: 'É necessário enviar a foto do hodômetro e do medidor de combustível.'});
+        if (!odometerPhoto) {
+            toast({ variant: 'destructive', title: 'Foto Obrigatória', description: 'É necessário enviar a foto do hodômetro.'});
             setIsSubmitting(false);
             return;
         }
@@ -302,12 +269,11 @@ export function DriverForm() {
       }
   
       const [
-        odometerPhotoB64, fuelGaugePhotoB64,
+        odometerPhotoB64,
         frontDiagonalPhotoB64, rearDiagonalPhotoB64, 
         leftSidePhotoB64, rightSidePhotoB64
       ] = await Promise.all([
         fileToBase64(odometerPhoto),
-        fileToBase64(fuelGaugePhoto),
         fileToBase64(frontDiagonalPhotoRef.current?.files?.[0] ?? null),
         fileToBase64(rearDiagonalPhotoRef.current?.files?.[0] ?? null),
         fileToBase64(leftSidePhotoRef.current?.files?.[0] ?? null),
@@ -324,7 +290,7 @@ export function DriverForm() {
         hasIssue: hasAvaria,
         signature: data.signature,
         odometerPhoto: odometerPhotoB64,
-        fuelGaugePhoto: fuelGaugePhotoB64,
+        fuelGaugePhoto: null, // Campo removido
         frontDiagonalPhoto: frontDiagonalPhotoB64,
         rearDiagonalPhoto: rearDiagonalPhotoB64,
         leftSidePhoto: leftSidePhotoB64,
@@ -341,7 +307,7 @@ export function DriverForm() {
         kmStart: data.kmStart,
         kmEnd: null,
         status: "Em Andamento",
-        startOdometerPhoto: odometerPhotoB64, // Use a foto específica do odômetro
+        startOdometerPhoto: odometerPhotoB64,
         endOdometerPhoto: null,
       };
       await addRecord(recordPayload);
@@ -353,7 +319,6 @@ export function DriverForm() {
       startForm.reset(initialStartValues);
       
       if (odometerPhotoRef.current) odometerPhotoRef.current.value = "";
-      if (fuelGaugePhotoRef.current) fuelGaugePhotoRef.current.value = "";
       if (frontDiagonalPhotoRef.current) frontDiagonalPhotoRef.current.value = "";
       if (rearDiagonalPhotoRef.current) rearDiagonalPhotoRef.current.value = "";
       if (leftSidePhotoRef.current) leftSidePhotoRef.current.value = "";
@@ -494,46 +459,28 @@ export function DriverForm() {
                 {startTripStep === 1 && (
                      <div className="space-y-4">
                         <h3 className="text-lg font-semibold flex items-center gap-2"><GaugeCircle className="w-5 h-5 text-primary"/> Painel do Veículo</h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <FormItem>
-                                <FormLabel>1. Foto do Hodômetro</FormLabel>
-                                <FormControl>
-                                    <div className="relative">
-                                        <Input 
-                                            type="file" 
-                                            accept="image/*" 
-                                            capture="camera" 
-                                            className="pr-12" 
-                                            ref={odometerPhotoRef}
-                                            onChange={handleOcr}
-                                        />
-                                        <Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
-                                    </div>
-                                </FormControl>
-                            </FormItem>
-                             <FormItem>
-                                <FormLabel>2. Foto do Combustível</FormLabel>
-                                <FormControl>
-                                    <div className="relative">
-                                        <Input 
-                                            type="file" 
-                                            accept="image/*" 
-                                            capture="camera" 
-                                            className="pr-12" 
-                                            ref={fuelGaugePhotoRef}
-                                            onChange={handleOcr}
-                                        />
-                                        <Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
-                                    </div>
-                                </FormControl>
-                            </FormItem>
-                        </div>
+                        <FormItem>
+                            <FormLabel>1. Foto do Hodômetro</FormLabel>
+                            <FormControl>
+                                <div className="relative">
+                                    <Input 
+                                        type="file" 
+                                        accept="image/*" 
+                                        capture="camera" 
+                                        className="pr-12" 
+                                        ref={odometerPhotoRef}
+                                        onChange={handleOcr}
+                                    />
+                                    <Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                                </div>
+                            </FormControl>
+                        </FormItem>
                         <FormField 
                             control={startForm.control} 
                             name="kmStart" 
                             render={({ field }) => (
                             <FormItem>
-                                <FormLabel>3. Confirmar KM Inicial</FormLabel>
+                                <FormLabel>2. Confirmar KM Inicial</FormLabel>
                                 <FormControl>
                                     <div className="relative">
                                         <Input 
@@ -552,7 +499,7 @@ export function DriverForm() {
                           name="fuelLevel"
                           render={({ field }) => (
                             <FormItem>
-                                <FormLabel>4. Confirmar Nível de Combustível</FormLabel>
+                                <FormLabel>3. Confirmar Nível de Combustível</FormLabel>
                                 <FormControl>
                                     <RadioGroup
                                         onValueChange={field.onChange}
@@ -758,5 +705,3 @@ export function DriverForm() {
     </Card>
   );
 }
-
-    

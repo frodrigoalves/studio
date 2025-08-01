@@ -51,11 +51,10 @@ export async function addChecklistRecord(record: ChecklistRecordPayload): Promis
     const recordId = tempDocRef.id;
 
     const [
-        odometerPhotoUrl, fuelGaugePhotoUrl, frontDiagonalPhotoUrl,
+        odometerPhotoUrl, frontDiagonalPhotoUrl,
         rearDiagonalPhotoUrl, leftSidePhotoUrl, rightSidePhotoUrl
     ] = await Promise.all([
         uploadPhoto(record.odometerPhoto || null, recordId, 'odometer'),
-        uploadPhoto(record.fuelGaugePhoto || null, recordId, 'fuel-gauge'),
         uploadPhoto(record.frontDiagonalPhoto || null, recordId, 'front-diagonal'),
         uploadPhoto(record.rearDiagonalPhoto || null, recordId, 'rear-diagonal'),
         uploadPhoto(record.leftSidePhoto || null, recordId, 'left-side'),
@@ -66,7 +65,7 @@ export async function addChecklistRecord(record: ChecklistRecordPayload): Promis
         ...record,
         date: new Date().toISOString(),
         odometerPhoto: odometerPhotoUrl,
-        fuelGaugePhoto: fuelGaugePhotoUrl,
+        fuelGaugePhoto: null, // Campo removido
         frontDiagonalPhoto: frontDiagonalPhotoUrl,
         rearDiagonalPhoto: rearDiagonalPhotoUrl,
         leftSidePhoto: leftSidePhotoUrl,
