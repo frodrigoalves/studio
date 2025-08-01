@@ -1,19 +1,20 @@
 
 "use client";
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, AlertTriangle } from "lucide-react";
+import { Loader2, AlertTriangle, ArrowRight } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 import { getFuelingRecords, type FuelingRecord } from '@/services/fueling';
 import { getRecords, type Record as TripRecord } from '@/services/records';
-import { parseISO, format, isBefore } from 'date-fns';
+import { parseISO, format, isBefore, isAfter } from 'date-fns';
 
 interface EnhancedFuelingRecord extends FuelingRecord {
-    lastDriverOdometer?: number | null;
+    previousTripOdometer?: number | null;
+    nextTripOdometer?: number | null;
 }
 
 export default function FuelingRecordsPage() {
@@ -36,19 +37,24 @@ export default function FuelingRecordsPage() {
                 }
                 tripRecordsByCar.get(trip.car)!.push(trip);
             });
+            
+             tripRecordsByCar.forEach(trips => trips.sort((a, b) => parseISO(a.date).getTime() - parseISO(b.date).getTime()));
 
             const enhancedFuelingData = fuelingData.map(fuelingRecord => {
                 const carTrips = tripRecordsByCar.get(fuelingRecord.carId) || [];
                 const fuelingDate = parseISO(fuelingRecord.date);
                 
-                const lastRelevantTrip = carTrips
+                const previousTrip = carTrips
                     .filter(trip => trip.kmEnd && isBefore(parseISO(trip.date), fuelingDate))
-                    .sort((a, b) => parseISO(b.date).getTime() - parseISO(a.date).getTime())
-                    [0];
+                    .pop();
+
+                const nextTrip = carTrips
+                    .find(trip => trip.kmStart && isAfter(parseISO(trip.date), fuelingDate));
 
                 return {
                     ...fuelingRecord,
-                    lastDriverOdometer: lastRelevantTrip?.kmEnd
+                    previousTripOdometer: previousTrip?.kmEnd,
+                    nextTripOdometer: nextTrip?.kmStart
                 };
             });
 
@@ -73,19 +79,21 @@ export default function FuelingRecordsPage() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Registros de Abastecimento</CardTitle>
-        <CardDescription>Visualize e audite todos os registros de abastecimento da frota.</CardDescription>
+        <CardTitle>Auditoria de Abastecimento e KM</CardTitle>
+        <CardDescription>
+            Compare o KM registrado pelo motorista (antes e depois) com o KM registrado no abastecimento para identificar percursos não autorizados.
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Data e Hora</TableHead>
+              <TableHead className="whitespace-nowrap">Data e Hora</TableHead>
               <TableHead>Carro</TableHead>
-              <TableHead className="hidden sm:table-cell">Abastecedor</TableHead>
-              <TableHead className="hidden sm:table-cell">Chapa</TableHead>
-              <TableHead className="text-center">Hodômetro Abastecedor</TableHead>
-              <TableHead className="text-center">KM Motorista (Anterior)</TableHead>
+              <TableHead className="hidden md:table-cell">Abastecedor</TableHead>
+              <TableHead className="text-center whitespace-nowrap">KM Motorista (Anterior)</TableHead>
+              <TableHead className="text-center whitespace-nowrap">KM Abastecedor</TableHead>
+              <TableHead className="text-center whitespace-nowrap">KM Motorista (Posterior)</TableHead>
               <TableHead className="text-right">Litros</TableHead>
             </TableRow>
           </TableHeader>
@@ -97,24 +105,36 @@ export default function FuelingRecordsPage() {
                     </TableCell>
                 </TableRow>
             ) : records.map((record) => {
-                const hasDiscrepancy = record.lastDriverOdometer && record.odometer !== record.lastDriverOdometer;
+                const attendantKm = record.odometer;
+                const prevKm = record.previousTripOdometer;
+                const nextKm = record.nextTripOdometer;
+
+                const discrepancyWithPrev = prevKm != null && attendantKm !== prevKm;
+                const discrepancyWithNext = nextKm != null && attendantKm !== nextKm;
+
+                const renderCell = (kmValue: number | null | undefined, hasDiscrepancy: boolean) => (
+                    <TableCell className={`text-center transition-colors duration-300 ${hasDiscrepancy ? 'text-destructive' : ''}`}>
+                         <div className="flex items-center justify-center gap-1.5">
+                             {hasDiscrepancy && <AlertTriangle className="h-4 w-4" />}
+                             <span className={hasDiscrepancy ? 'font-bold' : ''}>
+                                {kmValue?.toLocaleString('pt-BR') ?? 'N/A'}
+                             </span>
+                         </div>
+                    </TableCell>
+                );
+
                 return (
-                  <TableRow key={record.id}>
-                    <TableCell>
+                  <TableRow key={record.id} className={discrepancyWithPrev || discrepancyWithNext ? 'bg-destructive/5' : ''}>
+                    <TableCell className="whitespace-nowrap">
                         {format(parseISO(record.date), 'dd/MM/yy HH:mm')}
                     </TableCell>
                     <TableCell className="font-medium">{record.carId}</TableCell>
-                    <TableCell className="hidden sm:table-cell">{record.attendantName}</TableCell>
-                    <TableCell className="hidden sm:table-cell">
-                        <Badge variant="secondary">{record.attendantChapa}</Badge>
-                    </TableCell>
-                    <TableCell className="text-center">{record.odometer.toLocaleString('pt-BR')}</TableCell>
-                    <TableCell className={`text-center ${hasDiscrepancy ? 'text-destructive font-bold' : ''}`}>
-                         <div className="flex items-center justify-center gap-2">
-                             {hasDiscrepancy && <AlertTriangle className="h-4 w-4" />}
-                             <span>{record.lastDriverOdometer?.toLocaleString('pt-BR') ?? 'N/A'}</span>
-                         </div>
-                    </TableCell>
+                    <TableCell className="hidden md:table-cell">{record.attendantName}</TableCell>
+                    
+                    {renderCell(prevKm, discrepancyWithPrev)}
+                    {renderCell(attendantKm, discrepancyWithPrev || discrepancyWithNext)}
+                    {renderCell(nextKm, discrepancyWithNext)}
+
                     <TableCell className="text-right font-semibold">{record.liters.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} L</TableCell>
                   </TableRow>
                 )
