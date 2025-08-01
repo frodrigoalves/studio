@@ -1,11 +1,11 @@
 
 "use client";
 
-import { useState, useTransition, useCallback, useRef, useEffect, useMemo } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Camera, Loader2, Send, ArrowLeft, ArrowRight, User, Milestone, Phone, ClipboardCheck, Signature, Car as CarIcon, GaugeCircle, Fuel, AlertCircle, ScanText } from "lucide-react";
+import { Camera, Loader2, Send, ArrowLeft, ArrowRight, User, Phone, ClipboardCheck, Signature, Car as CarIcon, GaugeCircle, Fuel, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -22,7 +22,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { addRecord, getRecordByPlateAndStatus, updateRecord, RecordUpdatePayload, Record, RecordAddPayload } from "@/services/records";
 import { addChecklistRecord, ChecklistRecordPayload, ChecklistItemStatus } from "@/services/checklist";
-import { extractOdometerFromImage } from "@/ai/flows/ocr-flow";
+import { extractOdometerFromImage, OcrInput } from "@/ai/flows/ocr-flow";
 import { cn } from "@/lib/utils";
 import { Progress } from "./ui/progress";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
@@ -30,7 +30,7 @@ import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
 import { Textarea } from "./ui/textarea";
 import { SignaturePad } from "./ui/signature-pad";
 import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
-
+import { FuelGauge } from "./ui/fuel-gauge";
 
 const fileToBase64 = (file: File | null): Promise<string | null> => {
     if (!file) return Promise.resolve(null);
@@ -67,21 +67,14 @@ const startTripSchema = z.object({
     line: z.string().min(1, "Linha é obrigatória."),
     
     // Step 2
-    panelPhoto: z.any().optional(),
     kmStart: z.coerce.number({ required_error: "Km Inicial é obrigatório."}).min(1, "Km Inicial é obrigatório."),
-    fuelLevel: z.string().optional(),
+    fuelLevel: z.coerce.number({ required_error: "Nível de combustível é obrigatório."}).min(0).max(100),
 
     // Step 3
     items: z.object(itemsShape),
     observations: z.string().optional(),
 
     // Step 4
-    frontDiagonalPhoto: z.any().optional(),
-    rearDiagonalPhoto: z.any().optional(),
-    leftSidePhoto: z.any().optional(),
-    rightSidePhoto: z.any().optional(),
-
-    // Step 5
     signature: z.string().refine(sig => sig && sig.length > 0, { message: "A assinatura é obrigatória." }),
 }).refine(data => {
     const hasAvaria = Object.values(data.items).some(status => status === 'avaria');
@@ -103,43 +96,35 @@ const endFormSchema = z.object({
   car: z.string().min(1, "Carro é obrigatório."),
   line: z.string().min(1, "Linha é obrigatória."),
   kmEnd: z.coerce.number({ required_error: "Km Final é obrigatório."}).min(1, "Km Final é obrigatório."),
-  endOdometerPhoto: z.any().refine(file => file, "Foto é obrigatória."),
 });
 type EndFormValues = z.infer<typeof endFormSchema>;
 
 const stepFields: (keyof StartTripFormValues)[][] = [
     ['plate', 'driver', 'car', 'line'],
-    ['panelPhoto', 'kmStart', 'fuelLevel'],
+    ['kmStart', 'fuelLevel'],
     ['items', 'observations'],
-    ['frontDiagonalPhoto', 'rearDiagonalPhoto', 'leftSidePhoto', 'rightSidePhoto'],
     ['signature']
 ];
 
 
-const initialStartValues: StartTripFormValues = { 
+const initialStartValues: Omit<StartTripFormValues, 'kmStart' | 'fuelLevel'> & { kmStart: string; fuelLevel: number } = { 
     plate: "", 
     driver: "", 
     car: "", 
     line: "", 
-    kmStart: '' as unknown as number,
-    panelPhoto: null,
-    fuelLevel: "",
+    kmStart: '',
+    fuelLevel: 50, // Default to 50%
     items: allChecklistItems.reduce((acc, item) => ({...acc, [item]: "ok" }), {} as Record<ItemId, ChecklistItemStatus>),
     observations: "",
-    frontDiagonalPhoto: null,
-    rearDiagonalPhoto: null,
-    leftSidePhoto: null,
-    rightSidePhoto: null,
     signature: ""
 };
 
-const initialEndValues: Omit<EndFormValues, 'kmEnd' | 'driver' | 'car' | 'line' | 'endOdometerPhoto'> & { kmEnd: string | number, driver: string, car: string, line: string, endOdometerPhoto: null } = { 
+const initialEndValues: Omit<EndFormValues, 'kmEnd'> & { kmEnd: string } = { 
     plate: "", 
     driver: "", 
     car: "", 
     line: "", 
     kmEnd: '', 
-    endOdometerPhoto: null 
 };
 
 
@@ -152,7 +137,12 @@ export function DriverForm() {
   const [recordToEnd, setRecordToEnd] = useState<Record | null>(null);
   const [startTripStep, setStartTripStep] = useState(0);
 
-  const panelPhotoRef = useRef<HTMLInputElement>(null);
+  const odometerPhotoRef = useRef<HTMLInputElement>(null);
+  const fuelGaugePhotoRef = useRef<HTMLInputElement>(null);
+  const frontDiagonalPhotoRef = useRef<HTMLInputElement>(null);
+  const rearDiagonalPhotoRef = useRef<HTMLInputElement>(null);
+  const leftSidePhotoRef = useRef<HTMLInputElement>(null);
+  const rightSidePhotoRef = useRef<HTMLInputElement>(null);
   const endFileInputRef = useRef<HTMLInputElement>(null);
   
   const startForm = useForm<StartTripFormValues>({
@@ -167,6 +157,7 @@ export function DriverForm() {
   });
   
   const watchItems = startForm.watch('items');
+  const watchFuelLevel = startForm.watch('fuelLevel');
 
   const handleChapaBlur = useCallback(async (plate: string) => {
     if(!plate || activeTab !== 'end') return;
@@ -200,23 +191,30 @@ export function DriverForm() {
     }
   }, [activeTab, endForm, toast]);
   
-  const handleOcr = async (file: File | null) => {
+  const handleOcr = async (file: File | null, type: 'odometer' | 'fuel') => {
     if (!file) return;
     setIsOcrLoading(true);
-    startForm.setValue('kmStart', '' as unknown as number);
-    startForm.setValue('fuelLevel', '');
+
     try {
       const dataUri = await fileToBase64(file);
       if (!dataUri) throw new Error("Could not convert file to data URI");
+      
+      const ocrInput: OcrInput = {};
+      if(type === 'odometer') {
+          ocrInput.odometerPhotoDataUri = dataUri;
+      } else {
+          ocrInput.fuelGaugePhotoDataUri = dataUri;
+      }
 
-      const result = await extractOdometerFromImage({ photoDataUri: dataUri });
-      if (result.odometer) {
+      const result = await extractOdometerFromImage(ocrInput);
+
+      if (type === 'odometer' && result.odometer) {
         startForm.setValue('kmStart', result.odometer, { shouldValidate: true });
         toast({
           title: "KM Extraído com Sucesso!",
           description: `Valor do hodômetro preenchido: ${result.odometer}. Por favor, confirme se está correto.`,
         });
-      } else {
+      } else if (type === 'odometer') {
         toast({
           variant: 'destructive',
           title: "Leitura do Hodômetro Falhou",
@@ -224,8 +222,22 @@ export function DriverForm() {
         });
       }
 
-      if(result.fuelLevel) {
-        startForm.setValue('fuelLevel', result.fuelLevel, { shouldValidate: true });
+      if(type === 'fuel' && result.fuelLevel) {
+        // Example: "75%" -> 75
+        const fuelPercent = parseInt(result.fuelLevel.replace('%', ''), 10);
+        if (!isNaN(fuelPercent)) {
+            startForm.setValue('fuelLevel', fuelPercent, { shouldValidate: true });
+             toast({
+                title: "Nível de Combustível Estimado!",
+                description: `Nível estimado em ${result.fuelLevel}. Por favor, confirme ou ajuste a agulha.`,
+            });
+        }
+      } else if (type === 'fuel') {
+         toast({
+          variant: 'destructive',
+          title: "Leitura do Combustível Falhou",
+          description: "Não foi possível estimar o nível de combustível. Por favor, ajuste a agulha manualmente.",
+        });
       }
 
     } catch (error) {
@@ -243,6 +255,15 @@ export function DriverForm() {
   async function onStartSubmit(data: StartTripFormValues) {
     setIsSubmitting(true);
     try {
+        const odometerPhoto = odometerPhotoRef.current?.files?.[0] ?? null;
+        const fuelGaugePhoto = fuelGaugePhotoRef.current?.files?.[0] ?? null;
+        
+        if (!odometerPhoto || !fuelGaugePhoto) {
+            toast({ variant: 'destructive', title: 'Fotos Obrigatórias', description: 'É necessário enviar a foto do hodômetro e do medidor de combustível.'});
+            setIsSubmitting(false);
+            return;
+        }
+
       const existingRecord = await getRecordByPlateAndStatus(data.plate, "Em Andamento");
       if (existingRecord) {
         toast({
@@ -255,14 +276,16 @@ export function DriverForm() {
       }
   
       const [
-        panelPhotoB64, frontDiagonalPhotoB64,
-        rearDiagonalPhotoB64, leftSidePhotoB64, rightSidePhotoB64
+        odometerPhotoB64, fuelGaugePhotoB64,
+        frontDiagonalPhotoB64, rearDiagonalPhotoB64, 
+        leftSidePhotoB64, rightSidePhotoB64
       ] = await Promise.all([
-        fileToBase64(data.panelPhoto),
-        fileToBase64(data.frontDiagonalPhoto),
-        fileToBase64(data.rearDiagonalPhoto),
-        fileToBase64(data.leftSidePhoto),
-        fileToBase64(data.rightSidePhoto),
+        fileToBase64(odometerPhoto),
+        fileToBase64(fuelGaugePhoto),
+        fileToBase64(frontDiagonalPhotoRef.current?.files?.[0] ?? null),
+        fileToBase64(rearDiagonalPhotoRef.current?.files?.[0] ?? null),
+        fileToBase64(leftSidePhotoRef.current?.files?.[0] ?? null),
+        fileToBase64(rightSidePhotoRef.current?.files?.[0] ?? null),
       ]);
   
       const hasAvaria = Object.values(data.items).some(status => status === 'avaria');
@@ -274,8 +297,8 @@ export function DriverForm() {
         observations: data.observations || null,
         hasIssue: hasAvaria,
         signature: data.signature,
-        odometerPhoto: panelPhotoB64, // Unified photo
-        fuelGaugePhoto: panelPhotoB64, // Unified photo
+        odometerPhoto: odometerPhotoB64,
+        fuelGaugePhoto: fuelGaugePhotoB64,
         frontDiagonalPhoto: frontDiagonalPhotoB64,
         rearDiagonalPhoto: rearDiagonalPhotoB64,
         leftSidePhoto: leftSidePhotoB64,
@@ -292,8 +315,10 @@ export function DriverForm() {
         kmStart: data.kmStart,
         kmEnd: null,
         status: "Em Andamento",
-        startOdometerPhoto: panelPhotoB64, // Unified photo
+        startOdometerPhoto: odometerPhotoB64, // Use a foto específica do odômetro
         endOdometerPhoto: null,
+        // Você pode querer salvar a foto do combustível no registro de viagem também
+        // fuelGaugePhoto: fuelGaugePhotoB64 
       };
       await addRecord(recordPayload);
   
@@ -302,7 +327,15 @@ export function DriverForm() {
         description: "Todos os dados foram salvos. Boa viagem!",
       });
       startForm.reset(initialStartValues);
-      if (panelPhotoRef.current) panelPhotoRef.current.value = "";
+      
+      // Reset file inputs
+      if (odometerPhotoRef.current) odometerPhotoRef.current.value = "";
+      if (fuelGaugePhotoRef.current) fuelGaugePhotoRef.current.value = "";
+      if (frontDiagonalPhotoRef.current) frontDiagonalPhotoRef.current.value = "";
+      if (rearDiagonalPhotoRef.current) rearDiagonalPhotoRef.current.value = "";
+      if (leftSidePhotoRef.current) leftSidePhotoRef.current.value = "";
+      if (rightSidePhotoRef.current) rightSidePhotoRef.current.value = "";
+
       setStartTripStep(0);
   
     } catch (e) {
@@ -320,6 +353,13 @@ export function DriverForm() {
   async function onEndSubmit(data: EndFormValues) {
      setIsSubmitting(true);
      try {
+        const endOdometerPhoto = endFileInputRef.current?.files?.[0];
+        if (!endOdometerPhoto) {
+             toast({ variant: "destructive", title: "Foto Obrigatória", description: "Por favor, envie a foto do odômetro final." });
+             setIsSubmitting(false);
+             return;
+        }
+
         if (!recordToEnd) {
             toast({
                 variant: "destructive",
@@ -340,7 +380,7 @@ export function DriverForm() {
             return;
         }
 
-        const photoBase64 = data.endOdometerPhoto ? await fileToBase64(data.endOdometerPhoto) : null;
+        const photoBase64 = await fileToBase64(endOdometerPhoto);
         
         const dataToUpdate: RecordUpdatePayload = {
           status: "Finalizado",
@@ -421,23 +461,19 @@ export function DriverForm() {
                 {startTripStep === 0 && (
                     <div className="space-y-4">
                         <h3 className="text-lg font-semibold flex items-center gap-2"><User className="w-5 h-5 text-primary"/> Identificação</h3>
-                        <FormField control={startForm.control} name="plate" render={({ field }) => (<FormItem><FormLabel>Chapa do Motorista</FormLabel><FormControl><Input placeholder="Sua matrícula" {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                        <FormField control={startForm.control} name="driver" render={({ field }) => (<FormItem><FormLabel>Nome do Motorista</FormLabel><FormControl><Input placeholder="Seu nome completo" {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                        <FormField control={startForm.control} name="car" render={({ field }) => (<FormItem><FormLabel>Carro</FormLabel><FormControl><Input placeholder="Número do veículo" {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                        <FormField control={startForm.control} name="line" render={({ field }) => (<FormItem><FormLabel>Linha</FormLabel><FormControl><Input placeholder="Número da linha" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                        <FormField control={startForm.control} name="plate" render={({ field }) => (<FormItem><FormLabel>Chapa do Motorista</FormLabel><FormControl><Input placeholder="Sua matrícula" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)}/>
+                        <FormField control={startForm.control} name="driver" render={({ field }) => (<FormItem><FormLabel>Nome do Motorista</FormLabel><FormControl><Input placeholder="Seu nome completo" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)}/>
+                        <FormField control={startForm.control} name="car" render={({ field }) => (<FormItem><FormLabel>Carro</FormLabel><FormControl><Input placeholder="Número do veículo" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)}/>
+                        <FormField control={startForm.control} name="line" render={({ field }) => (<FormItem><FormLabel>Linha</FormLabel><FormControl><Input placeholder="Número da linha" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)}/>
                     </div>
                 )}
                 
                 {startTripStep === 1 && (
                      <div className="space-y-4">
                         <h3 className="text-lg font-semibold flex items-center gap-2"><GaugeCircle className="w-5 h-5 text-primary"/> Painel do Veículo</h3>
-                        <FormField 
-                            control={startForm.control} 
-                            name="panelPhoto" 
-                            render={({ field: { onChange, value, ...rest } }) => (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <FormItem>
-                                <FormLabel>1. Foto do Painel (KM e Combustível)</FormLabel>
-                                <FormDescription>Tire uma foto nítida do painel para leitura automática.</FormDescription>
+                                <FormLabel>1. Foto do Hodômetro</FormLabel>
                                 <FormControl>
                                     <div className="relative">
                                         <Input 
@@ -445,65 +481,69 @@ export function DriverForm() {
                                             accept="image/*" 
                                             capture="camera" 
                                             className="pr-12" 
-                                            ref={panelPhotoRef}
-                                            onChange={(e) => {
-                                                const file = e.target.files?.[0];
-                                                onChange(file);
-                                                handleOcr(file || null);
-                                            }}
-                                            {...rest}
+                                            ref={odometerPhotoRef}
+                                            onChange={(e) => handleOcr(e.target.files?.[0] ?? null, 'odometer')}
                                         />
                                         <Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
                                     </div>
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
-                        )}/>
-                        <div className="grid grid-cols-2 gap-4">
-                          <FormField 
-                              control={startForm.control} 
-                              name="kmStart" 
-                              render={({ field }) => (
-                              <FormItem>
-                                  <FormLabel>2. KM Inicial</FormLabel>
-                                  <FormControl>
-                                      <div className="relative">
-                                          <Input 
-                                              type="number" 
-                                              placeholder="Aguardando..." 
-                                              {...field} 
-                                              value={field.value ?? ''} 
-                                              onChange={(e) => field.onChange(e.target.value === '' ? undefined : e.target.valueAsNumber)}
-                                          />
-                                          {isOcrLoading && <Loader2 className="absolute right-3 top-2.5 h-5 w-5 animate-spin" />}
-                                      </div>
-                                  </FormControl>
-                                  <FormMessage />
-                              </FormItem>
-                          )}/>
-                           <FormField 
-                              control={startForm.control} 
-                              name="fuelLevel" 
-                              render={({ field }) => (
-                              <FormItem>
-                                  <FormLabel>Nível de Combustível</FormLabel>
-                                  <FormControl>
-                                      <div className="relative">
-                                          <Input 
-                                              type="text" 
-                                              placeholder="Aguardando..." 
-                                              {...field} 
-                                              value={field.value ?? ''}
-                                              readOnly
-                                              className="bg-muted"
-                                          />
-                                          {isOcrLoading && <Loader2 className="absolute right-3 top-2.5 h-5 w-5 animate-spin" />}
-                                      </div>
-                                  </FormControl>
-                                  <FormMessage />
-                              </FormItem>
-                          )}/>
+                             <FormItem>
+                                <FormLabel>2. Foto do Combustível</FormLabel>
+                                <FormControl>
+                                    <div className="relative">
+                                        <Input 
+                                            type="file" 
+                                            accept="image/*" 
+                                            capture="camera" 
+                                            className="pr-12" 
+                                            ref={fuelGaugePhotoRef}
+                                            onChange={(e) => handleOcr(e.target.files?.[0] ?? null, 'fuel')}
+                                        />
+                                        <Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                                    </div>
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
                         </div>
+                        <FormField 
+                            control={startForm.control} 
+                            name="kmStart" 
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>3. Confirmar KM Inicial</FormLabel>
+                                <FormControl>
+                                    <div className="relative">
+                                        <Input 
+                                            type="number" 
+                                            placeholder="Aguardando foto..." 
+                                            {...field}
+                                            value={field.value ?? ''}
+                                        />
+                                        {isOcrLoading && <Loader2 className="absolute right-3 top-2.5 h-5 w-5 animate-spin" />}
+                                    </div>
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}/>
+                       <FormField
+                          control={startForm.control}
+                          name="fuelLevel"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>4. Confirmar Nível de Combustível</FormLabel>
+                              <FormControl>
+                                <FuelGauge 
+                                    value={field.value} 
+                                    onValueChange={field.onChange} 
+                                    disabled={isOcrLoading}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
                     </div>
                 )}
 
@@ -544,23 +584,18 @@ export function DriverForm() {
                 )}
                 
                 {startTripStep === 3 && (
-                     <div className="space-y-6">
-                        <h3 className="text-lg font-semibold flex items-center gap-2"><Camera className="w-5 h-5 text-primary"/> Fotos Externas do Veículo</h3>
-                        <p className="text-sm text-muted-foreground">Tire uma foto para cada item listado abaixo. Por enquanto, o envio de fotos é opcional.</p>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <FormField control={startForm.control} name="frontDiagonalPhoto" render={({ field: { onChange, ...rest }}) => (<FormItem><FormLabel>1. Diagonal Frontal</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" onChange={(e) => onChange(e.target.files?.[0])} {...rest} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl><FormMessage /></FormItem>)}/>
-                            <FormField control={startForm.control} name="rearDiagonalPhoto" render={({ field: { onChange, ...rest }}) => (<FormItem><FormLabel>2. Diagonal Traseira</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" onChange={(e) => onChange(e.target.files?.[0])} {...rest} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl><FormMessage /></FormItem>)}/>
-                            <FormField control={startForm.control} name="leftSidePhoto" render={({ field: { onChange, ...rest }}) => (<FormItem><FormLabel>3. Lateral Esquerda</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" onChange={(e) => onChange(e.target.files?.[0])} {...rest} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl><FormMessage /></FormItem>)}/>
-                            <FormField control={startForm.control} name="rightSidePhoto" render={({ field: { onChange, ...rest }}) => (<FormItem><FormLabel>4. Lateral Direita</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" onChange={(e) => onChange(e.target.files?.[0])} {...rest} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl><FormMessage /></FormItem>)}/>
-                        </div>
-                    </div>
-                )}
-                
-                {startTripStep === 4 && (
                     <div className="space-y-4">
                         <h3 className="text-lg font-semibold flex items-center gap-2"><Signature className="w-5 h-5 text-primary"/> Confirmação e Assinatura</h3>
-                        <p className="text-sm text-muted-foreground">Revise os dados antes de assinar. Sua assinatura confirma a veracidade de todas as informações fornecidas na vistoria e no registro de KM.</p>
-                        <FormField control={startForm.control} name="signature" render={({ field }) => ( <FormItem><FormLabel className="text-lg font-semibold">Assinatura do Motorista</FormLabel><FormControl><SignaturePad onSignatureEnd={(signature) => field.onChange(signature)} className="w-full h-48 border rounded-lg bg-background" /></FormControl><FormMessage /></FormItem>)}/>
+                        <div className="space-y-6">
+                            <p className="text-sm text-muted-foreground">Tire fotos externas opcionais e assine para confirmar a veracidade de todas as informações fornecidas na vistoria e no registro de KM.</p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <FormItem><FormLabel>Diagonal Frontal (Opcional)</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" ref={frontDiagonalPhotoRef} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl></FormItem>
+                                <FormItem><FormLabel>Diagonal Traseira (Opcional)</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" ref={rearDiagonalPhotoRef} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl></FormItem>
+                                <FormItem><FormLabel>Lateral Esquerda (Opcional)</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" ref={leftSidePhotoRef} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl></FormItem>
+                                <FormItem><FormLabel>Lateral Direita (Opcional)</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" ref={rightSidePhotoRef} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl></FormItem>
+                            </div>
+                            <FormField control={startForm.control} name="signature" render={({ field }) => ( <FormItem><FormLabel className="text-lg font-semibold">Assinatura do Motorista</FormLabel><FormControl><SignaturePad onSignatureEnd={(signature) => field.onChange(signature)} className="w-full h-48 border rounded-lg bg-background" /></FormControl><FormMessage /></FormItem>)}/>
+                        </div>
                     </div>
                 )}
 
@@ -597,7 +632,7 @@ export function DriverForm() {
                       <FormLabel>Chapa</FormLabel>
                       <FormControl>
                         <div className="relative">
-                            <Input placeholder="Confirme sua matrícula" {...field} onBlur={(e) => handleChapaBlur(e.target.value)} />
+                            <Input placeholder="Confirme sua matrícula" {...field} onBlur={(e) => handleChapaBlur(e.target.value)} value={field.value ?? ''} />
                              {isSearching && <Loader2 className="absolute right-3 top-2.5 h-5 w-5 animate-spin" />}
                         </div>
                       </FormControl>
@@ -612,7 +647,7 @@ export function DriverForm() {
                       <FormItem>
                         <FormLabel>Nome do Motorista</FormLabel>
                         <FormControl>
-                           <Input placeholder="Preenchido automaticamente" {...field} disabled />
+                           <Input placeholder="Preenchido automaticamente" {...field} disabled value={field.value ?? ''} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -625,7 +660,7 @@ export function DriverForm() {
                       <FormItem>
                         <FormLabel>Carro</FormLabel>
                         <FormControl>
-                           <Input placeholder="Preenchido automaticamente" {...field} disabled />
+                           <Input placeholder="Preenchido automaticamente" {...field} disabled value={field.value ?? ''} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -638,7 +673,7 @@ export function DriverForm() {
                       <FormItem>
                         <FormLabel>Linha</FormLabel>
                         <FormControl>
-                           <Input placeholder="Preenchido automaticamente" {...field} disabled />
+                           <Input placeholder="Preenchido automaticamente" {...field} disabled value={field.value ?? ''} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -651,35 +686,22 @@ export function DriverForm() {
                     <FormItem>
                       <FormLabel>KM Final</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="123567" {...field} value={field.value ?? ''} onChange={(e) => field.onChange(e.target.value === '' ? undefined : e.target.valueAsNumber)} />
+                        <Input type="number" placeholder="123567" {...field} value={field.value ?? ''} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                <FormField
-                  control={endForm.control}
-                  name="endOdometerPhoto"
-                  render={({ field: { onChange, value, ...rest } }) => (
-                    <FormItem>
-                      <FormLabel>Foto do Odômetro (Fim)</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <Input type="file" accept="image/*" capture="camera" className="pr-12"
-                           {...rest}
-                           ref={endFileInputRef}
-                           onChange={(e) => {
-                             const file = e.target.files ? e.target.files[0] : null;
-                             onChange(file);
-                           }}
-                          />
-                          <Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <FormItem>
+                  <FormLabel>Foto do Odômetro (Fim)</FormLabel>
+                  <FormControl>
+                    <div className="relative">
+                      <Input type="file" accept="image/*" capture="camera" className="pr-12" ref={endFileInputRef} />
+                      <Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
                 <Button type="submit" variant="destructive" className="w-full" disabled={isSubmitting}>
                    {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
                   {isSubmitting ? "Finalizando..." : "Registrar Fim"}
@@ -692,3 +714,5 @@ export function DriverForm() {
     </Card>
   );
 }
+
+    
