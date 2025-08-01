@@ -145,6 +145,15 @@ export function DriverForm() {
   const [recordToEnd, setRecordToEnd] = useState<Record | null>(null);
   const [startTripStep, setStartTripStep] = useState(0);
 
+  // Use state for file management
+  const [odometerPhotoFile, setOdometerPhotoFile] = useState<File | null>(null);
+  const [frontDiagonalPhotoFile, setFrontDiagonalPhotoFile] = useState<File | null>(null);
+  const [rearDiagonalPhotoFile, setRearDiagonalPhotoFile] = useState<File | null>(null);
+  const [leftSidePhotoFile, setLeftSidePhotoFile] = useState<File | null>(null);
+  const [rightSidePhotoFile, setRightSidePhotoFile] = useState<File | null>(null);
+  const [endOdometerPhotoFile, setEndOdometerPhotoFile] = useState<File | null>(null);
+
+  // Refs for resetting file inputs
   const odometerPhotoRef = useRef<HTMLInputElement>(null);
   const frontDiagonalPhotoRef = useRef<HTMLInputElement>(null);
   const rearDiagonalPhotoRef = useRef<HTMLInputElement>(null);
@@ -197,10 +206,8 @@ export function DriverForm() {
     }
   }, [activeTab, endForm, toast]);
   
-  const handleOcr = async () => {
-    const odometerFile = odometerPhotoRef.current?.files?.[0];
-
-    if (!odometerFile) {
+  const handleOcr = async (file: File | null) => {
+    if (!file) {
         toast({
             variant: 'destructive',
             title: 'Foto Obrigatória',
@@ -211,7 +218,7 @@ export function DriverForm() {
     setIsOcrLoading(true);
 
     try {
-        const odomB64 = await fileToBase64(odometerFile);
+        const odomB64 = await fileToBase64(file);
         
       if (!odomB64) throw new Error("Could not convert file to data URI");
       
@@ -249,9 +256,7 @@ export function DriverForm() {
   async function onStartSubmit(data: StartTripFormValues) {
     setIsSubmitting(true);
     try {
-        const odometerPhoto = odometerPhotoRef.current?.files?.[0] ?? null;
-        
-        if (!odometerPhoto) {
+        if (!odometerPhotoFile) {
             toast({ variant: 'destructive', title: 'Foto Obrigatória', description: 'É necessário enviar a foto do hodômetro.'});
             setIsSubmitting(false);
             return;
@@ -273,11 +278,11 @@ export function DriverForm() {
         frontDiagonalPhotoB64, rearDiagonalPhotoB64, 
         leftSidePhotoB64, rightSidePhotoB64
       ] = await Promise.all([
-        fileToBase64(odometerPhoto),
-        fileToBase64(frontDiagonalPhotoRef.current?.files?.[0] ?? null),
-        fileToBase64(rearDiagonalPhotoRef.current?.files?.[0] ?? null),
-        fileToBase64(leftSidePhotoRef.current?.files?.[0] ?? null),
-        fileToBase64(rightSidePhotoRef.current?.files?.[0] ?? null),
+        fileToBase64(odometerPhotoFile),
+        fileToBase64(frontDiagonalPhotoFile),
+        fileToBase64(rearDiagonalPhotoFile),
+        fileToBase64(leftSidePhotoFile),
+        fileToBase64(rightSidePhotoFile),
       ]);
   
       const hasAvaria = Object.values(data.items).some(status => status === 'avaria');
@@ -290,7 +295,7 @@ export function DriverForm() {
         hasIssue: hasAvaria,
         signature: data.signature,
         odometerPhoto: odometerPhotoB64,
-        fuelGaugePhoto: null, // Campo removido
+        fuelGaugePhoto: null, 
         frontDiagonalPhoto: frontDiagonalPhotoB64,
         rearDiagonalPhoto: rearDiagonalPhotoB64,
         leftSidePhoto: leftSidePhotoB64,
@@ -318,6 +323,13 @@ export function DriverForm() {
       });
       startForm.reset(initialStartValues);
       
+      // Reset file states and input values
+      setOdometerPhotoFile(null);
+      setFrontDiagonalPhotoFile(null);
+      setRearDiagonalPhotoFile(null);
+      setLeftSidePhotoFile(null);
+      setRightSidePhotoFile(null);
+
       if (odometerPhotoRef.current) odometerPhotoRef.current.value = "";
       if (frontDiagonalPhotoRef.current) frontDiagonalPhotoRef.current.value = "";
       if (rearDiagonalPhotoRef.current) rearDiagonalPhotoRef.current.value = "";
@@ -341,8 +353,7 @@ export function DriverForm() {
   async function onEndSubmit(data: EndFormValues) {
      setIsSubmitting(true);
      try {
-        const endOdometerPhoto = endFileInputRef.current?.files?.[0];
-        if (!endOdometerPhoto) {
+        if (!endOdometerPhotoFile) {
              toast({ variant: "destructive", title: "Foto Obrigatória", description: "Por favor, envie a foto do odômetro final." });
              setIsSubmitting(false);
              return;
@@ -368,7 +379,7 @@ export function DriverForm() {
             return;
         }
 
-        const photoBase64 = await fileToBase64(endOdometerPhoto);
+        const photoBase64 = await fileToBase64(endOdometerPhotoFile);
         
         const dataToUpdate: RecordUpdatePayload = {
           status: "Finalizado",
@@ -384,6 +395,7 @@ export function DriverForm() {
         });
         endForm.reset(initialEndValues);
         setRecordToEnd(null);
+        setEndOdometerPhotoFile(null);
          if (endFileInputRef.current) {
             endFileInputRef.current.value = "";
         }
@@ -469,7 +481,11 @@ export function DriverForm() {
                                         capture="camera" 
                                         className="pr-12" 
                                         ref={odometerPhotoRef}
-                                        onChange={handleOcr}
+                                        onChange={(e) => {
+                                            const file = e.target.files?.[0] || null;
+                                            setOdometerPhotoFile(file);
+                                            handleOcr(file);
+                                        }}
                                     />
                                     <Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
                                 </div>
@@ -580,10 +596,10 @@ export function DriverForm() {
                         <div className="space-y-6">
                             <p className="text-sm text-muted-foreground">Tire fotos externas opcionais e assine para confirmar a veracidade de todas as informações fornecidas na vistoria e no registro de KM.</p>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <FormItem><FormLabel>Diagonal Frontal (Opcional)</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" ref={frontDiagonalPhotoRef} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl></FormItem>
-                                <FormItem><FormLabel>Diagonal Traseira (Opcional)</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" ref={rearDiagonalPhotoRef} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl></FormItem>
-                                <FormItem><FormLabel>Lateral Esquerda (Opcional)</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" ref={leftSidePhotoRef} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl></FormItem>
-                                <FormItem><FormLabel>Lateral Direita (Opcional)</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" ref={rightSidePhotoRef} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl></FormItem>
+                                <FormItem><FormLabel>Diagonal Frontal (Opcional)</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" ref={frontDiagonalPhotoRef} onChange={(e) => setFrontDiagonalPhotoFile(e.target.files?.[0] || null)} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl></FormItem>
+                                <FormItem><FormLabel>Diagonal Traseira (Opcional)</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" ref={rearDiagonalPhotoRef} onChange={(e) => setRearDiagonalPhotoFile(e.target.files?.[0] || null)} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl></FormItem>
+                                <FormItem><FormLabel>Lateral Esquerda (Opcional)</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" ref={leftSidePhotoRef} onChange={(e) => setLeftSidePhotoFile(e.target.files?.[0] || null)} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl></FormItem>
+                                <FormItem><FormLabel>Lateral Direita (Opcional)</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" ref={rightSidePhotoRef} onChange={(e) => setRightSidePhotoFile(e.target.files?.[0] || null)} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl></FormItem>
                             </div>
                             <FormField control={startForm.control} name="signature" render={({ field }) => ( <FormItem><FormLabel className="text-lg font-semibold">Assinatura do Motorista</FormLabel><FormControl><SignaturePad onSignatureEnd={(signature) => field.onChange(signature ?? "")} className="w-full h-48 border rounded-lg bg-background" /></FormControl><FormMessage /></FormItem>)}/>
                         </div>
@@ -687,7 +703,7 @@ export function DriverForm() {
                   <FormLabel>Foto do Odômetro (Fim)</FormLabel>
                   <FormControl>
                     <div className="relative">
-                      <Input type="file" accept="image/*" capture="camera" className="pr-12" ref={endFileInputRef} />
+                      <Input type="file" accept="image/*" capture="camera" className="pr-12" ref={endFileInputRef} onChange={(e) => setEndOdometerPhotoFile(e.target.files?.[0] || null)} />
                       <Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
                     </div>
                   </FormControl>
