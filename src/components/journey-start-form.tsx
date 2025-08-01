@@ -29,7 +29,6 @@ import { cn } from "@/lib/utils";
 import { SignaturePad } from "./ui/signature-pad";
 import { Progress } from "./ui/progress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 
 // Schemas for each step
 const step1Schema = z.object({
@@ -41,12 +40,12 @@ const step1Schema = z.object({
 
 const step2Schema = z.object({
   initialKm: z.coerce.number({ required_error: "Km Inicial é obrigatório." }).min(1, "Km Inicial é obrigatório."),
-  odometerPhoto: z.any().refine(file => file, "Foto do odômetro é obrigatória."),
-  fuelGaugePhoto: z.any().refine(file => file, "Foto do marcador de combustível é obrigatória."),
-  frontDiagonalPhoto: z.any().refine(file => file, "Foto da diagonal frontal é obrigatória."),
-  rearDiagonalPhoto: z.any().refine(file => file, "Foto da diagonal traseira é obrigatória."),
-  leftSidePhoto: z.any().refine(file => file, "Foto da lateral esquerda é obrigatória."),
-  rightSidePhoto: z.any().refine(file => file, "Foto da lateral direita é obrigatória."),
+  odometerPhoto: z.any().optional(),
+  fuelGaugePhoto: z.any().optional(),
+  frontDiagonalPhoto: z.any().optional(),
+  rearDiagonalPhoto: z.any().optional(),
+  leftSidePhoto: z.any().optional(),
+  rightSidePhoto: z.any().optional(),
 });
 
 
@@ -82,7 +81,36 @@ const step4Schema = z.object({
   signature: z.string().refine(sig => sig && sig.length > 0, { message: "A assinatura é obrigatória." }),
 });
 
-const journeyFormSchema = step1Schema.merge(step2Schema).merge(step3Schema).merge(step4Schema);
+// A single, unified schema
+const journeyFormSchema = z.object({
+  // Step 1
+  driverChapa: z.string().min(1, "Chapa é obrigatória."),
+  driverName: z.string().min(1, "Nome é obrigatório."),
+  car: z.string().min(1, "Carro é obrigatório."),
+  line: z.string().min(1, "Linha é obrigatória."),
+  // Step 2
+  initialKm: z.coerce.number({ required_error: "Km Inicial é obrigatório." }).min(1, "Km Inicial é obrigatório."),
+  odometerPhoto: z.any().optional(),
+  fuelGaugePhoto: z.any().optional(),
+  frontDiagonalPhoto: z.any().optional(),
+  rearDiagonalPhoto: z.any().optional(),
+  leftSidePhoto: z.any().optional(),
+  rightSidePhoto: z.any().optional(),
+  // Step 3
+  items: z.object(itemsShape),
+  observations: z.string().optional(),
+  // Step 4
+  signature: z.string().refine(sig => sig && sig.length > 0, { message: "A assinatura é obrigatória." }),
+}).refine(data => { // Refinement from step 3, applied to the whole schema
+    const hasAvaria = Object.values(data.items).some(status => status === 'avaria');
+    if (hasAvaria) {
+        return data.observations && data.observations.trim().length > 0;
+    }
+    return true;
+}, {
+    message: "É obrigatório descrever a avaria no campo de observações.",
+    path: ["observations"],
+});
 
 
 type JourneyFormValues = z.infer<typeof journeyFormSchema>;
@@ -115,13 +143,6 @@ const fileToBase64 = (file: File): Promise<string> => {
         reader.onerror = reject;
     });
 };
-
-const photoExamples = [
-    { title: 'Hodômetro', icon: GaugeCircle, description: 'Foto nítida do KM inicial no painel.' },
-    { title: 'Combustível', icon: Fuel, description: 'Foto do marcador de combustível.' },
-    { title: 'Diagonais e Laterais', icon: Car, description: '4 fotos: diagonal frontal, traseira, lateral esquerda e direita.' },
-];
-
 
 export function JourneyStartForm() {
   const { toast } = useToast();
@@ -166,12 +187,12 @@ export function JourneyStartForm() {
           odometerPhotoB64, fuelGaugePhotoB64, frontDiagonalPhotoB64,
           rearDiagonalPhotoB64, leftSidePhotoB64, rightSidePhotoB64
       ] = await Promise.all([
-          fileToBase64(data.odometerPhoto),
-          fileToBase64(data.fuelGaugePhoto),
-          fileToBase64(data.frontDiagonalPhoto),
-          fileToBase64(data.rearDiagonalPhoto),
-          fileToBase64(data.leftSidePhoto),
-          fileToBase64(data.rightSidePhoto),
+          data.odometerPhoto ? fileToBase64(data.odometerPhoto) : Promise.resolve(null),
+          data.fuelGaugePhoto ? fileToBase64(data.fuelGaugePhoto) : Promise.resolve(null),
+          data.frontDiagonalPhoto ? fileToBase64(data.frontDiagonalPhoto) : Promise.resolve(null),
+          data.rearDiagonalPhoto ? fileToBase64(data.rearDiagonalPhoto) : Promise.resolve(null),
+          data.leftSidePhoto ? fileToBase64(data.leftSidePhoto) : Promise.resolve(null),
+          data.rightSidePhoto ? fileToBase64(data.rightSidePhoto) : Promise.resolve(null),
       ]);
 
       // 2. Preparar e salvar checklist
@@ -203,7 +224,7 @@ export function JourneyStartForm() {
         kmStart: data.initialKm,
         kmEnd: null,
         status: "Em Andamento",
-        startOdometerPhoto: odometerPhotoB64, // Also save the main odometer photo here
+        startOdometerPhoto: odometerPhotoB64,
         endOdometerPhoto: null,
       };
       await addRecord(recordPayload);
@@ -262,17 +283,25 @@ export function JourneyStartForm() {
                     <Card className="bg-muted/30">
                         <CardHeader className="pb-4">
                            <CardTitle className="text-base">Guia Visual de Fotos</CardTitle> 
-                           <CardDescription className="text-xs">Tire uma foto para cada item listado abaixo.</CardDescription>
+                           <CardDescription className="text-xs">Tire uma foto para cada item listado abaixo. (Opcional por enquanto)</CardDescription>
                         </CardHeader>
                         <CardContent>
                              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                {photoExamples.map((item) => (
-                                    <div key={item.title} className="flex flex-col items-center text-center gap-2 p-4 border rounded-lg bg-background">
-                                        <item.icon className="w-8 h-8 text-primary" />
-                                        <h4 className="font-semibold text-sm">{item.title}</h4>
-                                        <p className="text-xs text-muted-foreground">{item.description}</p>
-                                    </div>
-                                ))}
+                               <div className="flex flex-col items-center text-center gap-2 p-4 border rounded-lg bg-background">
+                                    <GaugeCircle className="w-8 h-8 text-primary" />
+                                    <h4 className="font-semibold text-sm">Hodômetro</h4>
+                                    <p className="text-xs text-muted-foreground">Foto nítida do KM inicial no painel.</p>
+                                </div>
+                                <div className="flex flex-col items-center text-center gap-2 p-4 border rounded-lg bg-background">
+                                    <Fuel className="w-8 h-8 text-primary" />
+                                    <h4 className="font-semibold text-sm">Combustível</h4>
+                                    <p className="text-xs text-muted-foreground">Foto do marcador de combustível.</p>
+                                </div>
+                                <div className="flex flex-col items-center text-center gap-2 p-4 border rounded-lg bg-background">
+                                    <Car className="w-8 h-8 text-primary" />
+                                    <h4 className="font-semibold text-sm">Externas</h4>
+                                    <p className="text-xs text-muted-foreground">4 fotos: diagonais e laterais do veículo.</p>
+                                </div>
                             </div>
                         </CardContent>
                     </Card>
