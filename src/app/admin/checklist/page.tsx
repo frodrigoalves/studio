@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, CheckCircle2, AlertCircle, MessageSquare, CameraOff } from "lucide-react";
+import { Loader2, CheckCircle2, AlertCircle, MessageSquare, CameraOff, FileDown, FileText } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 import { getChecklistRecords, type ChecklistRecord, type ChecklistItemStatus } from '@/services/checklist';
 import {
@@ -21,6 +21,11 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+
 
 const statusDisplay: Record<ChecklistItemStatus, { text: string, className: string }> = {
     ok: { text: "OK", className: "text-green-600" },
@@ -78,12 +83,11 @@ export default function ChecklistRecordsPage() {
     };
 
     const hasAllPhotos = (record: ChecklistRecord) => {
-        return record.odometerPhoto && record.fuelGaugePhoto && record.frontDiagonalPhoto && record.rearDiagonalPhoto && record.leftSidePhoto && record.rightSidePhoto;
+        return record.odometerPhoto && record.frontDiagonalPhoto && record.rearDiagonalPhoto && record.leftSidePhoto && record.rightSidePhoto;
     }
 
     const photoCollection = selectedRecord ? [
         { label: "Hodômetro", url: selectedRecord.odometerPhoto },
-        { label: "Marcador Combustível", url: selectedRecord.fuelGaugePhoto },
         { label: "Diagonal Frontal", url: selectedRecord.frontDiagonalPhoto },
         { label: "Diagonal Traseira", url: selectedRecord.rearDiagonalPhoto },
         { label: "Lateral Esquerda", url: selectedRecord.leftSidePhoto },
@@ -91,12 +95,122 @@ export default function ChecklistRecordsPage() {
     ].filter(p => p.url) : [];
 
 
+    const getExportData = () => {
+        return records.flatMap(r => 
+            Object.entries(r.items).map(([item, status]) => ({
+                'Data': new Date(r.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' }),
+                'Carro': r.carId,
+                'Motorista': r.driverName,
+                'Item': item,
+                'Status': status,
+                'Observações': r.observations || '',
+            }))
+        );
+    };
+
+    const formatDataAsText = (data: ReturnType<typeof getExportData>) => {
+        if (data.length === 0) return "";
+        let text = "";
+        const headers = Object.keys(data[0]);
+        text += headers.join('\t') + '\r\n';
+        data.forEach(row => {
+            text += headers.map(header => row[header as keyof typeof row] ?? '').join('\t') + '\r\n';
+        });
+        return text;
+    };
+
+
+    const handleExportXLSX = () => {
+        if (records.length === 0) {
+            toast({ title: "Nenhum dado para exportar" });
+            return;
+        }
+        const data = getExportData();
+        const worksheet = XLSX.utils.json_to_sheet(data);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Vistorias");
+        XLSX.writeFile(workbook, "registros_vistoria.xlsx");
+        toast({ title: "Exportação Concluída", description: "O arquivo XLSX foi baixado."});
+    };
+    
+    const handleExportPDF = () => {
+        if (records.length === 0) {
+            toast({ title: "Nenhum dado para exportar" });
+            return;
+        }
+        const doc = new jsPDF();
+        const tableData = getExportData();
+        const tableColumn = Object.keys(tableData[0]);
+        const tableRows = tableData.map(obj => tableColumn.map(key => obj[key as keyof typeof obj] ?? ''));
+
+        (doc as any).autoTable({
+            head: [tableColumn],
+            body: tableRows,
+            didDrawPage: (data: any) => {
+                doc.setFontSize(20);
+                doc.text("Relatório de Vistorias", data.settings.margin.left, 15);
+            },
+        });
+        doc.save('registros_vistoria.pdf');
+        toast({ title: "Exportação Concluída", description: "O arquivo PDF foi baixado."});
+    };
+    
+    const handleExportTXT = () => {
+        if (records.length === 0) {
+            toast({ title: "Nenhum dado para exportar" });
+            return;
+        }
+        const data = getExportData();
+        const textData = formatDataAsText(data);
+        const blob = new Blob([textData], { type: 'text/plain;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", "registros_vistoria.txt");
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        toast({ title: "Exportação Concluída", description: "O arquivo TXT foi baixado." });
+    };
+
+
   return (
     <>
     <Card>
       <CardHeader>
-        <CardTitle>Registros de Vistoria</CardTitle>
-        <CardDescription>Visualize todas as vistorias de pré-viagem realizadas pelos motoristas.</CardDescription>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+                <CardTitle>Registros de Vistoria</CardTitle>
+                <CardDescription>Visualize todas as vistorias de pré-viagem realizadas pelos motoristas.</CardDescription>
+            </div>
+             <div className="flex gap-2 w-full sm:w-auto">
+                 <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="outline" className="w-full sm:w-auto">
+                            <FileDown className="mr-2 h-4 w-4" />
+                            Exportar
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Opções de Exportação</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={handleExportXLSX}>
+                            <FileText className="mr-2 h-4 w-4" />
+                            Exportar para XLSX
+                        </DropdownMenuItem>
+                         <DropdownMenuItem onClick={handleExportPDF}>
+                            <FileText className="mr-2 h-4 w-4" />
+                            Exportar para PDF
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleExportTXT}>
+                            <FileText className="mr-2 h-4 w-4" />
+                            Exportar para TXT
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
+        </div>
       </CardHeader>
       <CardContent>
         <Table>

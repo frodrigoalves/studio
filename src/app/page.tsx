@@ -1,3 +1,4 @@
+
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -44,14 +45,14 @@ export default function Home() {
 
             if (item.available) {
               return (
-                <Link href={item.href} key={item.label} className={item.highlight ? 'col-span-2' : ''}>
+                <Link href={item.href} key={item.label}>
                   {cardContent}
                 </Link>
               );
             }
 
             return (
-              <div key={item.label} className={`cursor-not-allowed opacity-50 ${item.highlight ? 'col-span-2' : ''}`}>
+              <div key={item.label} className={`cursor-not-allowed opacity-50`}>
                 {cardContent}
               </div>
             );

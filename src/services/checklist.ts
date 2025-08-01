@@ -20,7 +20,6 @@ export interface ChecklistRecord {
   signature: string | null;
   // Photo fields
   odometerPhoto?: string | null;
-  fuelGaugePhoto?: string | null;
   frontDiagonalPhoto?: string | null;
   rearDiagonalPhoto?: string | null;
   leftSidePhoto?: string | null;
@@ -65,7 +64,6 @@ export async function addChecklistRecord(record: ChecklistRecordPayload): Promis
         ...record,
         date: new Date().toISOString(),
         odometerPhoto: odometerPhotoUrl,
-        fuelGaugePhoto: null, // Campo removido
         frontDiagonalPhoto: frontDiagonalPhotoUrl,
         rearDiagonalPhoto: rearDiagonalPhotoUrl,
         leftSidePhoto: leftSidePhotoUrl,

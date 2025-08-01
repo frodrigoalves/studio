@@ -5,29 +5,15 @@ import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Loader2, AlertTriangle, CheckCircle2, AlertCircle, Clock, Fuel } from "lucide-react";
+import { Loader2, FileDown, FileText, Send } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 import { getFuelingRecords, type FuelingRecord } from '@/services/fueling';
 import { parseISO, format } from 'date-fns';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
-// --- LÓGICA DE AUDITORIA DESABILITADA TEMPORARIAMENTE ---
-/*
-import { getRecords, type Record as TripRecord } from '@/services/records';
-import { isBefore, isAfter, compareAsc } from 'date-fns';
-
-type AuditStatus = {
-    status: 'ok' | 'pending' | 'discrepancy';
-    message: string;
-};
-
-interface EnhancedFuelingRecord extends FuelingRecord {
-    previousTripOdometer?: number | null;
-    nextTripOdometer?: number | null;
-    auditStatus: AuditStatus;
-}
-*/
 
 export default function FuelingRecordsPage() {
     const { toast } = useToast();
@@ -39,67 +25,6 @@ export default function FuelingRecordsPage() {
         try {
             const fuelingData = await getFuelingRecords();
             setRecords(fuelingData);
-
-            // --- LÓGICA DE AUDITORIA DESABILITADA TEMPORARIAMENTE ---
-            /*
-            const [fuelingData, tripData] = await Promise.all([
-                getFuelingRecords(),
-                getRecords()
-            ]);
-
-            const tripRecordsByCar = new Map<string, TripRecord[]>();
-            tripData.forEach(trip => {
-                if (!tripRecordsByCar.has(trip.car)) {
-                    tripRecordsByCar.set(trip.car, []);
-                }
-                tripRecordsByCar.get(trip.car)!.push(trip);
-            });
-            
-             tripRecordsByCar.forEach(trips => trips.sort((a, b) => compareAsc(parseISO(a.date), parseISO(b.date))));
-
-            const enhancedFuelingData = fuelingData.map(fuelingRecord => {
-                const carTrips = tripRecordsByCar.get(fuelingRecord.carId) || [];
-                const fuelingDate = parseISO(fuelingRecord.date);
-                
-                const previousTrip = carTrips
-                    .filter(trip => trip.kmEnd && isBefore(parseISO(trip.date), fuelingDate))
-                    .pop();
-
-                const nextTrip = carTrips
-                    .find(trip => trip.kmStart && isAfter(parseISO(trip.date), fuelingDate));
-
-                const attendantKm = fuelingRecord.odometer;
-                const prevKm = previousTrip?.kmEnd;
-                const nextKm = nextTrip?.kmStart;
-
-                let auditStatus: AuditStatus;
-                const prevDiscrepancy = prevKm != null && attendantKm !== prevKm;
-                const nextDiscrepancy = nextKm != null && attendantKm !== nextKm;
-
-                if (prevDiscrepancy && nextDiscrepancy) {
-                    auditStatus = { status: 'discrepancy', message: 'Divergência dupla: KM\'s anterior e seguinte não batem.' };
-                } else if (prevDiscrepancy) {
-                    auditStatus = { status: 'discrepancy', message: 'KM Abastecimento diferente do KM Final anterior.' };
-                } else if (nextDiscrepancy) {
-                    auditStatus = { status: 'discrepancy', message: 'KM Inicial seguinte diferente do KM Abastecimento.' };
-                } else if (prevKm != null && nextKm == null) {
-                    auditStatus = { status: 'pending', message: 'Aguardando próxima viagem para auditoria completa.' };
-                } else {
-                    auditStatus = { status: 'ok', message: 'KM reconciliado com sucesso.' };
-                }
-
-
-                return {
-                    ...fuelingRecord,
-                    previousTripOdometer: prevKm,
-                    nextTripOdometer: nextKm,
-                    auditStatus
-                };
-            });
-
-            setRecords(enhancedFuelingData);
-            */
-
         } catch (error) {
             console.error("Failed to fetch records", error);
             toast({
@@ -116,13 +41,120 @@ export default function FuelingRecordsPage() {
         fetchRecords();
     }, []);
 
+    const getExportData = () => {
+        return records.map(r => ({
+            'Data': format(parseISO(r.date), 'dd/MM/yy HH:mm'),
+            'Carro': r.carId,
+            'Abastecedor': r.attendantName,
+            'Bomba': r.pump,
+            'KM Registrado': r.odometer,
+            'Litros': r.liters,
+        }));
+    };
+
+    const formatDataAsText = (data: ReturnType<typeof getExportData>) => {
+        if (data.length === 0) return "";
+        let text = "";
+        const headers = Object.keys(data[0]);
+        text += headers.join('\t') + '\r\n';
+        data.forEach(row => {
+            text += headers.map(header => row[header as keyof typeof row] ?? '').join('\t') + '\r\n';
+        });
+        return text;
+    };
+
+
+    const handleExportXLSX = () => {
+        if (records.length === 0) {
+            toast({ title: "Nenhum dado para exportar" });
+            return;
+        }
+        const data = getExportData();
+        const worksheet = XLSX.utils.json_to_sheet(data);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Abastecimentos");
+        XLSX.writeFile(workbook, "registros_abastecimento.xlsx");
+        toast({ title: "Exportação Concluída", description: "O arquivo XLSX foi baixado."});
+    };
+    
+    const handleExportPDF = () => {
+        if (records.length === 0) {
+            toast({ title: "Nenhum dado para exportar" });
+            return;
+        }
+        const doc = new jsPDF();
+        const tableData = getExportData();
+        const tableColumn = Object.keys(tableData[0]);
+        const tableRows = tableData.map(obj => tableColumn.map(key => obj[key as keyof typeof obj] ?? ''));
+
+        (doc as any).autoTable({
+            head: [tableColumn],
+            body: tableRows,
+            didDrawPage: (data: any) => {
+                doc.setFontSize(20);
+                doc.text("Relatório de Abastecimentos", data.settings.margin.left, 15);
+            },
+        });
+        doc.save('registros_abastecimento.pdf');
+        toast({ title: "Exportação Concluída", description: "O arquivo PDF foi baixado."});
+    };
+    
+    const handleExportTXT = () => {
+        if (records.length === 0) {
+            toast({ title: "Nenhum dado para exportar" });
+            return;
+        }
+        const data = getExportData();
+        const textData = formatDataAsText(data);
+        const blob = new Blob([textData], { type: 'text/plain;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", "registros_abastecimento.txt");
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        toast({ title: "Exportação Concluída", description: "O arquivo TXT foi baixado." });
+    };
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Registros de Abastecimento</CardTitle>
-        <CardDescription>
-            Visualize todos os abastecimentos registrados.
-        </CardDescription>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+                <CardTitle>Registros de Abastecimento</CardTitle>
+                <CardDescription>
+                    Visualize todos os abastecimentos registrados.
+                </CardDescription>
+            </div>
+            <div className="flex gap-2 w-full sm:w-auto">
+                 <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="outline" className="w-full sm:w-auto">
+                            <FileDown className="mr-2 h-4 w-4" />
+                            Exportar
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Opções de Exportação</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={handleExportXLSX}>
+                            <FileText className="mr-2 h-4 w-4" />
+                            Exportar para XLSX
+                        </DropdownMenuItem>
+                         <DropdownMenuItem onClick={handleExportPDF}>
+                            <FileText className="mr-2 h-4 w-4" />
+                            Exportar para PDF
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleExportTXT}>
+                            <FileText className="mr-2 h-4 w-4" />
+                            Exportar para TXT
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
+        </div>
       </CardHeader>
       <CardContent>
         <Table>
