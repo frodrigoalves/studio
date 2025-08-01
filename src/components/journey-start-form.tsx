@@ -121,13 +121,11 @@ const fileToBase64 = (file: File): Promise<string> => {
 };
 
 const photoExamples = [
-    { title: 'Hodômetro', src: `https://storage.googleapis.com/static.invertase.io/assets/images/bus-dashboard-odometer.jpg`, description: 'Foto nítida do KM inicial no painel.', hint: 'bus dashboard odometer' },
-    { title: 'Marcador de Combustível', src: `https://storage.googleapis.com/static.invertase.io/assets/images/bus-fuel-gauge.jpg`, description: 'Mostre claramente o nível de combustível.', hint: 'bus fuel gauge' },
-    { title: 'Diagonal Frontal', src: `https://storage.googleapis.com/static.invertase.io/assets/images/bus-front-corner.jpg`, description: 'Pegue a frente e a lateral do veículo em uma só foto.', hint: 'bus front corner' },
-    { title: 'Diagonal Traseira', src: `https://storage.googleapis.com/static.invertase.io/assets/images/bus-rear-corner.jpg`, description: 'Pegue a traseira e a outra lateral do veículo.', hint: 'bus rear corner' },
-    { title: 'Lateral Esquerda', src: `https://storage.googleapis.com/static.invertase.io/assets/images/bus-side-view-left.jpg`, description: 'Foto completa da lateral esquerda do ônibus.', hint: 'bus side view' },
-    { title: 'Lateral Direita', src: `https://storage.googleapis.com/static.invertase.io/assets/images/bus-side-view-right.jpg`, description: 'Foto completa da lateral direita do ônibus.', hint: 'bus side view' },
-]
+    { title: 'Diagonal Frontal Direita', src: `/images/diagonal1.png`, description: 'Pegue a frente e a lateral direita do veículo em uma só foto.', hint: 'bus front corner' },
+    { title: 'Diagonal Traseira Direita', src: `/images/diagonal2.png`, description: 'Pegue a traseira e a lateral direita do veículo.', hint: 'bus rear corner' },
+    { title: 'Diagonal Frontal Esquerda', src: `/images/diagonal3.png`, description: 'Pegue a frente e a lateral esquerda do veículo.', hint: 'bus front corner' },
+    { title: 'Diagonal Traseira Esquerda', src: `/images/diagonal4.png`, description: 'Pegue a traseira e a outra lateral esquerda do veículo.', hint: 'bus rear corner' },
+];
 
 
 export function JourneyStartForm() {
