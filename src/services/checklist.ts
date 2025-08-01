@@ -4,14 +4,17 @@
 import { db } from '@/lib/firebase';
 import { collection, addDoc, getDoc, getDocs, query, orderBy } from 'firebase/firestore';
 
+export type ChecklistItemStatus = "ok" | "avaria" | "na";
+
 export interface ChecklistRecord {
   id: string;
   date: string; // ISO String
   driverChapa: string;
   driverName: string;
   carId: string;
-  items: Record<string, boolean>;
+  items: Record<string, ChecklistItemStatus>;
   observations: string | null;
+  hasIssue: boolean;
 }
 
 export type ChecklistRecordPayload = Omit<ChecklistRecord, 'id' | 'date'>;

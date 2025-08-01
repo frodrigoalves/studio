@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Loader2, CheckCircle2, AlertCircle, MessageSquare } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
-import { getChecklistRecords, type ChecklistRecord } from '@/services/checklist';
+import { getChecklistRecords, type ChecklistRecord, type ChecklistItemStatus } from '@/services/checklist';
 import {
   Dialog,
   DialogContent,
@@ -16,8 +16,16 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-  DialogTrigger,
 } from "@/components/ui/dialog";
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
+
+const statusDisplay: Record<ChecklistItemStatus, { text: string, className: string }> = {
+    ok: { text: "OK", className: "text-green-600" },
+    avaria: { text: "Avaria", className: "text-destructive font-bold" },
+    na: { text: "N/A", className: "text-muted-foreground" },
+};
+
 
 export default function ChecklistRecordsPage() {
     const { toast } = useToast();
@@ -87,9 +95,9 @@ export default function ChecklistRecordsPage() {
                     <Badge variant="secondary">{record.driverChapa}</Badge>
                 </TableCell>
                 <TableCell className="text-center">
-                  {record.observations ? (
+                  {record.hasIssue ? (
                     <Badge variant="destructive" className="flex items-center justify-center gap-1">
-                      <AlertCircle className="h-3 w-3" /> Com Observações
+                      <AlertCircle className="h-3 w-3" /> Com Avaria
                     </Badge>
                   ) : (
                     <Badge variant="default" className="bg-green-100 text-green-800 flex items-center justify-center gap-1">
@@ -117,25 +125,43 @@ export default function ChecklistRecordsPage() {
     </Card>
 
     <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Detalhes da Vistoria</DialogTitle>
           <DialogDescription>
-            Vistoria do carro <span className="font-semibold">{selectedRecord?.carId}</span> por <span className="font-semibold">{selectedRecord?.driverName}</span>.
+            Vistoria do carro <span className="font-semibold">{selectedRecord?.carId}</span> por <span className="font-semibold">{selectedRecord?.driverName}</span> em {selectedRecord?.date ? new Date(selectedRecord.date).toLocaleString('pt-BR', {timeZone: 'UTC'}) : ''}.
           </DialogDescription>
         </DialogHeader>
-        <div className="py-4 space-y-4">
+        <div className="py-4 space-y-6">
           <div>
             <h4 className="font-semibold mb-2">Itens Verificados</h4>
-            <ul className="list-disc list-inside pl-2 text-sm text-muted-foreground">
-              {selectedRecord && Object.entries(selectedRecord.items).map(([key, value]) => (
-                value && <li key={key} className="capitalize">{key.replace(/([A-Z])/g, ' $1')}</li>
-              ))}
-            </ul>
+            <ScrollArea className="h-72 w-full rounded-md border">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Item</TableHead>
+                            <TableHead className="text-right">Status</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                    {selectedRecord && Object.entries(selectedRecord.items).map(([key, value]) => {
+                         const status = statusDisplay[value];
+                         return (
+                            <TableRow key={key}>
+                                <TableCell>{key}</TableCell>
+                                <TableCell className={cn("text-right font-medium", status.className)}>
+                                    {status.text}
+                                </TableCell>
+                            </TableRow>
+                         );
+                    })}
+                    </TableBody>
+                </Table>
+            </ScrollArea>
           </div>
           {selectedRecord?.observations && (
             <div>
-              <h4 className="font-semibold flex items-center gap-2 mb-2"><MessageSquare className="h-4 w-4 text-destructive"/> Observações do Motorista</h4>
+              <h4 className="font-semibold flex items-center gap-2 mb-2"><MessageSquare className={cn("h-4 w-4", selectedRecord.hasIssue && "text-destructive")}/> Observações do Motorista</h4>
               <p className="text-sm bg-muted p-3 rounded-md border">{selectedRecord.observations}</p>
             </div>
           )}

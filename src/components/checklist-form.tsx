@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { Loader2, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -17,32 +17,36 @@ import {
   FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
-import { addChecklistRecord } from "@/services/checklist";
+import { addChecklistRecord, type ChecklistRecordPayload, type ChecklistItemStatus } from "@/services/checklist";
 import { Textarea } from "./ui/textarea";
 
 const checklistItems = [
-  { id: "tires", label: "Pneus (calibragem e desgaste)" },
-  { id: "brakes", label: "Freios (fluido e resposta)" },
-  { id: "lights", label: "Faróis e Lanternas" },
-  { id: "horn", label: "Buzina" },
-  { id: "mirrors", label: "Retrovisores" },
-  { id: "wipers", label: "Limpadores de para-brisa" },
-  { id: "oilLevel", label: "Nível de Óleo" },
-  { id: "waterLevel", label: "Nível de Água do Radiador" },
-  { id: "documents", label: "Documentos do Veículo" },
-  { id: "cleaning", label: "Limpeza interna e externa" },
+  "Adesivos", "Ar Condicionado", "Bancos", "Carroceria", "Cinto de Segurança", "Direção", 
+  "Documentos", "Elevador", "Extintor", "Freios", "Gaveta Cobrador", "Janelas", 
+  "Letreiro", "Limpador Pára-Brisa", "Molas", "Parte Elétrica", "Placas", "Pneus", 
+  "Portas", "Selo de Roleta", "Suspensão a Ar", "Tacógrafo", "Validador", "Vazamento de ar"
 ] as const;
+
+type ItemId = typeof checklistItems[number];
+
+const itemSchema = z.enum(["ok", "avaria", "na"]);
+
+// Cria um objeto Zod dinamicamente com todos os itens do checklist
+const itemsShape = checklistItems.reduce((acc, item) => {
+  acc[item] = itemSchema;
+  return acc;
+}, {} as Record<ItemId, typeof itemSchema>);
 
 const checklistFormSchema = z.object({
   driverChapa: z.string().min(1, "Chapa é obrigatória."),
   driverName: z.string().min(1, "Nome é obrigatório."),
   carId: z.string().min(1, "Carro é obrigatório."),
-  items: z.array(z.string()).refine((value) => value.length === checklistItems.length, {
-    message: "Você deve marcar todos os itens para confirmar a vistoria.",
-  }),
+  items: z.object(itemsShape).refine(obj => {
+    return Object.keys(obj).length === checklistItems.length;
+  }, { message: "Todos os itens devem ser verificados." }),
   observations: z.string().optional(),
 });
 
@@ -52,7 +56,7 @@ const initialValues: ChecklistFormValues = {
   driverChapa: "",
   driverName: "",
   carId: "",
-  items: [],
+  items: checklistItems.reduce((acc, item) => ({...acc, [item]: "ok" }), {} as Record<ItemId, ChecklistItemStatus>),
   observations: "",
 };
 
@@ -68,17 +72,29 @@ export function ChecklistForm() {
   async function onSubmit(data: ChecklistFormValues) {
     setIsSubmitting(true);
     try {
-      const a_items: Record<string, boolean> = {};
-      checklistItems.forEach(item => {
-        a_items[item.id] = data.items.includes(item.id);
-      })
-      await addChecklistRecord({
+      const hasAvaria = Object.values(data.items).some(status => status === 'avaria');
+
+      const payload: ChecklistRecordPayload = {
         driverChapa: data.driverChapa,
         driverName: data.driverName,
         carId: data.carId,
-        items: a_items,
-        observations: data.observations || null,
-      });
+        items: data.items,
+        // Se houver avaria, as observações se tornam obrigatórias
+        observations: data.observations || (hasAvaria ? 'Avaria apontada sem descrição.' : null),
+        hasIssue: hasAvaria
+      };
+      
+      if (hasAvaria && !data.observations) {
+         toast({
+            variant: "destructive",
+            title: "Observação necessária",
+            description: "Por favor, descreva a avaria encontrada no campo de observações.",
+         });
+         setIsSubmitting(false);
+         return;
+      }
+
+      await addChecklistRecord(payload);
 
       toast({
         title: "Vistoria registrada!",
@@ -100,117 +116,121 @@ export function ChecklistForm() {
   return (
     <Card className="shadow-2xl shadow-primary/10 border-2 border-primary/50">
       <CardHeader>
-        <CardTitle>Checklist de Pré-Viagem</CardTitle>
+        <CardTitle>Checklist de Vistoria</CardTitle>
+        <CardDescription>
+          Realize a vistoria do veículo no início da jornada de trabalho.
+        </CardDescription>
       </CardHeader>
       <CardContent className="p-4 sm:p-6">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <div className="space-y-4">
+                <CardTitle className="text-lg">Identificação</CardTitle>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <FormField
+                    control={form.control}
+                    name="driverChapa"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Chapa do Motorista</FormLabel>
+                        <FormControl>
+                            <Input placeholder="Sua matrícula" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                    <FormField
+                    control={form.control}
+                    name="driverName"
+                    render={({ field }) => (
+                        <FormItem>
+                        <FormLabel>Nome do Motorista</FormLabel>
+                        <FormControl>
+                            <Input placeholder="Seu nome completo" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                </div>
                 <FormField
                 control={form.control}
-                name="driverChapa"
+                name="carId"
                 render={({ field }) => (
                     <FormItem>
-                    <FormLabel>Chapa do Motorista</FormLabel>
+                    <FormLabel>Carro</FormLabel>
                     <FormControl>
-                        <Input placeholder="Sua matrícula" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                    </FormItem>
-                )}
-                />
-                <FormField
-                control={form.control}
-                name="driverName"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>Nome do Motorista</FormLabel>
-                    <FormControl>
-                        <Input placeholder="Seu nome completo" {...field} />
+                        <Input placeholder="Número do veículo" {...field} />
                     </FormControl>
                     <FormMessage />
                     </FormItem>
                 )}
                 />
             </div>
-            <FormField
-              control={form.control}
-              name="carId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Carro</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Número do veículo" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
             
-            <FormField
-              control={form.control}
-              name="items"
-              render={({ field }) => (
-                <FormItem>
-                  <div className="mb-4">
-                    <FormLabel className="text-base">Itens de Vistoria</FormLabel>
-                    <FormDescription>
-                      Marque todos os itens para confirmar que foram verificados.
-                    </FormDescription>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-4">
+                <CardTitle className="text-lg">Itens de Vistoria</CardTitle>
+                <FormDescription>
+                    Marque a condição de cada item abaixo.
+                </FormDescription>
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
                   {checklistItems.map((item) => (
-                    <FormField
-                      key={item.id}
-                      control={form.control}
-                      name="items"
-                      render={({ field }) => {
-                        return (
-                          <FormItem
-                            key={item.id}
-                            className="flex flex-row items-start space-x-3 space-y-0"
-                          >
+                     <FormField
+                        key={item}
+                        control={form.control}
+                        name={`items.${item}`}
+                        render={({ field }) => (
+                          <FormItem className="space-y-2 p-3 rounded-md border bg-muted/20">
+                            <FormLabel className="text-base font-semibold">{item}</FormLabel>
                             <FormControl>
-                              <Checkbox
-                                checked={field.value?.includes(item.id)}
-                                onCheckedChange={(checked) => {
-                                  return checked
-                                    ? field.onChange([...(field.value || []), item.id])
-                                    : field.onChange(
-                                        (field.value || []).filter(
-                                          (value) => value !== item.id
-                                        )
-                                      )
-                                }}
-                              />
+                               <RadioGroup
+                                onValueChange={field.onChange}
+                                defaultValue={field.value}
+                                className="flex items-center space-x-4 pt-1"
+                              >
+                                <FormItem className="flex items-center space-x-2 space-y-0">
+                                  <FormControl>
+                                    <RadioGroupItem value="ok" />
+                                  </FormControl>
+                                  <FormLabel className="font-normal text-sm">OK</FormLabel>
+                                </FormItem>
+                                <FormItem className="flex items-center space-x-2 space-y-0">
+                                  <FormControl>
+                                    <RadioGroupItem value="avaria" />
+                                  </FormControl>
+                                  <FormLabel className="font-normal text-sm">Avaria</FormLabel>
+                                </FormItem>
+                                <FormItem className="flex items-center space-x-2 space-y-0">
+                                  <FormControl>
+                                    <RadioGroupItem value="na" />
+                                  </FormControl>
+                                  <FormLabel className="font-normal text-sm">N/A</FormLabel>
+                                </FormItem>
+                              </RadioGroup>
                             </FormControl>
-                            <FormLabel className="font-normal">
-                              {item.label}
-                            </FormLabel>
+                             <FormMessage />
                           </FormItem>
-                        )
-                      }}
-                    />
+                        )}
+                      />
                   ))}
                   </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            </div>
             
             <FormField
               control={form.control}
               name="observations"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Observações</FormLabel>
+                  <FormLabel className="text-lg font-semibold">Observações Gerais</FormLabel>
                    <FormDescription>
-                      Se algum item não estiver conforme, descreva o problema aqui.
+                      Se algum item estiver com avaria, é obrigatório descrever o problema aqui.
                     </FormDescription>
                   <FormControl>
                     <Textarea
-                      placeholder="Ex: Pneu dianteiro direito visivelmente baixo..."
+                      placeholder="Ex: Pneu dianteiro direito visivelmente baixo, trinca no para-brisa, etc."
                       className="resize-none"
+                      rows={4}
                       {...field}
                     />
                   </FormControl>
