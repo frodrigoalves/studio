@@ -5,7 +5,7 @@ import { useState, useTransition, useCallback, useRef, useEffect, useMemo } from
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Camera, Loader2, Send, ArrowLeft, ArrowRight, User, Milestone, Phone, ClipboardCheck, Signature, Car as CarIcon, GaugeCircle, Fuel, AlertCircle } from "lucide-react";
+import { Camera, Loader2, Send, ArrowLeft, ArrowRight, User, Milestone, Phone, ClipboardCheck, Signature, Car as CarIcon, GaugeCircle, Fuel, AlertCircle, ScanText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -22,7 +22,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { addRecord, getRecordByPlateAndStatus, updateRecord, RecordUpdatePayload, Record, RecordAddPayload } from "@/services/records";
 import { addChecklistRecord, ChecklistRecordPayload, ChecklistItemStatus } from "@/services/checklist";
-import { getActiveVehicles, type VehicleParameters } from "@/services/vehicles";
+import { extractOdometerFromImage } from "@/ai/flows/ocr-flow";
 import { cn } from "@/lib/utils";
 import { Progress } from "./ui/progress";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
@@ -65,21 +65,23 @@ const startTripSchema = z.object({
     driver: z.string().min(1, "Nome é obrigatório."),
     car: z.string().min(1, "Carro é obrigatório."),
     line: z.string().min(1, "Linha é obrigatória."),
-    kmStart: z.coerce.number({ required_error: "Km Inicial é obrigatório."}).min(1, "Km Inicial é obrigatório."),
     
     // Step 2
+    startOdometerPhoto: z.any().optional(),
+    kmStart: z.coerce.number({ required_error: "Km Inicial é obrigatório."}).min(1, "Km Inicial é obrigatório."),
+
+    // Step 3
     items: z.object(itemsShape),
     observations: z.string().optional(),
 
-    // Step 3
-    startOdometerPhoto: z.any().optional(),
+    // Step 4
     fuelGaugePhoto: z.any().optional(),
     frontDiagonalPhoto: z.any().optional(),
     rearDiagonalPhoto: z.any().optional(),
     leftSidePhoto: z.any().optional(),
     rightSidePhoto: z.any().optional(),
 
-    // Step 4
+    // Step 5
     signature: z.string().refine(sig => sig && sig.length > 0, { message: "A assinatura é obrigatória." }),
 }).refine(data => {
     const hasAvaria = Object.values(data.items).some(status => status === 'avaria');
@@ -106,9 +108,10 @@ const endFormSchema = z.object({
 type EndFormValues = z.infer<typeof endFormSchema>;
 
 const stepFields: (keyof StartTripFormValues)[][] = [
-    ['plate', 'driver', 'car', 'line', 'kmStart'],
+    ['plate', 'driver', 'car', 'line'],
+    ['startOdometerPhoto', 'kmStart'],
     ['items', 'observations'],
-    ['startOdometerPhoto', 'fuelGaugePhoto', 'frontDiagonalPhoto', 'rearDiagonalPhoto', 'leftSidePhoto', 'rightSidePhoto'],
+    ['fuelGaugePhoto', 'frontDiagonalPhoto', 'rearDiagonalPhoto', 'leftSidePhoto', 'rightSidePhoto'],
     ['signature']
 ];
 
@@ -119,9 +122,9 @@ const initialStartValues: StartTripFormValues = {
     car: "", 
     line: "", 
     kmStart: '' as unknown as number,
+    startOdometerPhoto: null,
     items: allChecklistItems.reduce((acc, item) => ({...acc, [item]: "ok" }), {} as Record<ItemId, ChecklistItemStatus>),
     observations: "",
-    startOdometerPhoto: null,
     fuelGaugePhoto: null,
     frontDiagonalPhoto: null,
     rearDiagonalPhoto: null,
@@ -145,9 +148,11 @@ export function DriverForm() {
   const [activeTab, setActiveTab] = useState("start");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  const [isOcrLoading, setIsOcrLoading] = useState(false);
   const [recordToEnd, setRecordToEnd] = useState<Record | null>(null);
   const [startTripStep, setStartTripStep] = useState(0);
 
+  const startOdometerPhotoRef = useRef<HTMLInputElement>(null);
   const endFileInputRef = useRef<HTMLInputElement>(null);
   
   const startForm = useForm<StartTripFormValues>({
@@ -195,6 +200,39 @@ export function DriverForm() {
     }
   }, [activeTab, endForm, toast]);
   
+  const handleOcr = async (file: File | null) => {
+    if (!file) return;
+    setIsOcrLoading(true);
+    try {
+      const dataUri = await fileToBase64(file);
+      if (!dataUri) throw new Error("Could not convert file to data URI");
+
+      const result = await extractOdometerFromImage({ photoDataUri: dataUri });
+      if (result.odometer) {
+        startForm.setValue('kmStart', result.odometer, { shouldValidate: true });
+        toast({
+          title: "KM Extraído com Sucesso!",
+          description: `Valor do hodômetro preenchido: ${result.odometer}. Por favor, confirme se está correto.`,
+        });
+      } else {
+        toast({
+          variant: 'destructive',
+          title: "Leitura do Hodômetro Falhou",
+          description: "Não foi possível extrair o KM da imagem. Por favor, insira o valor manualmente.",
+        });
+      }
+    } catch (error) {
+      console.error("OCR failed", error);
+      toast({
+        variant: 'destructive',
+        title: "Erro na Leitura da Imagem",
+        description: "Ocorreu um problema ao processar a foto. Tente novamente ou insira o valor manualmente.",
+      });
+    } finally {
+      setIsOcrLoading(false);
+    }
+  };
+
   async function onStartSubmit(data: StartTripFormValues) {
     setIsSubmitting(true);
     try {
@@ -258,6 +296,7 @@ export function DriverForm() {
         description: "Todos os dados foram salvos. Boa viagem!",
       });
       startForm.reset(initialStartValues);
+      if (startOdometerPhotoRef.current) startOdometerPhotoRef.current.value = "";
       setStartTripStep(0);
   
     } catch (e) {
@@ -338,7 +377,7 @@ export function DriverForm() {
   
   const nextStep = async () => {
     const fields = stepFields[startTripStep];
-    const isValid = await startForm.trigger(fields, { shouldFocus: true });
+    const isValid = await startForm.trigger(fields as any, { shouldFocus: true });
     if (isValid) {
       setStartTripStep((prev) => prev + 1);
     }
@@ -380,11 +419,57 @@ export function DriverForm() {
                         <FormField control={startForm.control} name="driver" render={({ field }) => (<FormItem><FormLabel>Nome do Motorista</FormLabel><FormControl><Input placeholder="Seu nome completo" {...field} /></FormControl><FormMessage /></FormItem>)}/>
                         <FormField control={startForm.control} name="car" render={({ field }) => (<FormItem><FormLabel>Carro</FormLabel><FormControl><Input placeholder="Número do veículo" {...field} /></FormControl><FormMessage /></FormItem>)}/>
                         <FormField control={startForm.control} name="line" render={({ field }) => (<FormItem><FormLabel>Linha</FormLabel><FormControl><Input placeholder="Número da linha" {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                        <FormField control={startForm.control} name="kmStart" render={({ field }) => (
+                    </div>
+                )}
+                
+                {startTripStep === 1 && (
+                     <div className="space-y-4">
+                        <h3 className="text-lg font-semibold flex items-center gap-2"><GaugeCircle className="w-5 h-5 text-primary"/> Hodômetro</h3>
+                        <FormField 
+                            control={startForm.control} 
+                            name="startOdometerPhoto" 
+                            render={({ field: { onChange, value, ...rest } }) => (
                             <FormItem>
-                                <FormLabel>KM Inicial do Veículo</FormLabel>
+                                <FormLabel>1. Foto do Hodômetro</FormLabel>
+                                <FormDescription>Tire uma foto nítida do hodômetro para leitura automática.</FormDescription>
                                 <FormControl>
-                                    <Input type="number" placeholder="123456" {...field} value={field.value ?? ''} onChange={(e) => field.onChange(e.target.value === '' ? undefined : e.target.valueAsNumber)} />
+                                    <div className="relative">
+                                        <Input 
+                                            type="file" 
+                                            accept="image/*" 
+                                            capture="camera" 
+                                            className="pr-12" 
+                                            ref={startOdometerPhotoRef}
+                                            onChange={(e) => {
+                                                const file = e.target.files?.[0];
+                                                onChange(file);
+                                                handleOcr(file || null);
+                                            }}
+                                            {...rest}
+                                        />
+                                        <Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                                    </div>
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}/>
+                        <FormField 
+                            control={startForm.control} 
+                            name="kmStart" 
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>2. Confirme ou digite o KM Inicial</FormLabel>
+                                <FormControl>
+                                    <div className="relative">
+                                        <Input 
+                                            type="number" 
+                                            placeholder="Aguardando leitura da foto..." 
+                                            {...field} 
+                                            value={field.value ?? ''} 
+                                            onChange={(e) => field.onChange(e.target.value === '' ? undefined : e.target.valueAsNumber)}
+                                        />
+                                        {isOcrLoading && <Loader2 className="absolute right-3 top-2.5 h-5 w-5 animate-spin" />}
+                                    </div>
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -392,7 +477,7 @@ export function DriverForm() {
                     </div>
                 )}
 
-                {startTripStep === 1 && (
+                {startTripStep === 2 && (
                     <div className="space-y-6">
                         <h3 className="text-lg font-semibold flex items-center gap-2"><ClipboardCheck className="w-5 h-5 text-primary"/> Checklist de Vistoria</h3>
                         <Alert variant="default" className="bg-blue-50 border-blue-200">
@@ -424,26 +509,25 @@ export function DriverForm() {
                                 </AccordionItem>
                             ))}
                         </Accordion>
-                         <FormField control={startForm.control} name="observations" render={({ field }) => ( <FormItem><FormLabel className="text-base font-semibold">Observações Gerais</FormLabel><FormDescription>Se algum item estiver com avaria, é obrigatório descrever o problema aqui.</FormDescription><FormControl><Textarea placeholder="Ex: Pneu dianteiro direito visivelmente baixo, trinca no para-brisa, etc." className="resize-none" rows={4} {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                    </div>
-                )}
-                
-                {startTripStep === 2 && (
-                     <div className="space-y-6">
-                        <h3 className="text-lg font-semibold flex items-center gap-2"><Camera className="w-5 h-5 text-primary"/> Fotos da Vistoria</h3>
-                        <p className="text-sm text-muted-foreground">Tire uma foto para cada item listado abaixo. Por enquanto, o envio de fotos é opcional.</p>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <FormField control={startForm.control} name="startOdometerPhoto" render={({ field: { onChange, ...rest }}) => (<FormItem><FormLabel>1. Foto do Hodômetro</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" onChange={(e) => onChange(e.target.files?.[0])} {...rest} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl><FormMessage /></FormItem>)}/>
-                            <FormField control={startForm.control} name="fuelGaugePhoto" render={({ field: { onChange, ...rest }}) => (<FormItem><FormLabel>2. Foto do Combustível</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" onChange={(e) => onChange(e.target.files?.[0])} {...rest} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl><FormMessage /></FormItem>)}/>
-                            <FormField control={startForm.control} name="frontDiagonalPhoto" render={({ field: { onChange, ...rest }}) => (<FormItem><FormLabel>3. Diagonal Frontal</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" onChange={(e) => onChange(e.target.files?.[0])} {...rest} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl><FormMessage /></FormItem>)}/>
-                            <FormField control={startForm.control} name="rearDiagonalPhoto" render={({ field: { onChange, ...rest }}) => (<FormItem><FormLabel>4. Diagonal Traseira</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" onChange={(e) => onChange(e.target.files?.[0])} {...rest} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl><FormMessage /></FormItem>)}/>
-                            <FormField control={startForm.control} name="leftSidePhoto" render={({ field: { onChange, ...rest }}) => (<FormItem><FormLabel>5. Lateral Esquerda</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" onChange={(e) => onChange(e.target.files?.[0])} {...rest} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl><FormMessage /></FormItem>)}/>
-                            <FormField control={startForm.control} name="rightSidePhoto" render={({ field: { onChange, ...rest }}) => (<FormItem><FormLabel>6. Lateral Direita</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" onChange={(e) => onChange(e.target.files?.[0])} {...rest} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl><FormMessage /></FormItem>)}/>
-                        </div>
+                         <FormField control={startForm.control} name="observations" render={({ field }) => ( <FormItem><FormLabel className="text-base font-semibold">Observações Gerais</FormLabel><FormDescription>Se algum item estiver com avaria, é obrigatório descrever o problema aqui.</FormDescription><FormControl><Textarea placeholder="Ex: Pneu dianteiro direito visivelmente baixo, trinca no para-brisa, etc." className="resize-none" rows={4} {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)}/>
                     </div>
                 )}
                 
                 {startTripStep === 3 && (
+                     <div className="space-y-6">
+                        <h3 className="text-lg font-semibold flex items-center gap-2"><Camera className="w-5 h-5 text-primary"/> Fotos Adicionais da Vistoria</h3>
+                        <p className="text-sm text-muted-foreground">Tire uma foto para cada item listado abaixo. Por enquanto, o envio de fotos é opcional.</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <FormField control={startForm.control} name="fuelGaugePhoto" render={({ field: { onChange, ...rest }}) => (<FormItem><FormLabel>1. Foto do Combustível</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" onChange={(e) => onChange(e.target.files?.[0])} {...rest} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl><FormMessage /></FormItem>)}/>
+                            <FormField control={startForm.control} name="frontDiagonalPhoto" render={({ field: { onChange, ...rest }}) => (<FormItem><FormLabel>2. Diagonal Frontal</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" onChange={(e) => onChange(e.target.files?.[0])} {...rest} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl><FormMessage /></FormItem>)}/>
+                            <FormField control={startForm.control} name="rearDiagonalPhoto" render={({ field: { onChange, ...rest }}) => (<FormItem><FormLabel>3. Diagonal Traseira</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" onChange={(e) => onChange(e.target.files?.[0])} {...rest} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl><FormMessage /></FormItem>)}/>
+                            <FormField control={startForm.control} name="leftSidePhoto" render={({ field: { onChange, ...rest }}) => (<FormItem><FormLabel>4. Lateral Esquerda</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" onChange={(e) => onChange(e.target.files?.[0])} {...rest} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl><FormMessage /></FormItem>)}/>
+                            <FormField control={startForm.control} name="rightSidePhoto" render={({ field: { onChange, ...rest }}) => (<FormItem><FormLabel>5. Lateral Direita</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" onChange={(e) => onChange(e.target.files?.[0])} {...rest} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl><FormMessage /></FormItem>)}/>
+                        </div>
+                    </div>
+                )}
+                
+                {startTripStep === 4 && (
                     <div className="space-y-4">
                         <h3 className="text-lg font-semibold flex items-center gap-2"><Signature className="w-5 h-5 text-primary"/> Confirmação e Assinatura</h3>
                         <p className="text-sm text-muted-foreground">Revise os dados antes de assinar. Sua assinatura confirma a veracidade de todas as informações fornecidas na vistoria e no registro de KM.</p>
