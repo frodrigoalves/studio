@@ -240,7 +240,7 @@ export function JourneyStartForm() {
             <Progress value={progress} className="w-full h-2 mb-4" />
             <div className="flex justify-between items-center">
                  <div>
-                    <CardTitle>Formulário de Início de Jornada</CardTitle>
+                    <CardTitle>Vistoria e registro de km</CardTitle>
                     <CardDescription>Siga os passos para registrar o início do seu turno.</CardDescription>
                 </div>
                  <div className="text-sm text-muted-foreground font-medium">
