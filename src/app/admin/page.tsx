@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Wand2, FileText, Upload, Lightbulb, ListChecks, BarChart, Archive, BrainCircuit, GaugeCircle, AlertTriangle, Fuel, DollarSign, LineChart as LineChartIcon, BarChart2, Calendar as CalendarIcon, FileUp, Info, MapPin as MapIcon, Database, Car, Droplets, Wrench, Clock, Activity } from "lucide-react";
+import { Loader2, Wand2, FileText, Upload, Lightbulb, ListChecks, BarChart, Archive, BrainCircuit, GaugeCircle, AlertTriangle, Fuel, DollarSign, LineChart as LineChartIcon, BarChart2, Calendar as CalendarIcon, FileUp, Info, MapPin as MapIcon, Database, Car, Droplets, Wrench, Clock, Activity, ClipboardCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getRecords, type Record } from "@/services/records";
 import { getDieselPrices, type DieselPrice } from "@/services/settings";
@@ -23,7 +23,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { Bar, BarChart as BarChartComponent, Line, LineChart, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
-import { addDays, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, format, parseISO, compareAsc, differenceInDays } from 'date-fns';
+import { addDays, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, format, parseISO, compareAsc, differenceInDays, isBefore, isAfter } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { DateRange } from "react-day-picker";
 import { cn } from "@/lib/utils";
@@ -88,6 +88,7 @@ export default function AdminDashboard() {
         diesel: { count: 0, lastImport: '' },
         tripRecords: 0,
         tripAlerts: 0,
+        fuelingDiscrepancies: 0,
     });
 
 
@@ -137,6 +138,27 @@ export default function AdminDashboard() {
                 (r.status === "Finalizado" && (!r.startOdometerPhoto || !r.endOdometerPhoto))
             ).length;
 
+            const tripRecordsByCar = new Map<string, Record[]>();
+            tripData.forEach(trip => {
+                if (!tripRecordsByCar.has(trip.car)) {
+                    tripRecordsByCar.set(trip.car, []);
+                }
+                tripRecordsByCar.get(trip.car)!.push(trip);
+            });
+             tripRecordsByCar.forEach(trips => trips.sort((a, b) => compareAsc(parseISO(a.date), parseISO(b.date))));
+
+            let fuelingDiscrepancies = 0;
+            allFuelingRecords.forEach(fuelingRecord => {
+                const carTrips = tripRecordsByCar.get(fuelingRecord.carId) || [];
+                const fuelingDate = parseISO(fuelingRecord.date);
+                const previousTrip = carTrips.filter(trip => trip.kmEnd && isBefore(parseISO(trip.date), fuelingDate)).pop();
+                const nextTrip = carTrips.find(trip => trip.kmStart && isAfter(parseISO(trip.date), fuelingDate));
+                if ((previousTrip?.kmEnd != null && fuelingRecord.odometer !== previousTrip.kmEnd) || (nextTrip?.kmStart != null && fuelingRecord.odometer !== nextTrip.kmStart)) {
+                    fuelingDiscrepancies++;
+                }
+            });
+
+
             setDbStats({
                 vehicles: {
                     count: vehiclesData.length,
@@ -156,6 +178,7 @@ export default function AdminDashboard() {
                 },
                 tripRecords: tripData.length,
                 tripAlerts: tripAlerts,
+                fuelingDiscrepancies: fuelingDiscrepancies,
             });
 
         } catch (error) {
@@ -460,7 +483,7 @@ export default function AdminDashboard() {
                             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                         </div>
                     ) : (
-                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
                             <Card>
                                 <CardHeader className="pb-2">
                                     <CardTitle className="text-sm font-medium flex items-center justify-between">
@@ -473,6 +496,18 @@ export default function AdminDashboard() {
                                     <p className="text-xs text-muted-foreground flex items-center gap-1">
                                        <AlertTriangle className="h-3 w-3 text-destructive" /> {dbStats.tripAlerts.toLocaleString('pt-BR')} Alertas pendentes
                                     </p>
+                                </CardContent>
+                            </Card>
+                            <Card>
+                                 <CardHeader className="pb-2">
+                                    <CardTitle className="text-sm font-medium flex items-center justify-between">
+                                        Auditoria Abastecimento
+                                         <ClipboardCheck className="h-4 w-4 text-muted-foreground" />
+                                    </CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold">{dbStats.fuelingDiscrepancies.toLocaleString('pt-BR')}</div>
+                                    <a href="/admin/fueling" className="text-xs text-muted-foreground underline">Divergências encontradas</a>
                                 </CardContent>
                             </Card>
                             <Card>

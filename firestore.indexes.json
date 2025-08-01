@@ -72,6 +72,20 @@
           "order": "DESCENDING"
         }
       ]
+    },
+     {
+      "collectionGroup": "tripRecords",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "car",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "date",
+          "order": "ASCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": []
