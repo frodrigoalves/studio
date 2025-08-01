@@ -279,7 +279,7 @@ export function JourneyStartForm() {
                                         <Card>
                                             <CardContent className="flex flex-col items-center justify-center p-4 gap-2">
                                                  <Image 
-                                                    src={`https://placehold.co/300x200.png?text=${photo.title.replace(' ', '+')}`} 
+                                                    src={`https://placehold.co/300x200.png`} 
                                                     alt={photo.title} 
                                                     width={300} 
                                                     height={200} 
@@ -384,5 +384,3 @@ export function JourneyStartForm() {
     </Card>
   );
 }
-
-    
