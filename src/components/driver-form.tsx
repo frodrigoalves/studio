@@ -107,24 +107,24 @@ const stepFields: (keyof StartTripFormValues)[][] = [
 ];
 
 
-const initialStartValues: Omit<StartTripFormValues, 'kmStart' | 'fuelLevel'> & { kmStart: string, fuelLevel: string } = {
+const initialStartValues: StartTripFormValues = {
     plate: "",
     driver: "",
     car: "",
     line: "",
-    kmStart: '',
+    kmStart: 0,
     fuelLevel: '',
     items: allChecklistItems.reduce((acc, item) => ({...acc, [item]: "ok" }), {} as Record<ItemId, ChecklistItemStatus>),
     observations: "",
     signature: ""
 };
 
-const initialEndValues: Omit<EndFormValues, 'kmEnd'> & { kmEnd: string } = { 
+const initialEndValues: EndFormValues = { 
     plate: "", 
     driver: "", 
     car: "", 
     line: "", 
-    kmEnd: '', 
+    kmEnd: 0, 
 };
 
 const fuelLevelMapping: Record<string, string> = {
@@ -484,10 +484,10 @@ export function DriverForm() {
                 {startTripStep === 0 && (
                     <div className="space-y-4">
                         <h3 className="text-lg font-semibold flex items-center gap-2"><User className="w-5 h-5 text-primary"/> Identificação</h3>
-                        <FormField control={startForm.control} name="plate" render={({ field }) => (<FormItem><FormLabel>Chapa do Motorista</FormLabel><FormControl><Input placeholder="Sua matrícula" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)}/>
-                        <FormField control={startForm.control} name="driver" render={({ field }) => (<FormItem><FormLabel>Nome do Motorista</FormLabel><FormControl><Input placeholder="Seu nome completo" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)}/>
-                        <FormField control={startForm.control} name="car" render={({ field }) => (<FormItem><FormLabel>Carro</FormLabel><FormControl><Input placeholder="Número do veículo" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)}/>
-                        <FormField control={startForm.control} name="line" render={({ field }) => (<FormItem><FormLabel>Linha</FormLabel><FormControl><Input placeholder="Número da linha" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)}/>
+                        <FormField control={startForm.control} name="plate" render={({ field }) => (<FormItem><FormLabel>Chapa do Motorista</FormLabel><FormControl><Input placeholder="Sua matrícula" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                        <FormField control={startForm.control} name="driver" render={({ field }) => (<FormItem><FormLabel>Nome do Motorista</FormLabel><FormControl><Input placeholder="Seu nome completo" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                        <FormField control={startForm.control} name="car" render={({ field }) => (<FormItem><FormLabel>Carro</FormLabel><FormControl><Input placeholder="Número do veículo" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                        <FormField control={startForm.control} name="line" render={({ field }) => (<FormItem><FormLabel>Linha</FormLabel><FormControl><Input placeholder="Número da linha" {...field} /></FormControl><FormMessage /></FormItem>)}/>
                     </div>
                 )}
                 
@@ -540,7 +540,6 @@ export function DriverForm() {
                                             type="number" 
                                             placeholder="Aguardando foto..." 
                                             {...field}
-                                            value={field.value ?? ''}
                                         />
                                         {isOcrLoading && <Loader2 className="absolute right-3 top-2.5 h-5 w-5 animate-spin" />}
                                     </div>
@@ -608,7 +607,7 @@ export function DriverForm() {
                                 <AccordionItem value={`item-${index+1}`} key={sectionTitle}>
                                     <AccordionTrigger>{sectionTitle}</AccordionTrigger>
                                     <AccordionContent>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                                             {items.map((item) => (
                                                 <FormField key={item} control={startForm.control} name={`items.${item as ItemId}`}
                                                     render={({ field }) => (
@@ -624,7 +623,7 @@ export function DriverForm() {
                                 </AccordionItem>
                             ))}
                         </Accordion>
-                         <FormField control={startForm.control} name="observations" render={({ field }) => ( <FormItem><FormLabel className="text-base font-semibold">Observações Gerais</FormLabel><FormDescription>Se algum item estiver com avaria, é obrigatório descrever o problema aqui.</FormDescription><FormControl><Textarea placeholder="Ex: Pneu dianteiro direito visivelmente baixo, trinca no para-brisa, etc." className="resize-none" rows={4} {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)}/>
+                         <FormField control={startForm.control} name="observations" render={({ field }) => ( <FormItem><FormLabel className="text-base font-semibold">Observações Gerais</FormLabel><FormDescription>Se algum item estiver com avaria, é obrigatório descrever o problema aqui.</FormDescription><FormControl><Textarea placeholder="Ex: Pneu dianteiro direito visivelmente baixo, trinca no para-brisa, etc." className="resize-none" rows={4} {...field} /></FormControl><FormMessage /></FormItem>)}/>
                     </div>
                 )}
                 
@@ -639,7 +638,7 @@ export function DriverForm() {
                                 <FormItem><FormLabel>Lateral Esquerda (Opcional)</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" ref={leftSidePhotoRef} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl></FormItem>
                                 <FormItem><FormLabel>Lateral Direita (Opcional)</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" ref={rightSidePhotoRef} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl></FormItem>
                             </div>
-                            <FormField control={startForm.control} name="signature" render={({ field }) => ( <FormItem><FormLabel className="text-lg font-semibold">Assinatura do Motorista</FormLabel><FormControl><SignaturePad onSignatureEnd={(signature) => field.onChange(signature)} className="w-full h-48 border rounded-lg bg-background" /></FormControl><FormMessage /></FormItem>)}/>
+                            <FormField control={startForm.control} name="signature" render={({ field }) => ( <FormItem><FormLabel className="text-lg font-semibold">Assinatura do Motorista</FormLabel><FormControl><SignaturePad onSignatureEnd={(signature) => field.onChange(signature ?? "")} className="w-full h-48 border rounded-lg bg-background" /></FormControl><FormMessage /></FormItem>)}/>
                         </div>
                     </div>
                 )}
@@ -677,7 +676,7 @@ export function DriverForm() {
                       <FormLabel>Chapa</FormLabel>
                       <FormControl>
                         <div className="relative">
-                            <Input placeholder="Confirme sua matrícula" {...field} onBlur={(e) => handleChapaBlur(e.target.value)} value={field.value ?? ''} />
+                            <Input placeholder="Confirme sua matrícula" {...field} onBlur={(e) => handleChapaBlur(e.target.value)} />
                              {isSearching && <Loader2 className="absolute right-3 top-2.5 h-5 w-5 animate-spin" />}
                         </div>
                       </FormControl>
@@ -692,7 +691,7 @@ export function DriverForm() {
                       <FormItem>
                         <FormLabel>Nome do Motorista</FormLabel>
                         <FormControl>
-                           <Input placeholder="Preenchido automaticamente" {...field} disabled value={field.value ?? ''} />
+                           <Input placeholder="Preenchido automaticamente" {...field} disabled />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -705,7 +704,7 @@ export function DriverForm() {
                       <FormItem>
                         <FormLabel>Carro</FormLabel>
                         <FormControl>
-                           <Input placeholder="Preenchido automaticamente" {...field} disabled value={field.value ?? ''} />
+                           <Input placeholder="Preenchido automaticamente" {...field} disabled />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -718,7 +717,7 @@ export function DriverForm() {
                       <FormItem>
                         <FormLabel>Linha</FormLabel>
                         <FormControl>
-                           <Input placeholder="Preenchido automaticamente" {...field} disabled value={field.value ?? ''} />
+                           <Input placeholder="Preenchido automaticamente" {...field} disabled />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -731,7 +730,7 @@ export function DriverForm() {
                     <FormItem>
                       <FormLabel>KM Final</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="123567" {...field} value={field.value ?? ''} />
+                        <Input type="number" placeholder="123567" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -759,3 +758,5 @@ export function DriverForm() {
     </Card>
   );
 }
+
+    
