@@ -7,7 +7,7 @@ import Image from 'next/image';
 const menuOptions = [
   { href: '/registro-km', label: 'REGISTRO DE KM', icon: FileText, available: true },
   { href: '/abastecimento', label: 'ABASTECIMENTO', icon: Fuel, available: true },
-  { href: '/vistoria', label: 'VISTORIA', icon: ClipboardCheck, available: false },
+  { href: '/vistoria', label: 'VISTORIA', icon: ClipboardCheck, available: true },
   { href: '/gestao-pneu', label: 'GESTÃO DE PNEU', icon: CircleDot, available: false },
 ];
 

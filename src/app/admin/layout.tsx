@@ -33,6 +33,7 @@ const pageTitles: { [key: string]: string } = {
     '/admin': 'Painel BI',
     '/admin/records': 'Registros de KM',
     '/admin/fueling': 'Registros de Abastecimento',
+    '/admin/checklist': 'Registros de Vistoria',
     '/admin/settings': 'Configurações e Importação',
 };
 
@@ -128,7 +129,7 @@ export default function AdminLayout({
             </SidebarMenuItem>
              <SidebarMenuItem>
               <SidebarMenuButton asChild>
-                <Link href="#" onClick={handleDevelopmentClick}>
+                <Link href="/admin/checklist">
                   <ClipboardCheck />
                   Vistoria
                 </Link>
