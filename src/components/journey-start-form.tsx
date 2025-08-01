@@ -121,10 +121,10 @@ const fileToBase64 = (file: File): Promise<string> => {
 };
 
 const photoExamples = [
-    { title: 'Diagonal Frontal Direita', src: `/images/diagonal1.png`, description: 'Pegue a frente e a lateral direita do veículo em uma só foto.', hint: 'bus front corner' },
-    { title: 'Diagonal Traseira Direita', src: `/images/diagonal2.png`, description: 'Pegue a traseira e a lateral direita do veículo.', hint: 'bus rear corner' },
-    { title: 'Diagonal Frontal Esquerda', src: `/images/diagonal3.png`, description: 'Pegue a frente e a lateral esquerda do veículo.', hint: 'bus front corner' },
-    { title: 'Diagonal Traseira Esquerda', src: `/images/diagonal4.png`, description: 'Pegue a traseira e a outra lateral esquerda do veículo.', hint: 'bus rear corner' },
+    { title: 'Diagonal Frontal Direita', src: `/images/diagonal1.png`, description: 'Pegue a frente e a lateral direita do veículo em uma só foto.' },
+    { title: 'Diagonal Traseira Direita', src: `/images/diagonal2.png`, description: 'Pegue a traseira e a lateral direita do veículo.' },
+    { title: 'Diagonal Frontal Esquerda', src: `/images/diagonal3.png`, description: 'Pegue a frente e a lateral esquerda do veículo.' },
+    { title: 'Diagonal Traseira Esquerda', src: `/images/diagonal4.png`, description: 'Pegue a traseira e a outra lateral esquerda do veículo.' },
 ];
 
 
@@ -282,7 +282,6 @@ export function JourneyStartForm() {
                                                     width={300} 
                                                     height={200} 
                                                     className="rounded-md"
-                                                    data-ai-hint={photo.hint}
                                                 />
                                                 <h4 className="font-semibold mt-2">{photo.title}</h4>
                                                 <p className="text-xs text-muted-foreground text-center">{photo.description}</p>
