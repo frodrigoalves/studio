@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { MoreHorizontal, PlusCircle, FileUp, Camera, AlertCircle, KeyRound, Loader2, Upload, FileDown, FileText, Send, Trash2 } from "lucide-react";
+import { MoreHorizontal, PlusCircle, FileUp, Camera, AlertCircle, KeyRound, Loader2, Upload, FileDown, FileText, Send, Trash2, Fuel, Car } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import {
   Dialog,
@@ -312,6 +312,22 @@ export default function RecordsPage() {
         window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
         toast({ title: "E-mail Pronto", description: "Seu cliente de e-mail foi aberto."});
     };
+    
+    const PhotoDisplay = ({ label, url }: { label: string; url: string | null | undefined }) => (
+        <div className="space-y-2">
+            <h4 className="font-semibold text-center">{label}</h4>
+            {url ? (
+                <div className="relative w-full aspect-video rounded-md overflow-hidden border">
+                    <Image src={url} alt={label} layout="fill" objectFit="contain" />
+                </div>
+            ) : (
+                <div className="aspect-video flex flex-col items-center justify-center bg-muted rounded-md text-muted-foreground">
+                    <Camera className="h-12 w-12 mb-2" />
+                    <span>Nenhuma foto encontrada.</span>
+                </div>
+            )}
+        </div>
+    );
 
 
   return (
@@ -491,49 +507,22 @@ export default function RecordsPage() {
     </Card>
 
     <Dialog open={isPhotosDialogOpen} onOpenChange={setPhotosDialogOpen}>
-        <DialogContent className="sm:max-w-[80vw] md:max-w-[60vw] lg:max-w-[50vw]">
+        <DialogContent className="sm:max-w-[80vw] md:max-w-[70vw] lg:max-w-[60vw]">
             <DialogHeader>
-                <DialogTitle>Fotos do Odômetro</DialogTitle>
+                <DialogTitle>Fotos da Jornada</DialogTitle>
                 <DialogDescription>
-                    Fotos registradas para a viagem de {selectedRecord?.driver} com a chapa {selectedRecord?.plate}.
+                    Fotos registradas para a viagem de {selectedRecord?.driver} com o carro {selectedRecord?.car}.
                 </DialogDescription>
             </DialogHeader>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
-                <div className="space-y-2">
-                    <h4 className="font-semibold text-center">Início da Viagem</h4>
-                    {selectedRecord?.startOdometerPhoto ? (
-                        <div className="relative w-full aspect-video rounded-md overflow-hidden border">
-                            <Image src={selectedRecord.startOdometerPhoto} alt="Odômetro Início" layout="fill" objectFit="contain" />
-                        </div>
-                    ) : (
-                         <div className="aspect-video flex flex-col items-center justify-center bg-muted rounded-md text-muted-foreground">
-                            <Camera className="h-12 w-12 mb-2" />
-                            <span>Nenhuma foto encontrada.</span>
-                        </div>
-                    )}
-                </div>
-                 <div className="space-y-2">
-                    <h4 className="font-semibold text-center">Fim da Viagem</h4>
-                     {selectedRecord?.endOdometerPhoto ? (
-                        <div className="relative w-full aspect-video rounded-md overflow-hidden border">
-                            <Image src={selectedRecord.endOdometerPhoto} alt="Odômetro Fim" layout="fill" objectFit="contain" />
-                        </div>
-                    ) : (
-                         <div className="aspect-video flex flex-col items-center justify-center bg-muted rounded-md text-muted-foreground">
-                             {selectedRecord?.status === "Finalizado" ? (
-                                <>
-                                    <Camera className="h-12 w-12 mb-2" />
-                                    <span>Nenhuma foto encontrada.</span>
-                                </>
-                             ) : (
-                                <>
-                                    <AlertCircle className="h-12 w-12 mb-2" />
-                                    <span>Viagem ainda em andamento.</span>
-                                </>
-                             )}
-                        </div>
-                    )}
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 py-4">
+                 <PhotoDisplay label="Hodômetro (Início)" url={selectedRecord?.startOdometerPhoto} />
+                 <PhotoDisplay label="Marcador Combustível" url={selectedRecord?.fuelGaugePhoto} />
+                 <PhotoDisplay label="Hodômetro (Fim)" url={selectedRecord?.endOdometerPhoto} />
+                 <PhotoDisplay label="Diagonal Frontal" url={selectedRecord?.frontDiagonalPhoto} />
+                 <PhotoDisplay label="Diagonal Traseira" url={selectedRecord?.rearDiagonalPhoto} />
+                 <PhotoDisplay label="Lateral Esquerda" url={selectedRecord?.leftSidePhoto} />
+                 <PhotoDisplay label="Lateral Direita" url={selectedRecord?.rightSidePhoto} />
+
             </div>
             <DialogFooter>
                 <Button variant="outline" onClick={() => setPhotosDialogOpen(false)}>Fechar</Button>
@@ -642,5 +631,3 @@ export default function RecordsPage() {
     </>
   );
 }
-
-    

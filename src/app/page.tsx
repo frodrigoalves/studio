@@ -1,11 +1,11 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { UserCog, Fuel, ClipboardCheck, FileText, CircleDot } from 'lucide-react';
+import { UserCog, Fuel, ClipboardCheck, FileText, CircleDot, PlayCircle } from 'lucide-react';
 import Image from 'next/image';
 
 const menuOptions = [
-  { href: '/registro-km', label: 'REGISTRO DE KM', icon: FileText, available: true },
+  { href: '/inicio-jornada', label: 'INÍCIO DE JORNADA', icon: PlayCircle, available: true, highlight: true },
   { href: '/abastecimento', label: 'ABASTECIMENTO', icon: Fuel, available: true },
   { href: '/vistoria', label: 'VISTORIA', icon: ClipboardCheck, available: true },
   { href: '/gestao-pneu', label: 'GESTÃO DE PNEU', icon: CircleDot, available: false },
@@ -28,8 +28,10 @@ export default function Home() {
       <div className="w-full max-w-md mx-auto">
         <div className="grid grid-cols-2 gap-4">
           {menuOptions.map((item) => {
+            const cardClasses = `aspect-square flex items-center justify-center p-4 hover:bg-accent hover:border-primary transition-colors duration-200 ${item.highlight ? 'border-2 border-primary shadow-lg' : ''}`;
+
             const cardContent = (
-              <Card className="aspect-square flex items-center justify-center p-4 hover:bg-accent hover:border-primary transition-colors duration-200">
+              <Card className={cardClasses}>
                 <CardContent className="p-0 flex flex-col items-center justify-center gap-2 text-center">
                   <item.icon className="h-10 w-10 text-primary" />
                   <span className="font-semibold text-sm">{item.label}</span>
@@ -42,18 +44,39 @@ export default function Home() {
 
             if (item.available) {
               return (
-                <Link href={item.href} key={item.label}>
+                <Link href={item.href} key={item.label} className={item.highlight ? 'col-span-2' : ''}>
                   {cardContent}
                 </Link>
               );
             }
 
             return (
-              <div key={item.label} className="cursor-not-allowed opacity-50">
+              <div key={item.label} className={`cursor-not-allowed opacity-50 ${item.highlight ? 'col-span-2' : ''}`}>
                 {cardContent}
               </div>
             );
           })}
+        </div>
+        <div className="mt-4 border-t pt-4">
+            <p className="text-center text-xs text-muted-foreground mb-2">Outros Formulários</p>
+             <div className="grid grid-cols-2 gap-4">
+                 <Link href="/registro-km">
+                    <Card className="aspect-video flex items-center justify-center p-2 hover:bg-accent/50 transition-colors duration-200">
+                        <CardContent className="p-0 flex flex-col items-center justify-center gap-1 text-center">
+                        <FileText className="h-8 w-8 text-primary/80" />
+                        <span className="font-semibold text-xs">REGISTRO DE KM</span>
+                        </CardContent>
+                    </Card>
+                </Link>
+                 <Link href="/vistoria">
+                    <Card className="aspect-video flex items-center justify-center p-2 hover:bg-accent/50 transition-colors duration-200">
+                        <CardContent className="p-0 flex flex-col items-center justify-center gap-1 text-center">
+                        <ClipboardCheck className="h-8 w-8 text-primary/80" />
+                        <span className="font-semibold text-xs">VISTORIA (INDIVIDUAL)</span>
+                        </CardContent>
+                    </Card>
+                </Link>
+            </div>
         </div>
       </div>
     </main>
