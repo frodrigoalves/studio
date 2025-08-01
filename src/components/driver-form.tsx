@@ -384,7 +384,7 @@ export function DriverForm() {
                             <FormItem>
                                 <FormLabel>KM Inicial do Veículo</FormLabel>
                                 <FormControl>
-                                    <Input type="number" placeholder="123456" {...field} value={field.value ?? ''} onChange={(e) => field.onChange(e.target.value === '' ? null : e.target.valueAsNumber)} />
+                                    <Input type="number" placeholder="123456" {...field} value={field.value ?? ''} onChange={(e) => field.onChange(e.target.value === '' ? undefined : e.target.valueAsNumber)} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -538,7 +538,7 @@ export function DriverForm() {
                     <FormItem>
                       <FormLabel>KM Final</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="123567" {...field} value={field.value ?? ''} onChange={(e) => field.onChange(e.target.value === '' ? null : e.target.valueAsNumber)} />
+                        <Input type="number" placeholder="123567" {...field} value={field.value ?? ''} onChange={(e) => field.onChange(e.target.value === '' ? undefined : e.target.valueAsNumber)} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -579,5 +579,3 @@ export function DriverForm() {
     </Card>
   );
 }
-
-    
