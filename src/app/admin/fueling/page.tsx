@@ -6,13 +6,17 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Loader2, AlertTriangle, CheckCircle2, AlertCircle, Clock } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 import { getFuelingRecords, type FuelingRecord } from '@/services/fueling';
 import { getRecords, type Record as TripRecord } from '@/services/records';
 import { parseISO, format, isBefore, isAfter, compareAsc } from 'date-fns';
 
-type AuditStatus = 'ok' | 'pending' | 'discrepancy';
+type AuditStatus = {
+    status: 'ok' | 'pending' | 'discrepancy';
+    message: string;
+};
 
 interface EnhancedFuelingRecord extends FuelingRecord {
     previousTripOdometer?: number | null;
@@ -54,19 +58,26 @@ export default function FuelingRecordsPage() {
                 const nextTrip = carTrips
                     .find(trip => trip.kmStart && isAfter(parseISO(trip.date), fuelingDate));
 
-                let auditStatus: AuditStatus = 'ok';
                 const attendantKm = fuelingRecord.odometer;
                 const prevKm = previousTrip?.kmEnd;
                 const nextKm = nextTrip?.kmStart;
 
-                if (prevKm != null && attendantKm !== prevKm) {
-                    auditStatus = 'discrepancy';
-                } else if (nextKm != null && attendantKm !== nextKm) {
-                    auditStatus = 'discrepancy';
+                let auditStatus: AuditStatus;
+                const prevDiscrepancy = prevKm != null && attendantKm !== prevKm;
+                const nextDiscrepancy = nextKm != null && attendantKm !== nextKm;
+
+                if (prevDiscrepancy && nextDiscrepancy) {
+                    auditStatus = { status: 'discrepancy', message: 'Divergência dupla: KM\'s anterior e seguinte não batem.' };
+                } else if (prevDiscrepancy) {
+                    auditStatus = { status: 'discrepancy', message: 'KM Abastecimento diferente do KM Final anterior.' };
+                } else if (nextDiscrepancy) {
+                    auditStatus = { status: 'discrepancy', message: 'KM Inicial seguinte diferente do KM Abastecimento.' };
                 } else if (prevKm != null && nextKm == null) {
-                    // Previous trip exists and matches, but next one doesn't exist yet.
-                    auditStatus = 'pending';
+                    auditStatus = { status: 'pending', message: 'Aguardando próxima viagem para auditoria completa.' };
+                } else {
+                    auditStatus = { status: 'ok', message: 'KM reconciliado com sucesso.' };
                 }
+
 
                 return {
                     ...fuelingRecord,
@@ -94,17 +105,40 @@ export default function FuelingRecordsPage() {
         fetchRecords();
     }, []);
 
-    const getStatusBadge = (status: AuditStatus) => {
-        switch (status) {
+    const getStatusBadge = (audit: AuditStatus) => {
+        let badge: JSX.Element;
+        let badgeText: string;
+
+        switch (audit.status) {
             case 'ok':
-                return <Badge variant="default" className="bg-green-100 text-green-800 flex items-center justify-center gap-1"><CheckCircle2 className="h-3 w-3"/> OK</Badge>;
+                badgeText = "OK";
+                badge = <Badge variant="default" className="bg-green-100 text-green-800 flex items-center justify-center gap-1"><CheckCircle2 className="h-3 w-3"/> {badgeText}</Badge>;
+                break;
             case 'pending':
-                return <Badge variant="secondary" className="bg-amber-100 text-amber-800 flex items-center justify-center gap-1"><Clock className="h-3 w-3"/> Pendente</Badge>;
+                badgeText = "Pendente";
+                badge = <Badge variant="secondary" className="bg-amber-100 text-amber-800 flex items-center justify-center gap-1"><Clock className="h-3 w-3"/> {badgeText}</Badge>;
+                break;
             case 'discrepancy':
-                return <Badge variant="destructive" className="flex items-center justify-center gap-1"><AlertCircle className="h-3 w-3"/> Divergência</Badge>;
+                badgeText = "Divergência";
+                badge = <Badge variant="destructive" className="flex items-center justify-center gap-1"><AlertCircle className="h-3 w-3"/> {badgeText}</Badge>;
+                break;
             default:
-                return <Badge>N/A</Badge>;
+                badgeText = "N/A";
+                badge = <Badge>{badgeText}</Badge>;
         }
+
+        return (
+            <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        {badge}
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>{audit.message}</p>
+                    </TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
+        )
     };
 
   return (
@@ -140,13 +174,13 @@ export default function FuelingRecordsPage() {
                 const prevKm = record.previousTripOdometer;
                 const nextKm = record.nextTripOdometer;
 
-                const hasDiscrepancy = record.auditStatus === 'discrepancy';
+                const hasDiscrepancy = record.auditStatus.status === 'discrepancy';
 
-                const renderCell = (kmValue: number | null | undefined) => (
-                    <TableCell className={`text-center font-mono transition-colors duration-300 ${hasDiscrepancy ? 'text-destructive' : ''}`}>
+                const renderCell = (kmValue: number | null | undefined, isDivergent: boolean) => (
+                    <TableCell className={`text-center font-mono transition-colors duration-300 ${isDivergent ? 'text-destructive' : ''}`}>
                          <div className="flex items-center justify-center gap-1.5">
-                             {hasDiscrepancy && <AlertTriangle className="h-4 w-4" />}
-                             <span className={hasDiscrepancy ? 'font-bold' : ''}>
+                             {isDivergent && <AlertTriangle className="h-4 w-4" />}
+                             <span className={isDivergent ? 'font-bold' : ''}>
                                 {kmValue?.toLocaleString('pt-BR') ?? 'N/A'}
                              </span>
                          </div>
@@ -161,9 +195,9 @@ export default function FuelingRecordsPage() {
                     <TableCell className="font-medium">{record.carId}</TableCell>
                     <TableCell className="hidden md:table-cell">{record.attendantName}</TableCell>
                     
-                    {renderCell(prevKm)}
-                    {renderCell(attendantKm)}
-                    {renderCell(nextKm)}
+                    {renderCell(prevKm, hasDiscrepancy && record.auditStatus.message.includes('anterior'))}
+                    {renderCell(attendantKm, hasDiscrepancy)}
+                    {renderCell(nextKm, hasDiscrepancy && record.auditStatus.message.includes('seguinte'))}
                     
                     <TableCell className="text-center">{getStatusBadge(record.auditStatus)}</TableCell>
 
@@ -183,3 +217,5 @@ export default function FuelingRecordsPage() {
     </Card>
   );
 }
+
+    
