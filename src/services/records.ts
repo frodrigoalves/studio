@@ -19,12 +19,6 @@ export interface Record {
   status: "Finalizado" | "Em Andamento";
   startOdometerPhoto: string | null;
   endOdometerPhoto: string | null;
-  // New unified journey fields
-  fuelGaugePhoto?: string | null;
-  frontDiagonalPhoto?: string | null;
-  rearDiagonalPhoto?: string | null;
-  leftSidePhoto?: string | null;
-  rightSidePhoto?: string | null;
 }
 
 export type RecordAddPayload = Omit<Record, 'id'>;
@@ -35,7 +29,7 @@ async function uploadPhoto(photoBase64: string | null, recordId: string, type: s
         return null;
     }
 
-    const storageRef = ref(storage, `journey_photos/${recordId}-${type}-${uuidv4()}.jpg`);
+    const storageRef = ref(storage, `trip_photos/${recordId}-${type}-${uuidv4()}.jpg`);
     
     const base64String = photoBase64.split(',')[1];
     
@@ -63,14 +57,8 @@ export async function addRecord(record: RecordAddPayload): Promise<Record> {
   
   const tempDocRef = doc(collection(db, "tripRecords"));
   
-  // Handle both old and new photo fields
   const startOdometerPhotoUrl = await uploadPhoto(record.startOdometerPhoto, tempDocRef.id, 'start-odometer');
   const endOdometerPhotoUrl = await uploadPhoto(record.endOdometerPhoto, tempDocRef.id, 'end-odometer');
-  const fuelGaugePhotoUrl = await uploadPhoto(record.fuelGaugePhoto || null, tempDocRef.id, 'fuel-gauge');
-  const frontDiagonalPhotoUrl = await uploadPhoto(record.frontDiagonalPhoto || null, tempDocRef.id, 'front-diagonal');
-  const rearDiagonalPhotoUrl = await uploadPhoto(record.rearDiagonalPhoto || null, tempDocRef.id, 'rear-diagonal');
-  const leftSidePhotoUrl = await uploadPhoto(record.leftSidePhoto || null, tempDocRef.id, 'left-side');
-  const rightSidePhotoUrl = await uploadPhoto(record.rightSidePhoto || null, tempDocRef.id, 'right-side');
 
   const dataToSave: Omit<Record, 'id'> = {
       ...record,
@@ -79,11 +67,6 @@ export async function addRecord(record: RecordAddPayload): Promise<Record> {
       date: new Date(record.date).toISOString(),
       startOdometerPhoto: startOdometerPhotoUrl,
       endOdometerPhoto: endOdometerPhotoUrl,
-      fuelGaugePhoto: fuelGaugePhotoUrl,
-      frontDiagonalPhoto: frontDiagonalPhotoUrl,
-      rearDiagonalPhoto: rearDiagonalPhotoUrl,
-      leftSidePhoto: leftSidePhotoUrl,
-      rightSidePhoto: rightSidePhotoUrl,
   };
 
   if(isNaN(dataToSave.kmStart!)) dataToSave.kmStart = null;
@@ -125,11 +108,6 @@ export async function deleteRecord(id: string, startPhotoUrl: string | null, end
     await Promise.all([
         deletePhoto(recordData.startOdometerPhoto),
         deletePhoto(recordData.endOdometerPhoto),
-        deletePhoto(recordData.fuelGaugePhoto || null),
-        deletePhoto(recordData.frontDiagonalPhoto || null),
-        deletePhoto(recordData.rearDiagonalPhoto || null),
-        deletePhoto(recordData.leftSidePhoto || null),
-        deletePhoto(recordData.rightSidePhoto || null),
     ]);
 
     await deleteDoc(recordRef);

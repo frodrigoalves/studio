@@ -2,11 +2,12 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, CheckCircle2, AlertCircle, MessageSquare } from "lucide-react";
+import { Loader2, CheckCircle2, AlertCircle, MessageSquare, CameraOff } from "lucide-react";
 import { useToast } from '@/hooks/use-toast';
 import { getChecklistRecords, type ChecklistRecord, type ChecklistItemStatus } from '@/services/checklist';
 import {
@@ -19,6 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 
 const statusDisplay: Record<ChecklistItemStatus, { text: string, className: string }> = {
     ok: { text: "OK", className: "text-green-600" },
@@ -26,6 +28,21 @@ const statusDisplay: Record<ChecklistItemStatus, { text: string, className: stri
     na: { text: "N/A", className: "text-muted-foreground" },
 };
 
+const PhotoDisplay = ({ label, url }: { label: string; url: string | null | undefined }) => (
+    <div className="space-y-2">
+        <h4 className="font-semibold text-center">{label}</h4>
+        {url ? (
+            <div className="relative w-full aspect-video rounded-md overflow-hidden border">
+                <Image src={url} alt={label} layout="fill" objectFit="contain" />
+            </div>
+        ) : (
+            <div className="aspect-video flex flex-col items-center justify-center bg-muted rounded-md text-muted-foreground">
+                <CameraOff className="h-12 w-12 mb-2" />
+                <span>Nenhuma foto encontrada.</span>
+            </div>
+        )}
+    </div>
+);
 
 export default function ChecklistRecordsPage() {
     const { toast } = useToast();
@@ -60,6 +77,20 @@ export default function ChecklistRecordsPage() {
         setIsDetailsOpen(true);
     };
 
+    const hasAllPhotos = (record: ChecklistRecord) => {
+        return record.odometerPhoto && record.fuelGaugePhoto && record.frontDiagonalPhoto && record.rearDiagonalPhoto && record.leftSidePhoto && record.rightSidePhoto;
+    }
+
+    const photoCollection = selectedRecord ? [
+        { label: "Hodômetro", url: selectedRecord.odometerPhoto },
+        { label: "Marcador Combustível", url: selectedRecord.fuelGaugePhoto },
+        { label: "Diagonal Frontal", url: selectedRecord.frontDiagonalPhoto },
+        { label: "Diagonal Traseira", url: selectedRecord.rearDiagonalPhoto },
+        { label: "Lateral Esquerda", url: selectedRecord.leftSidePhoto },
+        { label: "Lateral Direita", url: selectedRecord.rightSidePhoto },
+    ].filter(p => p.url) : [];
+
+
   return (
     <>
     <Card>
@@ -74,8 +105,8 @@ export default function ChecklistRecordsPage() {
               <TableHead>Data</TableHead>
               <TableHead>Carro</TableHead>
               <TableHead className="hidden sm:table-cell">Motorista</TableHead>
-              <TableHead className="hidden sm:table-cell">Chapa</TableHead>
               <TableHead className="text-center">Status</TableHead>
+               <TableHead className="text-center">Fotos</TableHead>
               <TableHead className="text-right">Ações</TableHead>
             </TableRow>
           </TableHeader>
@@ -91,9 +122,6 @@ export default function ChecklistRecordsPage() {
                 <TableCell>{new Date(record.date).toLocaleDateString('pt-BR', { timeZone: 'UTC', day: '2-digit', month: '2-digit', year: 'numeric' })}</TableCell>
                 <TableCell className="font-medium">{record.carId}</TableCell>
                 <TableCell className="hidden sm:table-cell">{record.driverName}</TableCell>
-                <TableCell className="hidden sm:table-cell">
-                    <Badge variant="secondary">{record.driverChapa}</Badge>
-                </TableCell>
                 <TableCell className="text-center">
                   {record.hasIssue ? (
                     <Badge variant="destructive" className="flex items-center justify-center gap-1">
@@ -102,6 +130,17 @@ export default function ChecklistRecordsPage() {
                   ) : (
                     <Badge variant="default" className="bg-green-100 text-green-800 flex items-center justify-center gap-1">
                       <CheckCircle2 className="h-3 w-3" /> OK
+                    </Badge>
+                  )}
+                </TableCell>
+                 <TableCell className="text-center">
+                  {!hasAllPhotos(record) ? (
+                    <Badge variant="destructive" className="flex items-center justify-center gap-1">
+                      <CameraOff className="h-3 w-3" /> Incompleto
+                    </Badge>
+                  ) : (
+                    <Badge variant="default" className="bg-green-100 text-green-800 flex items-center justify-center gap-1">
+                      <CheckCircle2 className="h-3 w-3" /> Completo
                     </Badge>
                   )}
                 </TableCell>
@@ -125,39 +164,60 @@ export default function ChecklistRecordsPage() {
     </Card>
 
     <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
-      <DialogContent className="sm:max-w-2xl">
+      <DialogContent className="sm:max-w-4xl">
         <DialogHeader>
           <DialogTitle>Detalhes da Vistoria</DialogTitle>
           <DialogDescription>
             Vistoria do carro <span className="font-semibold">{selectedRecord?.carId}</span> por <span className="font-semibold">{selectedRecord?.driverName}</span> em {selectedRecord?.date ? new Date(selectedRecord.date).toLocaleString('pt-BR', {timeZone: 'UTC'}) : ''}.
           </DialogDescription>
         </DialogHeader>
-        <div className="py-4 space-y-6">
+        <ScrollArea className="max-h-[70vh]">
+        <div className="py-4 space-y-6 pr-6">
+            {photoCollection.length > 0 && (
+                <div>
+                     <h4 className="font-semibold mb-2">Fotos da Vistoria</h4>
+                     <Carousel className="w-full">
+                        <CarouselContent>
+                            {photoCollection.map((photo, index) => (
+                                <CarouselItem key={index}>
+                                    <div className="p-1">
+                                        <PhotoDisplay label={photo.label} url={photo.url} />
+                                    </div>
+                                </CarouselItem>
+                            ))}
+                        </CarouselContent>
+                        <CarouselPrevious />
+                        <CarouselNext />
+                    </Carousel>
+                </div>
+            )}
           <div>
             <h4 className="font-semibold mb-2">Itens Verificados</h4>
-            <ScrollArea className="h-72 w-full rounded-md border">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Item</TableHead>
-                            <TableHead className="text-right">Status</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                    {selectedRecord && Object.entries(selectedRecord.items).map(([key, value]) => {
-                         const status = statusDisplay[value];
-                         return (
-                            <TableRow key={key}>
-                                <TableCell>{key}</TableCell>
-                                <TableCell className={cn("text-right font-medium", status.className)}>
-                                    {status.text}
-                                </TableCell>
+            <div className="h-72 w-full rounded-md border">
+                <ScrollArea className="h-full">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Item</TableHead>
+                                <TableHead className="text-right">Status</TableHead>
                             </TableRow>
-                         );
-                    })}
-                    </TableBody>
-                </Table>
-            </ScrollArea>
+                        </TableHeader>
+                        <TableBody>
+                        {selectedRecord && Object.entries(selectedRecord.items).map(([key, value]) => {
+                            const status = statusDisplay[value];
+                            return (
+                                <TableRow key={key}>
+                                    <TableCell>{key}</TableCell>
+                                    <TableCell className={cn("text-right font-medium", status.className)}>
+                                        {status.text}
+                                    </TableCell>
+                                </TableRow>
+                            );
+                        })}
+                        </TableBody>
+                    </Table>
+                </ScrollArea>
+            </div>
           </div>
           {selectedRecord?.observations && (
             <div>
@@ -166,6 +226,7 @@ export default function ChecklistRecordsPage() {
             </div>
           )}
         </div>
+        </ScrollArea>
         <DialogFooter>
           <Button variant="outline" onClick={() => setIsDetailsOpen(false)}>Fechar</Button>
         </DialogFooter>

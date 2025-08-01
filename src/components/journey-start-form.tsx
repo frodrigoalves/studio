@@ -82,12 +82,8 @@ const step4Schema = z.object({
   signature: z.string().refine(sig => sig && sig.length > 0, { message: "A assinatura é obrigatória." }),
 });
 
-const journeyFormSchema = z.object({
-  ...step1Schema.shape,
-  ...step2Schema.shape,
-  ...step3Schema.shape,
-  ...step4Schema.shape,
-});
+const journeyFormSchema = step1Schema.merge(step2Schema).merge(step3Schema).merge(step4Schema);
+
 
 type JourneyFormValues = z.infer<typeof journeyFormSchema>;
 
@@ -96,7 +92,7 @@ const initialValues: JourneyFormValues = {
   driverName: "",
   car: "",
   line: "",
-  initialKm: 0,
+  initialKm: '' as unknown as number, // Start with empty string for display
   odometerPhoto: null,
   fuelGaugePhoto: null,
   frontDiagonalPhoto: null,
@@ -116,7 +112,7 @@ const fileToBase64 = (file: File): Promise<string> => {
         const reader = new FileReader();
         reader.readAsDataURL(file);
         reader.onload = () => resolve(reader.result as string);
-        reader.onerror = (error) => reject(error);
+        reader.onerror = reject;
     });
 };
 
@@ -165,23 +161,10 @@ export function JourneyStartForm() {
             return;
         }
 
-      // 1. Salvar checklist
-      const hasAvaria = Object.values(data.items).some(status => status === 'avaria');
-      const checklistPayload: ChecklistRecordPayload = {
-        driverChapa: data.driverChapa,
-        driverName: data.driverName,
-        carId: data.car,
-        items: data.items,
-        observations: data.observations || null,
-        hasIssue: hasAvaria,
-        signature: data.signature,
-      };
-      await addChecklistRecord(checklistPayload);
-
-      // 2. Upload de todas as fotos em paralelo
+      // 1. Upload de todas as fotos em paralelo e preparacao de payloads
       const [
-          odometerPhotoUrl, fuelGaugePhotoUrl, frontDiagonalPhotoUrl,
-          rearDiagonalPhotoUrl, leftSidePhotoUrl, rightSidePhotoUrl
+          odometerPhotoB64, fuelGaugePhotoB64, frontDiagonalPhotoB64,
+          rearDiagonalPhotoB64, leftSidePhotoB64, rightSidePhotoB64
       ] = await Promise.all([
           fileToBase64(data.odometerPhoto),
           fileToBase64(data.fuelGaugePhoto),
@@ -191,7 +174,26 @@ export function JourneyStartForm() {
           fileToBase64(data.rightSidePhoto),
       ]);
 
-      // 3. Salvar registro de KM com as fotos
+      // 2. Preparar e salvar checklist
+      const hasAvaria = Object.values(data.items).some(status => status === 'avaria');
+      const checklistPayload: ChecklistRecordPayload = {
+        driverChapa: data.driverChapa,
+        driverName: data.driverName,
+        carId: data.car,
+        items: data.items,
+        observations: data.observations || null,
+        hasIssue: hasAvaria,
+        signature: data.signature,
+        odometerPhoto: odometerPhotoB64,
+        fuelGaugePhoto: fuelGaugePhotoB64,
+        frontDiagonalPhoto: frontDiagonalPhotoB64,
+        rearDiagonalPhoto: rearDiagonalPhotoB64,
+        leftSidePhoto: leftSidePhotoB64,
+        rightSidePhoto: rightSidePhotoB64,
+      };
+      await addChecklistRecord(checklistPayload);
+
+      // 3. Preparar e salvar registro de KM
       const recordPayload: RecordAddPayload = {
         date: new Date().toISOString().split('T')[0],
         driver: data.driverName,
@@ -201,13 +203,8 @@ export function JourneyStartForm() {
         kmStart: data.initialKm,
         kmEnd: null,
         status: "Em Andamento",
-        startOdometerPhoto: odometerPhotoUrl,
+        startOdometerPhoto: odometerPhotoB64, // Also save the main odometer photo here
         endOdometerPhoto: null,
-        fuelGaugePhoto: fuelGaugePhotoUrl,
-        frontDiagonalPhoto: frontDiagonalPhotoUrl,
-        rearDiagonalPhoto: rearDiagonalPhotoUrl,
-        leftSidePhoto: leftSidePhotoUrl,
-        rightSidePhoto: rightSidePhotoUrl,
       };
       await addRecord(recordPayload);
 
@@ -281,7 +278,7 @@ export function JourneyStartForm() {
                     </Card>
 
 
-                    <FormField control={form.control} name="initialKm" render={({ field }) => (<FormItem><FormLabel>KM Inicial do Veículo</FormLabel><FormControl><Input type="number" placeholder="123456" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.valueAsNumber)} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="initialKm" render={({ field }) => (<FormItem><FormLabel>KM Inicial do Veículo</FormLabel><FormControl><Input type="number" placeholder="123456" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.value === '' ? null : e.target.valueAsNumber)} /></FormControl><FormMessage /></FormItem>)} />
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <FormField control={form.control} name="odometerPhoto" render={({ field: { onChange, ...rest }}) => (<FormItem><FormLabel>1. Foto do Hodômetro</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" onChange={(e) => onChange(e.target.files?.[0])} {...rest} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl><FormMessage /></FormItem>)}/>
@@ -364,5 +361,3 @@ export function JourneyStartForm() {
     </Card>
   );
 }
-
-    
