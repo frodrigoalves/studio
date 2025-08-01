@@ -54,9 +54,10 @@ async function deletePhoto(photoUrl: string | null) {
 
 
 export async function addRecord(record: RecordAddPayload): Promise<Record> {
-  
-  // The startOdometerPhoto URL is now passed directly from the checklist service logic
-  const startOdometerPhotoUrl = record.startOdometerPhoto;
+  const tempDocForId = doc(collection(db, "tripRecords"));
+  const recordId = tempDocForId.id;
+
+  const startOdometerPhotoUrl = await uploadPhoto(record.startOdometerPhoto, recordId, 'start-odometer');
 
   const dataToSave: Omit<Record, 'id'> = {
       ...record,
@@ -96,19 +97,22 @@ export async function updateRecord(id: string, data: RecordUpdatePayload): Promi
     await updateDoc(recordRef, dataToUpdate);
 }
 
-export async function deleteRecord(id: string, startPhotoUrl: string | null, endPhotoUrl: string | null): Promise<void> {
+export async function deleteRecord(id: string, startPhotoUrl: string | null, endOdometerUrl: string | null): Promise<void> {
     const recordRef = doc(db, "tripRecords", id);
     
+    // As an extra safety, fetch the document to get the latest photo URLs
     const recordSnap = await getDoc(recordRef);
-    if (!recordSnap.exists()) return;
+    if (!recordSnap.exists()) return; // Document already deleted
     const recordData = recordSnap.data() as Record;
 
-    // Delete all associated photos
+    // Delete all associated photos from storage
     await Promise.all([
         deletePhoto(recordData.startOdometerPhoto),
         deletePhoto(recordData.endOdometerPhoto),
+        // Add any other photos associated with the record here in the future
     ]);
 
+    // Finally, delete the document from Firestore
     await deleteDoc(recordRef);
 }
 
