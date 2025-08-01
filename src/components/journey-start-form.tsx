@@ -5,8 +5,9 @@ import { useState, useMemo } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Loader2, Send, ArrowLeft, ArrowRight, Camera, Car, ClipboardCheck, Signature, User, Milestone } from "lucide-react";
+import { Loader2, Send, ArrowLeft, ArrowRight, Camera, Car, ClipboardCheck, Signature, User, Milestone, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import Image from 'next/image';
 import {
   Form,
   FormControl,
@@ -27,6 +28,8 @@ import { Textarea } from "./ui/textarea";
 import { cn } from "@/lib/utils";
 import { SignaturePad } from "./ui/signature-pad";
 import { Progress } from "./ui/progress";
+import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "./ui/carousel";
 
 // Schemas for each step
 const step1Schema = z.object({
@@ -110,6 +113,15 @@ const fileToBase64 = (file: File): Promise<string> => {
         reader.onerror = (error) => reject(error);
     });
 };
+
+const photoExamples = [
+    { title: 'Hodômetro', description: 'Foto nítida do KM inicial no painel.', hint: 'bus dashboard odometer' },
+    { title: 'Marcador de Combustível', description: 'Mostre claramente o nível de combustível.', hint: 'bus fuel gauge' },
+    { title: 'Diagonal Frontal', description: 'Pegue a frente e a lateral do veículo em uma só foto.', hint: 'bus front corner' },
+    { title: 'Diagonal Traseira', description: 'Pegue a traseira e a outra lateral do veículo.', hint: 'bus rear corner' },
+    { title: 'Lateral Esquerda', description: 'Foto completa da lateral esquerda do ônibus.', hint: 'bus side view' },
+    { title: 'Lateral Direita', description: 'Foto completa da lateral direita do ônibus.', hint: 'bus side view' },
+]
 
 
 export function JourneyStartForm() {
@@ -244,17 +256,54 @@ export function JourneyStartForm() {
             )}
 
             {currentStep === 1 && (
-                <div className="space-y-4">
+                <div className="space-y-6">
                      <h3 className="text-lg font-semibold flex items-center gap-2"><Milestone className="w-5 h-5 text-primary"/> Leituras e Fotos</h3>
-                    <FormField control={form.control} name="initialKm" render={({ field }) => (<FormItem><FormLabel>KM Inicial do Veículo</FormLabel><FormControl><Input type="number" placeholder="123456" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                    
+                    <Card className="bg-muted/30">
+                        <CardHeader className="pb-2">
+                           <CardTitle className="text-base">Guia Visual de Fotos</CardTitle> 
+                           <CardDescription className="text-xs">Passe as imagens para ver exemplos de cada foto necessária.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                             <Carousel className="w-full max-w-xs mx-auto">
+                                <CarouselContent>
+                                    {photoExamples.map((photo, index) => (
+                                    <CarouselItem key={index}>
+                                        <div className="p-1">
+                                        <Card>
+                                            <CardContent className="flex flex-col items-center justify-center p-4 gap-2">
+                                                 <Image 
+                                                    src={`https://placehold.co/300x200.png?text=${photo.title.replace(' ', '+')}`} 
+                                                    alt={photo.title} 
+                                                    width={300} 
+                                                    height={200} 
+                                                    className="rounded-md"
+                                                    data-ai-hint={photo.hint}
+                                                />
+                                                <h4 className="font-semibold mt-2">{photo.title}</h4>
+                                                <p className="text-xs text-muted-foreground text-center">{photo.description}</p>
+                                            </CardContent>
+                                        </Card>
+                                        </div>
+                                    </CarouselItem>
+                                    ))}
+                                </CarouselContent>
+                                <CarouselPrevious className="-left-8" />
+                                <CarouselNext className="-right-8" />
+                                </Carousel>
+                        </CardContent>
+                    </Card>
+
+
+                    <FormField control={form.control} name="initialKm" render={({ field }) => (<FormItem><FormLabel>KM Inicial do Veículo</FormLabel><FormControl><Input type="number" placeholder="123456" {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>)} />
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <FormField control={form.control} name="odometerPhoto" render={({ field: { onChange, ...rest }}) => (<FormItem><FormLabel>Foto do Hodômetro</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" onChange={(e) => onChange(e.target.files?.[0])} {...rest} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl><FormMessage /></FormItem>)}/>
-                        <FormField control={form.control} name="fuelGaugePhoto" render={({ field: { onChange, ...rest }}) => (<FormItem><FormLabel>Foto do Combustível</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" onChange={(e) => onChange(e.target.files?.[0])} {...rest} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl><FormMessage /></FormItem>)}/>
-                        <FormField control={form.control} name="frontDiagonalPhoto" render={({ field: { onChange, ...rest }}) => (<FormItem><FormLabel>Diagonal Frontal</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" onChange={(e) => onChange(e.target.files?.[0])} {...rest} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl><FormMessage /></FormItem>)}/>
-                        <FormField control={form.control} name="rearDiagonalPhoto" render={({ field: { onChange, ...rest }}) => (<FormItem><FormLabel>Diagonal Traseira</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" onChange={(e) => onChange(e.target.files?.[0])} {...rest} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl><FormMessage /></FormItem>)}/>
-                        <FormField control={form.control} name="leftSidePhoto" render={({ field: { onChange, ...rest }}) => (<FormItem><FormLabel>Lateral Esquerda</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" onChange={(e) => onChange(e.target.files?.[0])} {...rest} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl><FormMessage /></FormItem>)}/>
-                        <FormField control={form.control} name="rightSidePhoto" render={({ field: { onChange, ...rest }}) => (<FormItem><FormLabel>Lateral Direita</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" onChange={(e) => onChange(e.target.files?.[0])} {...rest} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl><FormMessage /></FormItem>)}/>
+                        <FormField control={form.control} name="odometerPhoto" render={({ field: { onChange, ...rest }}) => (<FormItem><FormLabel>1. Foto do Hodômetro</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" onChange={(e) => onChange(e.target.files?.[0])} {...rest} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl><FormMessage /></FormItem>)}/>
+                        <FormField control={form.control} name="fuelGaugePhoto" render={({ field: { onChange, ...rest }}) => (<FormItem><FormLabel>2. Foto do Combustível</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" onChange={(e) => onChange(e.target.files?.[0])} {...rest} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl><FormMessage /></FormItem>)}/>
+                        <FormField control={form.control} name="frontDiagonalPhoto" render={({ field: { onChange, ...rest }}) => (<FormItem><FormLabel>3. Diagonal Frontal</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" onChange={(e) => onChange(e.target.files?.[0])} {...rest} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl><FormMessage /></FormItem>)}/>
+                        <FormField control={form.control} name="rearDiagonalPhoto" render={({ field: { onChange, ...rest }}) => (<FormItem><FormLabel>4. Diagonal Traseira</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" onChange={(e) => onChange(e.target.files?.[0])} {...rest} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl><FormMessage /></FormItem>)}/>
+                        <FormField control={form.control} name="leftSidePhoto" render={({ field: { onChange, ...rest }}) => (<FormItem><FormLabel>5. Lateral Esquerda</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" onChange={(e) => onChange(e.target.files?.[0])} {...rest} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl><FormMessage /></FormItem>)}/>
+                        <FormField control={form.control} name="rightSidePhoto" render={({ field: { onChange, ...rest }}) => (<FormItem><FormLabel>6. Lateral Direita</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" onChange={(e) => onChange(e.target.files?.[0])} {...rest} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl><FormMessage /></FormItem>)}/>
                     </div>
                 </div>
             )}
@@ -262,6 +311,16 @@ export function JourneyStartForm() {
             {currentStep === 2 && (
                 <div className="space-y-6">
                     <h3 className="text-lg font-semibold flex items-center gap-2"><ClipboardCheck className="w-5 h-5 text-primary"/> Checklist de Vistoria</h3>
+                    
+                     <Alert variant="default" className="bg-blue-50 border-blue-200">
+                        <Phone className="h-4 w-4 !text-blue-700" />
+                        <AlertTitle className="text-blue-800 font-semibold">ATENÇÃO OPERADORES!</AlertTitle>
+                        <AlertDescription className="text-blue-700">
+                           <p>Manutenção: <strong>(31) 99959-3176</strong> (WhatsApp)</p>
+                           <p>Tráfego: <strong>(31) 99959-3089</strong> / Fixo: <strong>3673-7000</strong></p>
+                        </AlertDescription>
+                    </Alert>
+
                     <Accordion type="single" collapsible defaultValue="item-1">
                         {Object.entries(checklistSections).map(([sectionTitle, items], index) => (
                             <AccordionItem value={`item-${index+1}`} key={sectionTitle}>

@@ -70,7 +70,7 @@ type StartFormValues = z.infer<ReturnType<typeof createStartFormSchema>>;
 
 
 const initialStartValues: Omit<StartFormValues, 'initialKm' | 'startOdometerPhoto'> & { initialKm: string | number, startOdometerPhoto: null } = { chapa: "", name: "", car: "", line: "", initialKm: '', startOdometerPhoto: null };
-const initialEndValues: Omit<EndFormValues, 'finalKm' | 'name' | 'car' | 'line'> & { finalKm: string | number, name: string, car: string, line: string } = { chapa: "", name: "", car: "", line: "", finalKm: '', endOdometerPhoto: null };
+const initialEndValues: Omit<EndFormValues, 'finalKm' | 'name' | 'car' | 'line' | 'endOdometerPhoto'> & { finalKm: string | number, name: string, car: string, line: string, endOdometerPhoto: null } = { chapa: "", name: "", car: "", line: "", finalKm: '', endOdometerPhoto: null };
 
 
 export function DriverForm() {
@@ -493,5 +493,3 @@ export function DriverForm() {
     </Card>
   );
 }
-
-    

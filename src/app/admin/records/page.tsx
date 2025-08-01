@@ -36,6 +36,7 @@ import { getRecords, addRecord, updateRecord, deleteRecord, type Record, type Re
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 
 
 const fileToBase64 = (file: File): Promise<string> => {
@@ -329,6 +330,16 @@ export default function RecordsPage() {
         </div>
     );
 
+    const photoCollection = selectedRecord ? [
+        { label: "Hodômetro (Início)", url: selectedRecord.startOdometerPhoto },
+        { label: "Marcador Combustível", url: selectedRecord.fuelGaugePhoto },
+        { label: "Hodômetro (Fim)", url: selectedRecord.endOdometerPhoto },
+        { label: "Diagonal Frontal", url: selectedRecord.frontDiagonalPhoto },
+        { label: "Diagonal Traseira", url: selectedRecord.rearDiagonalPhoto },
+        { label: "Lateral Esquerda", url: selectedRecord.leftSidePhoto },
+        { label: "Lateral Direita", url: selectedRecord.rightSidePhoto },
+    ].filter(p => p.url) : [];
+
 
   return (
     <>
@@ -490,7 +501,7 @@ export default function RecordsPage() {
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>Ações</DropdownMenuLabel>
                       <DropdownMenuItem onClick={() => openAuthDialog(record, 'edit')}>Editar</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => openPhotosDialog(record)}>Ver Fotos</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => openPhotosDialog(record)} disabled={photoCollection.length === 0}>Ver Fotos</DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem className="text-destructive" onClick={() => openAuthDialog(record, 'delete')}>
                         <Trash2 className="mr-2 h-4 w-4" />
@@ -507,22 +518,27 @@ export default function RecordsPage() {
     </Card>
 
     <Dialog open={isPhotosDialogOpen} onOpenChange={setPhotosDialogOpen}>
-        <DialogContent className="sm:max-w-[80vw] md:max-w-[70vw] lg:max-w-[60vw]">
+        <DialogContent className="sm:max-w-4xl">
             <DialogHeader>
                 <DialogTitle>Fotos da Jornada</DialogTitle>
                 <DialogDescription>
                     Fotos registradas para a viagem de {selectedRecord?.driver} com o carro {selectedRecord?.car}.
                 </DialogDescription>
             </DialogHeader>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 py-4">
-                 <PhotoDisplay label="Hodômetro (Início)" url={selectedRecord?.startOdometerPhoto} />
-                 <PhotoDisplay label="Marcador Combustível" url={selectedRecord?.fuelGaugePhoto} />
-                 <PhotoDisplay label="Hodômetro (Fim)" url={selectedRecord?.endOdometerPhoto} />
-                 <PhotoDisplay label="Diagonal Frontal" url={selectedRecord?.frontDiagonalPhoto} />
-                 <PhotoDisplay label="Diagonal Traseira" url={selectedRecord?.rearDiagonalPhoto} />
-                 <PhotoDisplay label="Lateral Esquerda" url={selectedRecord?.leftSidePhoto} />
-                 <PhotoDisplay label="Lateral Direita" url={selectedRecord?.rightSidePhoto} />
-
+            <div className="py-4">
+                 <Carousel className="w-full">
+                    <CarouselContent>
+                        {photoCollection.map((photo, index) => (
+                            <CarouselItem key={index}>
+                                <div className="p-1">
+                                    <PhotoDisplay label={photo.label} url={photo.url} />
+                                </div>
+                            </CarouselItem>
+                        ))}
+                    </CarouselContent>
+                    <CarouselPrevious className="left-2" />
+                    <CarouselNext className="right-2" />
+                </Carousel>
             </div>
             <DialogFooter>
                 <Button variant="outline" onClick={() => setPhotosDialogOpen(false)}>Fechar</Button>
@@ -607,7 +623,7 @@ export default function RecordsPage() {
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="edit-date">Data</Label>
-                        <Input id="edit-date" type="date" value={editRecordData.date} onChange={(e) => setEditRecordData({...editRecordData, date: e.target.value})} />
+                        <Input id="edit-date" type="date" value={editRecordData.date.split('T')[0]} onChange={(e) => setEditRecordData({...editRecordData, date: e.target.value})} />
                     </div>
                    <div className="space-y-2">
                         <Label htmlFor="edit-kmStart">KM Início</Label>
