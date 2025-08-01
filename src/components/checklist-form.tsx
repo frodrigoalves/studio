@@ -182,13 +182,13 @@ export function ChecklistForm() {
                       <FormField
                         key={item}
                         control={form.control}
-                        name={`items.${item}`}
+                        name={`items.${item as ItemId}`}
                         render={({ field }) => (
                           <FormItem className={cn(
                                 "space-y-2 p-3 rounded-lg border transition-all",
                                 watchItems[item as ItemId] === 'avaria' ? 'border-destructive bg-destructive/10' : 'bg-muted/30'
                             )}>
-                            <FormLabel className="text-base font-semibold flex items-center justify-between w-full">
+                            <FormLabel className="text-sm font-semibold flex items-center justify-between w-full">
                                 <span>{item}</span>
                                 {watchItems[item as ItemId] === 'avaria' && <span className="text-xs font-bold text-destructive">AVARIA</span>}
                                 {watchItems[item as ItemId] === 'ok' && <span className="text-xs font-bold text-green-600">OK</span>}
@@ -205,8 +205,8 @@ export function ChecklistForm() {
                                         <RadioGroupItem value="ok" className="sr-only" />
                                     </FormControl>
                                     <FormLabel className={cn(
-                                        "block w-full p-2 text-center rounded-md cursor-pointer border",
-                                        field.value === 'ok' ? 'bg-green-600 text-white border-green-700' : 'bg-background'
+                                        "block w-full p-2 text-center rounded-md cursor-pointer border text-xs h-9 flex items-center justify-center",
+                                        field.value === 'ok' ? 'bg-green-600 text-white border-green-700 font-bold' : 'bg-background'
                                     )}>OK</FormLabel>
                                 </FormItem>
                                  <FormItem className="flex-1">
@@ -214,8 +214,8 @@ export function ChecklistForm() {
                                         <RadioGroupItem value="avaria" className="sr-only" />
                                     </FormControl>
                                     <FormLabel className={cn(
-                                        "block w-full p-2 text-center rounded-md cursor-pointer border",
-                                        field.value === 'avaria' ? 'bg-destructive text-destructive-foreground border-destructive/80' : 'bg-background'
+                                        "block w-full p-2 text-center rounded-md cursor-pointer border text-xs h-9 flex items-center justify-center",
+                                        field.value === 'avaria' ? 'bg-destructive text-destructive-foreground border-destructive/80 font-bold' : 'bg-background'
                                     )}>Avaria</FormLabel>
                                 </FormItem>
                                 <FormItem className="flex-1">
@@ -223,7 +223,7 @@ export function ChecklistForm() {
                                         <RadioGroupItem value="na" className="sr-only" />
                                     </FormControl>
                                     <FormLabel className={cn(
-                                        "block w-full p-2 text-center rounded-md cursor-pointer border",
+                                        "block w-full p-2 text-center rounded-md cursor-pointer border text-xs h-9 flex items-center justify-center",
                                         field.value === 'na' ? 'bg-muted-foreground text-background border-muted-foreground/80' : 'bg-background'
                                     )}>N/A</FormLabel>
                                 </FormItem>
