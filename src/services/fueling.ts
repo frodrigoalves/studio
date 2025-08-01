@@ -2,21 +2,40 @@
 'use server';
 
 import { db } from '@/lib/firebase';
-import { collection, doc, writeBatch, getDocs, query, orderBy, limit } from 'firebase/firestore';
+import { collection, doc, writeBatch, getDocs, query, orderBy, limit, addDoc, getDoc } from 'firebase/firestore';
 
 export interface FuelingRecord {
   id: string;
-  date: string;
-  car: string;
+  attendantChapa: string;
+  attendantName: string;
+  carId: string;
+  odometer: number;
+  pump: number;
   liters: number;
-  pricePerLiter: number;
+  date: string; // ISO String
 }
 
 export type FuelingRecordPayload = Omit<FuelingRecord, 'id'>;
+export type FuelingRecordAddPayload = Omit<FuelingRecord, 'id' | 'date'>
 
 /**
- * Salva ou atualiza os registros de abastecimento no Firestore.
- * Cada documento terá o ID do carro como seu ID no Firestore para fácil acesso e unificação.
+ * Salva um único registro de abastecimento no Firestore.
+ * @param record O registro de abastecimento a ser salvo.
+ * @returns O registro de abastecimento salvo com seu ID.
+ */
+export async function addFuelingRecord(record: FuelingRecordAddPayload): Promise<FuelingRecord> {
+  const dataToSave = {
+    ...record,
+    date: new Date().toISOString(),
+  };
+  const docRef = await addDoc(collection(db, 'fuelingRecords'), dataToSave);
+  const docSnap = await getDoc(docRef);
+  return { id: docRef.id, ...(docSnap.data() as FuelingRecordPayload) };
+}
+
+
+/**
+ * Salva uma lista de registros de abastecimento no Firestore.
  * @param records A lista de registros de abastecimento a ser salva.
  */
 export async function addFuelingRecords(records: FuelingRecordPayload[]): Promise<void> {

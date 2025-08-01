@@ -118,15 +118,30 @@ export async function getRecordByPlateAndStatus(plate: string, status: "Em Andam
     const q = query(
         collection(db, "tripRecords"), 
         where("plate", "==", plate), 
-        where("status", "==", status)
+        where("status", "==", status),
+        orderBy("date", "desc"),
+        limit(1)
     );
     const querySnapshot = await getDocs(q);
     if (querySnapshot.empty) {
         return null;
     }
-
-    const records = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Record));
-    records.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     
-    return records[0];
+    const docSnap = querySnapshot.docs[0];
+    return { id: docSnap.id, ...docSnap.data() } as Record;
+}
+
+export async function getLastTripRecordForCar(carId: string): Promise<Record | null> {
+    const q = query(
+        collection(db, "tripRecords"),
+        where("car", "==", carId),
+        orderBy("date", "desc"),
+        limit(1)
+    );
+    const querySnapshot = await getDocs(q);
+    if (querySnapshot.empty) {
+        return null;
+    }
+    const docSnap = querySnapshot.docs[0];
+    return { id: docSnap.id, ...docSnap.data() } as Record;
 }
