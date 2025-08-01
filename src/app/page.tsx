@@ -6,7 +6,7 @@ import { UserCog, Fuel, ClipboardCheck, FileText, CircleDot, PlayCircle } from '
 import Image from 'next/image';
 
 const menuOptions = [
-  { href: '/registro-km', label: 'INÍCIO DE JORNADA', icon: PlayCircle, available: true, highlight: true },
+  { href: '/registro-km', label: 'REGISTRO DE KM E VISTORIA', icon: PlayCircle, available: true, highlight: true },
   { href: '/abastecimento', label: 'ABASTECIMENTO', icon: Fuel, available: true },
   { href: '/vistoria', label: 'VISTORIA (INDIVIDUAL)', icon: ClipboardCheck, available: true },
   { href: '/gestao-pneu', label: 'GESTÃO DE PNEU', icon: CircleDot, available: false },
