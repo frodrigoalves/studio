@@ -59,17 +59,28 @@ const itemsShape = allChecklistItems.reduce((acc, item) => {
 
 // --- Schemas ---
 
-const step1Schema = z.object({
+const startTripSchema = z.object({
+    // Step 1
     plate: z.string().min(1, "Chapa é obrigatória."),
     driver: z.string().min(1, "Nome é obrigatório."),
     car: z.string().min(1, "Carro é obrigatório."),
     line: z.string().min(1, "Linha é obrigatória."),
     kmStart: z.coerce.number({ required_error: "Km Inicial é obrigatório."}).min(1, "Km Inicial é obrigatório."),
-});
+    
+    // Step 2
+    items: z.object(itemsShape),
+    observations: z.string().optional(),
 
-const step2Schema = z.object({
-  items: z.object(itemsShape),
-  observations: z.string().optional(),
+    // Step 3
+    startOdometerPhoto: z.any().optional(),
+    fuelGaugePhoto: z.any().optional(),
+    frontDiagonalPhoto: z.any().optional(),
+    rearDiagonalPhoto: z.any().optional(),
+    leftSidePhoto: z.any().optional(),
+    rightSidePhoto: z.any().optional(),
+
+    // Step 4
+    signature: z.string().refine(sig => sig && sig.length > 0, { message: "A assinatura é obrigatória." }),
 }).refine(data => {
     const hasAvaria = Object.values(data.items).some(status => status === 'avaria');
     if (hasAvaria) {
@@ -81,20 +92,7 @@ const step2Schema = z.object({
     path: ["observations"],
 });
 
-const step3Schema = z.object({
-  startOdometerPhoto: z.any().optional(),
-  fuelGaugePhoto: z.any().optional(),
-  frontDiagonalPhoto: z.any().optional(),
-  rearDiagonalPhoto: z.any().optional(),
-  leftSidePhoto: z.any().optional(),
-  rightSidePhoto: z.any().optional(),
-});
 
-const step4Schema = z.object({
-  signature: z.string().refine(sig => sig && sig.length > 0, { message: "A assinatura é obrigatória." }),
-});
-
-const startTripSchema = step1Schema.merge(step2Schema).merge(step3Schema).merge(step4Schema);
 type StartTripFormValues = z.infer<typeof startTripSchema>;
 
 const endFormSchema = z.object({
@@ -107,7 +105,13 @@ const endFormSchema = z.object({
 });
 type EndFormValues = z.infer<typeof endFormSchema>;
 
-const stepSchemas = [step1Schema, step2Schema, step3Schema, step4Schema];
+const stepFields: (keyof StartTripFormValues)[][] = [
+    ['plate', 'driver', 'car', 'line', 'kmStart'],
+    ['items', 'observations'],
+    ['startOdometerPhoto', 'fuelGaugePhoto', 'frontDiagonalPhoto', 'rearDiagonalPhoto', 'leftSidePhoto', 'rightSidePhoto'],
+    ['signature']
+];
+
 
 const initialStartValues: StartTripFormValues = { 
     plate: "", 
@@ -333,16 +337,15 @@ export function DriverForm() {
   }, [activeTab, endForm, startForm]);
   
   const nextStep = async () => {
-    const currentSchema = stepSchemas[startTripStep];
-    const fieldsToValidate = Object.keys(currentSchema.shape) as (keyof StartTripFormValues)[];
-    const isValid = await startForm.trigger(fieldsToValidate);
+    const fields = stepFields[startTripStep];
+    const isValid = await startForm.trigger(fields, { shouldFocus: true });
     if (isValid) {
       setStartTripStep((prev) => prev + 1);
     }
   };
 
   const prevStep = () => setStartTripStep((prev) => prev - 1);
-  const progress = useMemo(() => ((startTripStep + 1) / (stepSchemas.length + 1)) * 100, [startTripStep]);
+  const progress = useMemo(() => ((startTripStep + 1) / (stepFields.length + 1)) * 100, [startTripStep]);
 
 
   return (
@@ -366,7 +369,7 @@ export function DriverForm() {
                 <div className="flex items-center gap-4">
                     <Progress value={progress} className="h-2 flex-grow" />
                     <div className="text-sm text-muted-foreground font-medium">
-                        Passo {startTripStep + 1} de {stepSchemas.length}
+                        Passo {startTripStep + 1} de {stepFields.length}
                     </div>
                 </div>
                 
@@ -455,7 +458,7 @@ export function DriverForm() {
                     </Button>
                   ) : <div></div>}
 
-                  {startTripStep < stepSchemas.length - 1 ? (
+                  {startTripStep < stepFields.length - 1 ? (
                     <Button type="button" onClick={nextStep}>
                       Avançar <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
@@ -576,3 +579,5 @@ export function DriverForm() {
     </Card>
   );
 }
+
+    
