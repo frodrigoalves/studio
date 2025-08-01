@@ -7,12 +7,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Wand2, FileText, Upload, Lightbulb, ListChecks, BarChart, Archive, BrainCircuit, GaugeCircle, AlertTriangle, Fuel, DollarSign, LineChart as LineChartIcon, BarChart2, Calendar as CalendarIcon, FileUp, Info, MapPin as MapIcon, Database, Car, Droplets, Wrench, Clock } from "lucide-react";
+import { Loader2, Wand2, FileText, Upload, Lightbulb, ListChecks, BarChart, Archive, BrainCircuit, GaugeCircle, AlertTriangle, Fuel, DollarSign, LineChart as LineChartIcon, BarChart2, Calendar as CalendarIcon, FileUp, Info, MapPin as MapIcon, Database, Car, Droplets, Wrench, Clock, Activity } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getRecords, type Record } from "@/services/records";
 import { getDieselPrices, type DieselPrice } from "@/services/settings";
 import { getVehicleParameters, type VehicleParameters, getMostRecentVehicleParameter } from "@/services/vehicles";
-import { getFuelingRecords, getMostRecentFuelingRecord } from "@/services/fueling";
+import { getFuelingRecords, getMostRecentFuelingRecord, type FuelingRecord } from "@/services/fueling";
 import { getMaintenanceRecords, getMostRecentMaintenanceRecord } from "@/services/maintenance";
 import { generateReport, type ReportOutput } from "@/ai/flows/report-flow";
 import { analyseSheet, type SheetAnalysisInput, type SheetAnalysisOutput } from "@/ai/flows/sheet-analysis-flow";
@@ -78,6 +78,7 @@ export default function AdminDashboard() {
         to: endOfMonth(new Date()),
     });
     const [records, setRecords] = useState<Record[]>([]);
+    const [fuelingRecords, setFuelingRecords] = useState<FuelingRecord[]>([]);
     const [dieselPrices, setDieselPrices] = useState<DieselPrice[]>([]);
     const [vehicleParameters, setVehicleParameters] = useState<VehicleParameters[]>([]);
      const [dbStats, setDbStats] = useState({
@@ -112,7 +113,7 @@ export default function AdminDashboard() {
         try {
             const [
                 allRecords, allPrices, allParameters,
-                vehiclesData, fuelingData, maintenanceData, tripData,
+                vehiclesData, allFuelingRecords, maintenanceData, tripData,
                 lastVehicle, lastFueling, lastMaintenance
              ] = await Promise.all([
                 getRecords(),
@@ -129,6 +130,7 @@ export default function AdminDashboard() {
             setRecords(allRecords);
             setDieselPrices(allPrices);
             setVehicleParameters(allParameters);
+            setFuelingRecords(allFuelingRecords);
             
             const tripAlerts = tripData.filter(r => 
                 r.status === "Em Andamento" || 
@@ -141,7 +143,7 @@ export default function AdminDashboard() {
                     lastImport: lastVehicle?.lastUpdated || ''
                 },
                 fueling: {
-                    count: fuelingData.length,
+                    count: allFuelingRecords.length,
                     lastImport: lastFueling?.date || ''
                 },
                 maintenance: {
@@ -186,7 +188,8 @@ export default function AdminDashboard() {
             performanceData: [],
             topVehicles: [],
             totalCost: 0,
-            latestDieselPrice: latestPrice
+            latestDieselPrice: latestPrice,
+            averageConsumption: 0,
         };
 
         const { from: startDate, to: endDate } = dateRange || { from: new Date(), to: new Date()};
@@ -267,11 +270,27 @@ export default function AdminDashboard() {
             .map(([name, km]) => ({ name, km, fill: "var(--color-primary)"}))
             .sort((a, b) => b.km - a.km)
             .slice(0, 10);
+            
+        const filteredFuelingRecords = fuelingRecords.filter(f => {
+             if (!startDate || !endDate) return true;
+             try {
+                const recordDate = parseISO(f.date);
+                const start = new Date(startDate);
+                start.setHours(0, 0, 0, 0);
+                const end = new Date(endDate);
+                end.setHours(23, 59, 59, 999);
+                return recordDate >= start && recordDate <= end;
+            } catch { return false; }
+        });
+
+        const totalLiters = filteredFuelingRecords.reduce((sum, r) => sum + r.liters, 0);
+
+        const averageConsumption = totalLiters > 0 ? totalKm / totalLiters : 0;
 
 
-        return { totalKm, alerts, performanceData, topVehicles, totalCost, latestDieselPrice: latestPrice };
+        return { totalKm, alerts, performanceData, topVehicles, totalCost, latestDieselPrice: latestPrice, averageConsumption };
 
-    }, [records, dateRange, dieselPrices, vehicleParameters]);
+    }, [records, fuelingRecords, dateRange, dieselPrices, vehicleParameters]);
 
     const handleGenerateFleetReport = async () => {
         setIsFleetLoading(true);
@@ -564,7 +583,7 @@ export default function AdminDashboard() {
                                 </div>
                             </div>
                         </div>
-                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-5">
                             <Card>
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                     <div className="flex items-center gap-2">
@@ -588,7 +607,7 @@ export default function AdminDashboard() {
                             <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <div className="flex items-center gap-2">
-                                    <h3 className="text-sm font-medium">Custo Total</h3>
+                                    <h3 className="text-sm font-medium">Custo Estimado</h3>
                                      <Popover>
                                         <PopoverTrigger>
                                             <Info className="h-3 w-3 text-muted-foreground cursor-pointer" />
@@ -604,6 +623,26 @@ export default function AdminDashboard() {
                                 <div className="text-2xl font-bold">R$ {dashboardData.totalCost.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                                 <p className="text-xs text-muted-foreground">Custo com combustível no período.</p>
                             </CardContent>
+                            </Card>
+                             <Card>
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <div className="flex items-center gap-2">
+                                        <h3 className="text-sm font-medium">Consumo Médio</h3>
+                                        <Popover>
+                                            <PopoverTrigger>
+                                                <Info className="h-3 w-3 text-muted-foreground cursor-pointer" />
+                                            </PopoverTrigger>
+                                            <PopoverContent className="text-xs">
+                                                Consumo médio real da frota, calculado pela fórmula: (KM Total Rodado / Litros Totais Abastecidos) no período selecionado.
+                                            </PopoverContent>
+                                        </Popover>
+                                    </div>
+                                    <Activity className="h-4 w-4 text-muted-foreground" />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold">{dashboardData.averageConsumption.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} km/L</div>
+                                    <p className="text-xs text-muted-foreground">Desempenho real da frota.</p>
+                                </CardContent>
                             </Card>
                             <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
