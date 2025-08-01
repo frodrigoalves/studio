@@ -5,7 +5,7 @@ import { useState, useMemo } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Loader2, Send, ArrowLeft, ArrowRight, Camera, Car, ClipboardCheck, Signature, User, Milestone, Phone } from "lucide-react";
+import { Loader2, Send, ArrowLeft, ArrowRight, Camera, Car, ClipboardCheck, Signature, User, Milestone, Phone, GaugeCircle, Fuel } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Image from 'next/image';
 import {
@@ -28,8 +28,8 @@ import { Textarea } from "./ui/textarea";
 import { cn } from "@/lib/utils";
 import { SignaturePad } from "./ui/signature-pad";
 import { Progress } from "./ui/progress";
-import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "./ui/carousel";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 
 // Schemas for each step
 const step1Schema = z.object({
@@ -91,12 +91,12 @@ const journeyFormSchema = z.object({
 
 type JourneyFormValues = z.infer<typeof journeyFormSchema>;
 
-const initialValues: Omit<JourneyFormValues, 'initialKm'> & { initialKm: string | number } = {
+const initialValues: JourneyFormValues = {
   driverChapa: "",
   driverName: "",
   car: "",
   line: "",
-  initialKm: '',
+  initialKm: 0,
   odometerPhoto: null,
   fuelGaugePhoto: null,
   frontDiagonalPhoto: null,
@@ -121,10 +121,9 @@ const fileToBase64 = (file: File): Promise<string> => {
 };
 
 const photoExamples = [
-    { title: 'Diagonal Frontal Direita', src: `/images/diagonal1.png`, description: 'Pegue a frente e a lateral direita do veículo em uma só foto.' },
-    { title: 'Diagonal Traseira Direita', src: `/images/diagonal2.png`, description: 'Pegue a traseira e a lateral direita do veículo.' },
-    { title: 'Diagonal Frontal Esquerda', src: `/images/diagonal3.png`, description: 'Pegue a frente e a lateral esquerda do veículo.' },
-    { title: 'Diagonal Traseira Esquerda', src: `/images/diagonal4.png`, description: 'Pegue a traseira e a outra lateral esquerda do veículo.' },
+    { title: 'Hodômetro', icon: GaugeCircle, description: 'Foto nítida do KM inicial no painel.' },
+    { title: 'Combustível', icon: Fuel, description: 'Foto do marcador de combustível.' },
+    { title: 'Diagonais e Laterais', icon: Car, description: '4 fotos: diagonal frontal, traseira, lateral esquerda e direita.' },
 ];
 
 
@@ -264,41 +263,25 @@ export function JourneyStartForm() {
                      <h3 className="text-lg font-semibold flex items-center gap-2"><Milestone className="w-5 h-5 text-primary"/> Leituras e Fotos</h3>
                     
                     <Card className="bg-muted/30">
-                        <CardHeader className="pb-2">
+                        <CardHeader className="pb-4">
                            <CardTitle className="text-base">Guia Visual de Fotos</CardTitle> 
-                           <CardDescription className="text-xs">Passe as imagens para ver exemplos de cada foto necessária.</CardDescription>
+                           <CardDescription className="text-xs">Tire uma foto para cada item listado abaixo.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                             <Carousel className="w-full max-w-xs mx-auto">
-                                <CarouselContent>
-                                    {photoExamples.map((photo, index) => (
-                                    <CarouselItem key={index}>
-                                        <div className="p-1">
-                                        <Card>
-                                            <CardContent className="flex flex-col items-center justify-center p-4 gap-2">
-                                                 <Image 
-                                                    src={photo.src}
-                                                    alt={photo.title} 
-                                                    width={300} 
-                                                    height={200} 
-                                                    className="rounded-md"
-                                                />
-                                                <h4 className="font-semibold mt-2">{photo.title}</h4>
-                                                <p className="text-xs text-muted-foreground text-center">{photo.description}</p>
-                                            </CardContent>
-                                        </Card>
-                                        </div>
-                                    </CarouselItem>
-                                    ))}
-                                </CarouselContent>
-                                <CarouselPrevious className="-left-8" />
-                                <CarouselNext className="-right-8" />
-                                </Carousel>
+                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                {photoExamples.map((item) => (
+                                    <div key={item.title} className="flex flex-col items-center text-center gap-2 p-4 border rounded-lg bg-background">
+                                        <item.icon className="w-8 h-8 text-primary" />
+                                        <h4 className="font-semibold text-sm">{item.title}</h4>
+                                        <p className="text-xs text-muted-foreground">{item.description}</p>
+                                    </div>
+                                ))}
+                            </div>
                         </CardContent>
                     </Card>
 
 
-                    <FormField control={form.control} name="initialKm" render={({ field }) => (<FormItem><FormLabel>KM Inicial do Veículo</FormLabel><FormControl><Input type="number" placeholder="123456" {...field} value={field.value ?? ''} /></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="initialKm" render={({ field }) => (<FormItem><FormLabel>KM Inicial do Veículo</FormLabel><FormControl><Input type="number" placeholder="123456" {...field} value={field.value ?? ''} onChange={e => field.onChange(e.target.valueAsNumber)} /></FormControl><FormMessage /></FormItem>)} />
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <FormField control={form.control} name="odometerPhoto" render={({ field: { onChange, ...rest }}) => (<FormItem><FormLabel>1. Foto do Hodômetro</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" onChange={(e) => onChange(e.target.files?.[0])} {...rest} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl><FormMessage /></FormItem>)}/>
