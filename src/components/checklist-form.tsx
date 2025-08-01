@@ -22,6 +22,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { addChecklistRecord, type ChecklistRecordPayload, type ChecklistItemStatus } from "@/services/checklist";
 import { Textarea } from "./ui/textarea";
+import { cn } from "@/lib/utils";
 
 const checklistItems = [
   "Adesivos", "Ar Condicionado", "Bancos", "Carroceria", "Cinto de Segurança", "Direção", 
@@ -44,14 +45,24 @@ const checklistFormSchema = z.object({
   driverChapa: z.string().min(1, "Chapa é obrigatória."),
   driverName: z.string().min(1, "Nome é obrigatório."),
   carId: z.string().min(1, "Carro é obrigatório."),
-  items: z.object(itemsShape).refine(obj => {
-    return Object.keys(obj).length === checklistItems.length;
-  }, { message: "Todos os itens devem ser verificados." }),
+  items: z.object(itemsShape),
   observations: z.string().optional(),
+}).refine(data => {
+    const hasAvaria = Object.values(data.items).some(status => status === 'avaria');
+    // If there is an 'avaria', observations must not be empty.
+    if (hasAvaria) {
+        return data.observations && data.observations.trim().length > 0;
+    }
+    return true;
+}, {
+    message: "É obrigatório descrever a avaria no campo de observações.",
+    path: ["observations"], // Set the error path to the observations field.
 });
+
 
 type ChecklistFormValues = z.infer<typeof checklistFormSchema>;
 
+// Otimização: Todos os itens começam como 'ok' por padrão
 const initialValues: ChecklistFormValues = {
   driverChapa: "",
   driverName: "",
@@ -69,6 +80,8 @@ export function ChecklistForm() {
     defaultValues: initialValues,
   });
 
+  const watchItems = form.watch('items');
+
   async function onSubmit(data: ChecklistFormValues) {
     setIsSubmitting(true);
     try {
@@ -79,21 +92,10 @@ export function ChecklistForm() {
         driverName: data.driverName,
         carId: data.carId,
         items: data.items,
-        // Se houver avaria, as observações se tornam obrigatórias
-        observations: data.observations || (hasAvaria ? 'Avaria apontada sem descrição.' : null),
+        observations: data.observations || null,
         hasIssue: hasAvaria
       };
       
-      if (hasAvaria && !data.observations) {
-         toast({
-            variant: "destructive",
-            title: "Observação necessária",
-            description: "Por favor, descreva a avaria encontrada no campo de observações.",
-         });
-         setIsSubmitting(false);
-         return;
-      }
-
       await addChecklistRecord(payload);
 
       toast({
@@ -118,7 +120,7 @@ export function ChecklistForm() {
       <CardHeader>
         <CardTitle>Checklist de Vistoria</CardTitle>
         <CardDescription>
-          Realize a vistoria do veículo no início da jornada de trabalho.
+          Realize a vistoria do veículo no início da jornada de trabalho. Os itens já vêm marcados como "OK", altere apenas o que for necessário.
         </CardDescription>
       </CardHeader>
       <CardContent className="p-4 sm:p-6">
@@ -174,42 +176,58 @@ export function ChecklistForm() {
                 <FormDescription>
                     Marque a condição de cada item abaixo.
                 </FormDescription>
-                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {checklistItems.map((item) => (
                      <FormField
                         key={item}
                         control={form.control}
                         name={`items.${item}`}
                         render={({ field }) => (
-                          <FormItem className="space-y-2 p-3 rounded-md border bg-muted/20">
-                            <FormLabel className="text-base font-semibold">{item}</FormLabel>
+                          <FormItem className={cn(
+                                "space-y-2 p-3 rounded-lg border transition-all",
+                                watchItems[item] === 'avaria' ? 'border-destructive bg-destructive/10' : 'bg-muted/30'
+                            )}>
+                            <FormLabel className="text-base font-semibold flex items-center justify-between w-full">
+                                <span>{item}</span>
+                                {watchItems[item] === 'avaria' && <span className="text-xs font-bold text-destructive">AVARIA</span>}
+                                {watchItems[item] === 'ok' && <span className="text-xs font-bold text-green-600">OK</span>}
+                                {watchItems[item] === 'na' && <span className="text-xs font-medium text-muted-foreground">N/A</span>}
+                            </FormLabel>
                             <FormControl>
                                <RadioGroup
                                 onValueChange={field.onChange}
                                 defaultValue={field.value}
-                                className="flex items-center space-x-4 pt-1"
+                                className="flex items-center space-x-2 pt-1"
                               >
-                                <FormItem className="flex items-center space-x-2 space-y-0">
-                                  <FormControl>
-                                    <RadioGroupItem value="ok" />
-                                  </FormControl>
-                                  <FormLabel className="font-normal text-sm">OK</FormLabel>
+                                <FormItem className="flex-1">
+                                    <FormControl>
+                                        <RadioGroupItem value="ok" className="sr-only" />
+                                    </FormControl>
+                                    <FormLabel className={cn(
+                                        "block w-full p-2 text-center rounded-md cursor-pointer border",
+                                        field.value === 'ok' ? 'bg-green-600 text-white border-green-700' : 'bg-background'
+                                    )}>OK</FormLabel>
                                 </FormItem>
-                                <FormItem className="flex items-center space-x-2 space-y-0">
-                                  <FormControl>
-                                    <RadioGroupItem value="avaria" />
-                                  </FormControl>
-                                  <FormLabel className="font-normal text-sm">Avaria</FormLabel>
+                                 <FormItem className="flex-1">
+                                    <FormControl>
+                                        <RadioGroupItem value="avaria" className="sr-only" />
+                                    </FormControl>
+                                    <FormLabel className={cn(
+                                        "block w-full p-2 text-center rounded-md cursor-pointer border",
+                                        field.value === 'avaria' ? 'bg-destructive text-destructive-foreground border-destructive/80' : 'bg-background'
+                                    )}>Avaria</FormLabel>
                                 </FormItem>
-                                <FormItem className="flex items-center space-x-2 space-y-0">
-                                  <FormControl>
-                                    <RadioGroupItem value="na" />
-                                  </FormControl>
-                                  <FormLabel className="font-normal text-sm">N/A</FormLabel>
+                                <FormItem className="flex-1">
+                                    <FormControl>
+                                        <RadioGroupItem value="na" className="sr-only" />
+                                    </FormControl>
+                                    <FormLabel className={cn(
+                                        "block w-full p-2 text-center rounded-md cursor-pointer border",
+                                        field.value === 'na' ? 'bg-muted-foreground text-background border-muted-foreground/80' : 'bg-background'
+                                    )}>N/A</FormLabel>
                                 </FormItem>
                               </RadioGroup>
                             </FormControl>
-                             <FormMessage />
                           </FormItem>
                         )}
                       />
