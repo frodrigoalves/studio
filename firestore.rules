@@ -3,33 +3,57 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    function isAdmin() {
-      return request.auth != null && (request.auth.token.role == 'diretor' || request.auth.token.role == 'analyst');
+  
+    function isAuthOwner(resourceId) {
+      return request.auth.uid == resourceId;
+    }
+    
+    function isUserAuthenticated() {
+      return request.auth != null;
     }
 
     match /tripRecords/{recordId} {
-      allow read, write, list, delete: if isAdmin();
-    }
-
-    match /fuelingRecords/{recordId} {
-        allow read, write, list, delete: if isAdmin();
+      allow read, write: if isUserAuthenticated();
     }
     
-    match /checklistRecords/{recordId} {
-        allow read, write, list, delete: if isAdmin();
+    match /fuelingRecords/{recordId} {
+      allow read, write: if isUserAuthenticated();
     }
-
-    match /dieselPrices/{priceId} {
-        allow read, write, list, delete: if isAdmin();
+    
+     match /checklistRecords/{recordId} {
+      allow read, write: if isUserAuthenticated();
     }
-
-    match /vehicleParameters/{carId} {
-        allow read, write, list, delete: if isAdmin();
+    
+     match /dieselPrices/{priceId} {
+      allow read, write: if isUserAuthenticated();
+    }
+    
+     match /vehicleParameters/{carId} {
+       allow read, write: if isUserAuthenticated();
     }
 
     match /maintenanceRecords/{recordId} {
-        allow read, write, list, delete: if isAdmin();
+      allow read, write: if isUserAuthenticated();
+    }
+    
+    // Permissões para listas de coleções
+    match /tripRecords/{document=**} {
+        allow list: if isUserAuthenticated();
+    }
+    match /fuelingRecords/{document=**} {
+        allow list: if isUserAuthenticated();
+    }
+    match /checklistRecords/{document=**} {
+        allow list: if isUserAuthenticated();
+    }
+    match /dieselPrices/{document=**} {
+        allow list: if isUserAuthenticated();
+    }
+     match /vehicleParameters/{document=**} {
+        allow list: if isUserAuthenticated();
+    }
+     match /maintenanceRecords/{document=**} {
+        allow list: if isUserAuthenticated();
     }
   }
 }
