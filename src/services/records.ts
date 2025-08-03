@@ -2,7 +2,7 @@
 'use server';
 
 import { db, storage } from '@/lib/firebase';
-import { collection, addDoc, getDocs, doc, updateDoc, query, where, getDoc, orderBy, limit, deleteDoc } from 'firebase/firestore';
+import { collection, addDoc, getDocs, doc, updateDoc, query, where, getDoc, orderBy, limit, deleteDoc, setDoc } from 'firebase/firestore';
 import { ref, uploadString, getDownloadURL, deleteObject } from 'firebase/storage';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -19,6 +19,12 @@ export interface Record {
   status: "Finalizado" | "Em Andamento";
   startOdometerPhoto: string | null;
   endOdometerPhoto: string | null;
+  fuelLevel?: string;
+  frontDiagonalPhoto?: string | null;
+  rearDiagonalPhoto?: string | null;
+  leftSidePhoto?: string | null;
+  rightSidePhoto?: string | null;
+  fuelGaugePhoto?: string | null;
 }
 
 export type RecordAddPayload = Omit<Record, 'id'>;

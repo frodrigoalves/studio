@@ -13,6 +13,7 @@ export interface FuelingRecord {
   pump: number;
   liters: number;
   date: string; // ISO String
+  pricePerLiter?: number;
 }
 
 export type FuelingRecordPayload = Omit<FuelingRecord, 'id'>;

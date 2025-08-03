@@ -212,10 +212,14 @@ export default function SettingsPage() {
 
                     const fuelingRecords: FuelingRecordPayload[] = json.map(row => ({
                         date: row['Data'] ? new Date((row['Data'] - (25567 + 1)) * 86400 * 1000).toISOString() : new Date().toISOString(),
-                        car: String(row['Carro'] ?? ''),
+                        carId: String(row['Carro'] ?? ''),
                         liters: Number(row['Litros'] ?? 0),
                         pricePerLiter: Number(row['Preço/Litro'] ?? 0),
-                    })).filter(r => r.car && r.liters > 0);
+                        attendantChapa: '', // Dados não disponíveis na planilha
+                        attendantName: 'Importado', // Dados não disponíveis na planilha
+                        odometer: 0, // Dados não disponíveis na planilha
+                        pump: 0, // Dados não disponíveis na planilha
+                    })).filter(r => r.carId && r.liters > 0);
 
                     if (fuelingRecords.length === 0) {
                          toast({ variant: 'destructive', title: 'Nenhum dado válido encontrado', description: 'Verifique se a planilha possui as colunas "Data", "Carro", "Litros" e "Preço/Litro" e se os dados estão corretos.'});
@@ -263,10 +267,10 @@ export default function SettingsPage() {
                     const json: any[] = XLSX.utils.sheet_to_json(worksheet);
 
                     const maintenanceRecords: MaintenanceRecordPayload[] = json.map(row => ({
-                        car: String(row['Carro'] ?? ''),
+                        carId: String(row['Carro'] ?? ''),
                         reason: String(row['Motivo'] ?? 'Manutenção'),
                         startDate: row['Data Início'] ? new Date((row['Data Início'] - (25567 + 1)) * 86400 * 1000).toISOString() : new Date().toISOString(),
-                    })).filter(r => r.car);
+                    })).filter(r => r.carId);
 
                     if (maintenanceRecords.length === 0) {
                          toast({ variant: 'destructive', title: 'Nenhum dado válido encontrado', description: 'Verifique se a planilha possui as colunas "Carro", "Motivo" e "Data Início".'});

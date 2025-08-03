@@ -6,7 +6,7 @@ import { collection, doc, writeBatch, getDocs, query, orderBy, limit } from 'fir
 
 export interface MaintenanceRecord {
   id: string;
-  car: string;
+  carId: string;
   reason: string;
   startDate: string; 
 }
