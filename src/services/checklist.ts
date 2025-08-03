@@ -148,21 +148,22 @@ export async function addChecklistRecord(record: ChecklistRecordPayload): Promis
         damageAnalysis: damageAnalysisResult ? { ...damageAnalysisResult, acknowledged: false } : undefined,
     };
     
+    const recordToSaveInDb = { ...finalRecord };
     // Remove base64 photos before saving to DB
-    delete (finalRecord as any).odometerPhoto;
-    delete (finalRecord as any).frontDiagonalPhoto;
-    delete (finalRecord as any).rearDiagonalPhoto;
-    delete (finalRecord as any).leftSidePhoto;
-    delete (finalRecord as any).rightSidePhoto;
+    delete (recordToSaveInDb as any).odometerPhoto;
+    delete (recordToSaveInDb as any).frontDiagonalPhoto;
+    delete (recordToSaveInDb as any).rearDiagonalPhoto;
+    delete (recordToSaveInDb as any).leftSidePhoto;
+    delete (recordToSaveInDb as any).rightSidePhoto;
 
-    finalRecord.odometerPhoto = odometerPhotoUrl;
-    finalRecord.frontDiagonalPhoto = frontDiagonalPhotoUrl;
-    finalRecord.rearDiagonalPhoto = rearDiagonalPhotoUrl;
-    finalRecord.leftSidePhoto = leftSidePhotoUrl;
-    finalRecord.rightSidePhoto = rightSidePhotoUrl;
+    recordToSaveInDb.odometerPhoto = odometerPhotoUrl;
+    recordToSaveInDb.frontDiagonalPhoto = frontDiagonalPhotoUrl;
+    recordToSaveInDb.rearDiagonalPhoto = rearDiagonalPhotoUrl;
+    recordToSaveInDb.leftSidePhoto = leftSidePhotoUrl;
+    recordToSaveInDb.rightSidePhoto = rightSidePhotoUrl;
     
     const docRef = doc(db, 'checklistRecords', recordId);
-    await setDoc(docRef, finalRecord);
+    await setDoc(docRef, recordToSaveInDb);
     
     const docSnap = await getDoc(docRef);
     return { id: docSnap.id, ...docSnap.data() } as ChecklistRecord;
@@ -227,5 +228,3 @@ export async function acknowledgeDamage(recordId: string): Promise<void> {
         "damageAnalysis.acknowledged": true
     });
 }
-
-    

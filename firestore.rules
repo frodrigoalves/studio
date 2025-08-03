@@ -3,57 +3,25 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-  
-    function isAuthOwner(resourceId) {
-      return request.auth.uid == resourceId;
-    }
     
-    function isUserAuthenticated() {
+    function isManager() {
+      // Check for custom claims if you implement them. For now, just check auth.
       return request.auth != null;
     }
 
-    match /tripRecords/{recordId} {
-      allow read, write: if isUserAuthenticated();
+    // Public forms can be written to by anyone.
+    // Reading/editing/deleting is restricted to managers.
+    match /{collectionName}/{docId} 
+      where collectionName in ['tripRecords', 'fuelingRecords', 'checklistRecords'] {
+      allow create: if true;
+      allow read, get, list: if isManager();
+      allow update, delete: if isManager();
     }
     
-    match /fuelingRecords/{recordId} {
-      allow read, write: if isUserAuthenticated();
-    }
-    
-     match /checklistRecords/{recordId} {
-      allow read, write: if isUserAuthenticated();
-    }
-    
-     match /dieselPrices/{priceId} {
-      allow read, write: if isUserAuthenticated();
-    }
-    
-     match /vehicleParameters/{carId} {
-       allow read, write: if isUserAuthenticated();
-    }
-
-    match /maintenanceRecords/{recordId} {
-      allow read, write: if isUserAuthenticated();
-    }
-    
-    // Permissões para listas de coleções
-    match /tripRecords/{document=**} {
-        allow list: if isUserAuthenticated();
-    }
-    match /fuelingRecords/{document=**} {
-        allow list: if isUserAuthenticated();
-    }
-    match /checklistRecords/{document=**} {
-        allow list: if isUserAuthenticated();
-    }
-    match /dieselPrices/{document=**} {
-        allow list: if isUserAuthenticated();
-    }
-     match /vehicleParameters/{document=**} {
-        allow list: if isUserAuthenticated();
-    }
-     match /maintenanceRecords/{document=**} {
-        allow list: if isUserAuthenticated();
+    // Settings and other internal collections can only be managed by managers.
+    match /{collectionName}/{docId}
+      where collectionName in ['dieselPrices', 'vehicleParameters', 'maintenanceRecords'] {
+        allow read, get, list, create, update, delete: if isManager();
     }
   }
 }

@@ -17,7 +17,7 @@ export interface FuelingRecord {
 }
 
 export type FuelingRecordPayload = Omit<FuelingRecord, 'id'>;
-export type FuelingRecordAddPayload = Omit<FuelingRecord, 'id' | 'date'>
+export type FuelingRecordAddPayload = Omit<FuelingRecord, 'id' | 'date'>;
 
 /**
  * Salva um único registro de abastecimento no Firestore.

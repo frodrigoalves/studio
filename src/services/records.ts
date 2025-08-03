@@ -61,30 +61,25 @@ async function deletePhoto(photoUrl: string | null) {
 
 
 export async function addRecord(record: RecordAddPayload): Promise<Record> {
-  // Use um ID pré-gerado para consistência entre Firestore e Storage
   const tempDocForId = doc(collection(db, "tripRecords"));
   const recordId = tempDocForId.id;
 
-  // Primeiro, faça o upload da foto inicial para o Storage
   const startOdometerPhotoUrl = await uploadPhoto(record.startOdometerPhoto, recordId, 'start-odometer');
 
-  // Prepare os dados para salvar no Firestore, usando a URL da foto, não a string base64
   const dataToSave: Omit<Record, 'id'> = {
       ...record,
       kmStart: record.kmStart ? Number(record.kmStart) : null,
       kmEnd: record.kmEnd ? Number(record.kmEnd) : null,
       date: new Date(record.date).toISOString(),
       startOdometerPhoto: startOdometerPhotoUrl,
-      endOdometerPhoto: null, // Foto final será adicionada na atualização
+      endOdometerPhoto: null, 
   };
   
   if(isNaN(dataToSave.kmStart!)) dataToSave.kmStart = null;
   if(isNaN(dataToSave.kmEnd!)) dataToSave.kmEnd = null;
 
-  // Crie o documento no Firestore usando o ID pré-gerado
   await setDoc(doc(db, "tripRecords", recordId), dataToSave);
   
-  // Retorne o registro completo
   const docSnap = await getDoc(doc(db, "tripRecords", recordId));
   return { id: docSnap.id, ...(docSnap.data() as Omit<Record, 'id'>) };
 }
