@@ -1,8 +1,25 @@
 rules_version = '2';
+
 service firebase.storage {
   match /b/{bucket}/o {
+    // As fotos de vistoria e viagem são enviadas por motoristas não autenticados.
+    // Permitimos a criação (escrita) em pastas específicas, mas bloqueamos a leitura,
+    // atualização e exclusão para proteger os dados.
+    match /checklist_photos/{allPaths=**} {
+      allow read: if request.auth != null && (request.auth.token.role == 'diretor' || request.auth.token.role == 'analyst');
+      allow write: if true; // Permite o upload por qualquer pessoa (formulário público)
+      allow update, delete: if request.auth != null && (request.auth.token.role == 'diretor' || request.auth.token.role == 'analyst');
+    }
+
+    match /trip_photos/{allPaths=**} {
+       allow read: if request.auth != null && (request.auth.token.role == 'diretor' || request.auth.token.role == 'analyst');
+       allow write: if true; // Permite o upload por qualquer pessoa (formulário público)
+       allow update, delete: if request.auth != null && (request.auth.token.role == 'diretor' || request.auth.token.role == 'analyst');
+    }
+
+    // Nega o acesso a todas as outras rotas por padrão.
     match /{allPaths=**} {
-      allow read, write: if true;
+      allow read, write: if false;
     }
   }
 }
