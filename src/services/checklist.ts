@@ -2,12 +2,19 @@
 'use server';
 
 import { db, storage } from '@/lib/firebase';
-import { collection, addDoc, getDoc, getDocs, query, orderBy, doc, setDoc, limit, where } from 'firebase/firestore';
+import { collection, addDoc, getDoc, getDocs, query, orderBy, doc, setDoc, limit, where, updateDoc } from 'firebase/firestore';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { v4 as uuidv4 } from 'uuid';
 import { analyzeVehicleDamage, type DamageAnalysisInput, type DamageAnalysisOutput } from '@/ai/flows/damage-analysis-flow';
 
 export type ChecklistItemStatus = "ok" | "avaria" | "na";
+
+interface PreviousChecklistPhotos {
+    front: string;
+    rear: string;
+    left: string;
+    right: string;
+}
 
 export interface ChecklistRecord {
   id: string;
@@ -19,13 +26,19 @@ export interface ChecklistRecord {
   observations: string | null;
   hasIssue: boolean;
   signature: string | null;
-  damageAnalysis?: DamageAnalysisOutput;
+  damageAnalysis?: DamageAnalysisOutput & { acknowledged?: boolean };
   // Photo fields
   odometerPhoto?: string | null;
   frontDiagonalPhoto?: string | null;
   rearDiagonalPhoto?: string | null;
   leftSidePhoto?: string | null;
   rightSidePhoto?: string | null;
+}
+
+// Type for the view on the Vigia Digital page
+export interface ChecklistRecordWithDamage extends ChecklistRecord {
+    damageAnalysis: DamageAnalysisOutput & { acknowledged?: boolean };
+    previousChecklistPhotos?: PreviousChecklistPhotos;
 }
 
 export type ChecklistRecordPayload = Omit<ChecklistRecord, 'id' | 'date' | 'damageAnalysis'>;
@@ -98,26 +111,25 @@ export async function addChecklistRecord(record: ChecklistRecordPayload): Promis
         rightSidePhoto: rightSidePhotoUrl,
     };
     
-    // Remove os campos de foto em base64 antes de salvar no Firestore
-    delete (dataToSave as any).signature; 
-
-
     // --- Damage Analysis Logic ---
     let damageAnalysisResult: DamageAnalysisOutput | undefined = undefined;
     const previousChecklist = await getLastChecklistForCar(record.carId);
 
-    if (previousChecklist && previousChecklist.frontDiagonalPhoto && dataToSave.frontDiagonalPhoto) {
+    const hasAllCurrentPhotos = dataToSave.frontDiagonalPhoto && dataToSave.rearDiagonalPhoto && dataToSave.leftSidePhoto && dataToSave.rightSidePhoto;
+    const hasAllPreviousPhotos = previousChecklist?.frontDiagonalPhoto && previousChecklist?.rearDiagonalPhoto && previousChecklist?.leftSidePhoto && previousChecklist?.rightSidePhoto;
+
+    if (previousChecklist && hasAllCurrentPhotos && hasAllPreviousPhotos) {
         console.log(`Analyzing damage for car ${record.carId} between current checklist and previous one from ${previousChecklist.date}`);
         try {
             const analysisInput: DamageAnalysisInput = {
                 previousPhotos: {
-                    front: previousChecklist.frontDiagonalPhoto,
+                    front: previousChecklist.frontDiagonalPhoto!,
                     rear: previousChecklist.rearDiagonalPhoto!,
                     left: previousChecklist.leftSidePhoto!,
                     right: previousChecklist.rightSidePhoto!,
                 },
                 currentPhotos: {
-                    front: dataToSave.frontDiagonalPhoto,
+                    front: dataToSave.frontDiagonalPhoto!,
                     rear: dataToSave.rearDiagonalPhoto!,
                     left: dataToSave.leftSidePhoto!,
                     right: dataToSave.rightSidePhoto!,
@@ -131,18 +143,29 @@ export async function addChecklistRecord(record: ChecklistRecordPayload): Promis
     }
     // --- End Damage Analysis Logic ---
 
-    const finalRecord: ChecklistRecord = {
-        id: recordId,
+    const finalRecord: Omit<ChecklistRecord, 'id'> = {
         ...dataToSave,
-        damageAnalysis: damageAnalysisResult,
-        signature: record.signature, // Re-add signature for final object
+        damageAnalysis: damageAnalysisResult ? { ...damageAnalysisResult, acknowledged: false } : undefined,
     };
+    
+    // Remove base64 photos before saving to DB
+    delete (finalRecord as any).odometerPhoto;
+    delete (finalRecord as any).frontDiagonalPhoto;
+    delete (finalRecord as any).rearDiagonalPhoto;
+    delete (finalRecord as any).leftSidePhoto;
+    delete (finalRecord as any).rightSidePhoto;
+
+    finalRecord.odometerPhoto = odometerPhotoUrl;
+    finalRecord.frontDiagonalPhoto = frontDiagonalPhotoUrl;
+    finalRecord.rearDiagonalPhoto = rearDiagonalPhotoUrl;
+    finalRecord.leftSidePhoto = leftSidePhotoUrl;
+    finalRecord.rightSidePhoto = rightSidePhotoUrl;
     
     const docRef = doc(db, 'checklistRecords', recordId);
     await setDoc(docRef, finalRecord);
     
     const docSnap = await getDoc(docRef);
-    return docSnap.data() as ChecklistRecord;
+    return { id: docSnap.id, ...docSnap.data() } as ChecklistRecord;
 }
 
 /**
@@ -154,3 +177,55 @@ export async function getChecklistRecords(): Promise<ChecklistRecord[]> {
     const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ChecklistRecord));
 }
+
+
+/**
+ * Busca todos os registros de vistoria que possuem um resultado de análise de dano.
+ * @returns Uma lista de registros de vistoria com análise de dano.
+ */
+export async function getChecklistRecordsWithDamage(): Promise<ChecklistRecordWithDamage[]> {
+    const q = query(collection(db, 'checklistRecords'), where("damageAnalysis.hasNewDamage", "==", true), orderBy("date", "desc"));
+    const querySnapshot = await getDocs(q);
+    
+    const records: ChecklistRecordWithDamage[] = [];
+
+    for (const docSnap of querySnapshot.docs) {
+        const currentRecord = { id: docSnap.id, ...docSnap.data() } as ChecklistRecordWithDamage;
+        
+        // Find the previous checklist to get its photos for comparison view
+        const prevQ = query(
+            collection(db, "checklistRecords"),
+            where("carId", "==", currentRecord.carId),
+            where("date", "<", currentRecord.date),
+            orderBy("date", "desc"),
+            limit(1)
+        );
+        const prevSnapshot = await getDocs(prevQ);
+
+        if (!prevSnapshot.empty) {
+            const prevRecord = prevSnapshot.docs[0].data() as ChecklistRecord;
+            currentRecord.previousChecklistPhotos = {
+                front: prevRecord.frontDiagonalPhoto || '',
+                rear: prevRecord.rearDiagonalPhoto || '',
+                left: prevRecord.leftSidePhoto || '',
+                right: prevRecord.rightSidePhoto || '',
+            };
+        }
+        records.push(currentRecord);
+    }
+
+    return records;
+}
+
+/**
+ * Marca um alerta de dano como "ciente" no Firestore.
+ * @param recordId O ID do registro de vistoria a ser atualizado.
+ */
+export async function acknowledgeDamage(recordId: string): Promise<void> {
+    const recordRef = doc(db, "checklistRecords", recordId);
+    await updateDoc(recordRef, {
+        "damageAnalysis.acknowledged": true
+    });
+}
+
+    

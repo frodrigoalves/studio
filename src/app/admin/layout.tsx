@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Settings, FileText, LogOut, BrainCircuit, Loader2, Clock4, FileHeart, Wrench, Users, Fuel, ClipboardCheck, CircleDot } from "lucide-react";
+import { Settings, FileText, LogOut, BrainCircuit, Loader2, Clock4, FileHeart, Wrench, Users, Fuel, ClipboardCheck, CircleDot, ShieldAlert } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 
@@ -34,6 +34,7 @@ const pageTitles: { [key: string]: string } = {
     '/admin/records': 'Registros de KM',
     '/admin/fueling': 'Registros de Abastecimento',
     '/admin/checklist': 'Registros de Vistoria',
+    '/admin/vigia-digital': 'Vigia Digital - Análise de Danos',
     '/admin/settings': 'Configurações e Importação',
 };
 
@@ -110,6 +111,17 @@ export default function AdminLayout({
               </SidebarMenuButton>
             </SidebarMenuItem>
             
+            {user.role === 'diretor' && (
+               <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <Link href="/admin/vigia-digital">
+                      <ShieldAlert />
+                      Vigia Digital
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+            )}
+
             <SidebarSeparator />
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
@@ -217,3 +229,5 @@ export default function AdminLayout({
     </SidebarProvider>
   );
 }
+
+    
