@@ -2,6 +2,9 @@
 # https://firebase.google.com/docs/app-hosting/configure
 
 runConfig:
+  # Sets the minimum number of instances to be running at all times.
+  # This is ideal for keeping the app responsive and avoiding "cold starts".
+  minInstances: 1
   # Increase this value to automatically spin up more instances
   # in response to increased traffic during real-world testing.
   maxInstances: 10
