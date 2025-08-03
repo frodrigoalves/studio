@@ -62,7 +62,7 @@ export default function LoginPage() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-4 bg-background">
       <div className="w-full max-w-sm">
-        <div className="flex flex-col items-center justify-center mb-6 text-center">
+        <div className="flex flex-col items-center justify-center mb-6 text-center h-[50px]">
           <Image src="/logo.jpeg" alt="TopBus Logo" width={200} height={50} priority />
           <p className="mt-2 text-lg text-muted-foreground">
             Acesso ao Painel de Gestor

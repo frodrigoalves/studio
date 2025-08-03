@@ -34,16 +34,6 @@
       ]
     },
     {
-      "collectionGroup": "vehicleParameters",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "lastUpdated",
-          "order": "DESCENDING"
-        }
-      ]
-    },
-    {
       "collectionGroup": "maintenanceRecords",
       "queryScope": "COLLECTION",
       "fields": [
