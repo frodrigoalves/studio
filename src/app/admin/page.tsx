@@ -789,184 +789,183 @@ export default function AdminDashboard() {
                 </AccordionContent>
             </AccordionItem>
             
-            {userRole === 'analyst' && (
-                <>
-                    <AccordionItem value="item-3">
-                        <AccordionTrigger className="text-xl font-semibold">
-                            <div className="flex items-center gap-2">
-                                <FileText /> Análise de Documentos (OCR)
+             <AccordionItem value="item-3">
+                <AccordionTrigger className="text-xl font-semibold">
+                    <div className="flex items-center gap-2">
+                        <FileText /> Análise de Documentos (OCR)
+                    </div>
+                </AccordionTrigger>
+                <AccordionContent>
+                    <Card className="shadow-lg mt-2 border-0">
+                        <CardHeader>
+                            <CardTitle>Análise Inteligente de Documentos</CardTitle>
+                            <CardDescription>
+                                Faça o upload de planilhas, PDFs ou imagens de RH (atestados) ou Manutenção para que a IA identifique anomalias e tendências.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="grid sm:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                <Label htmlFor="analysis-type">Tipo de Análise</Label>
+                                <Select
+                                    value={analysisType}
+                                    onValueChange={(value: string) => setAnalysisType(value)}
+                                    disabled={isSheetLoading}
+                                >
+                                    <SelectTrigger id="analysis-type">
+                                    <SelectValue placeholder="Selecione o tipo" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="Análise de Atestados Médicos">Análise de Atestados Médicos</SelectItem>
+                                        <SelectItem value="Análise de Manutenção de Frota">Análise de Manutenção de Frota</SelectItem>
+                                        <SelectItem value="Análise de Viagens Atrasadas/Não Realizadas">Viagens Atrasadas/Não Realizadas</SelectItem>
+                                        <SelectItem value="Análise de Outras Ocorrências">Outras Ocorrências</SelectItem>
+                                        <SelectItem value="Análise de RH">Análise de RH</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                </div>
+                                <div className="space-y-2">
+                                <Label htmlFor="sheet-upload">Arquivo do Documento</Label>
+                                <div className="relative">
+                                    <Input
+                                        id="sheet-upload"
+                                        type="file"
+                                        accept=".xlsx, .xls, .csv, image/*, application/pdf"
+                                        onChange={(e) => handleFileChange(e, setFile)}
+                                        disabled={isSheetLoading}
+                                        className="pr-12"
+                                    />
+                                    <Upload className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                                </div>
+                                </div>
                             </div>
-                        </AccordionTrigger>
-                        <AccordionContent>
-                            <Card className="shadow-lg mt-2 border-0">
-                                <CardHeader>
-                                    <CardTitle>Análise Inteligente de Documentos</CardTitle>
-                                    <CardDescription>
-                                        Faça o upload de planilhas, PDFs ou imagens de RH (atestados) ou Manutenção para que a IA identifique anomalias e tendências.
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent className="space-y-4">
-                                    <div className="grid sm:grid-cols-2 gap-4">
+                            <Button
+                                onClick={handleGenerateSheetAnalysis}
+                                disabled={isSheetLoading || !file}
+                                className="w-full"
+                            >
+                                {isSheetLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
+                                {isSheetLoading ? 'Analisando Documento...' : 'Analisar com IA'}
+                            </Button>
+
+                            {sheetAnalysisResult && (
+                                <Card className="mt-6 bg-muted/20">
+                                    <CardHeader>
+                                        <CardTitle>{sheetAnalysisResult.title}</CardTitle>
+                                        <CardDescription>Abaixo estão os insights gerados pela IA com base no arquivo enviado.</CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="space-y-6">
                                         <div className="space-y-2">
-                                        <Label htmlFor="analysis-type">Tipo de Análise</Label>
-                                        <Select
-                                            value={analysisType}
-                                            onValueChange={(value: string) => setAnalysisType(value)}
-                                            disabled={isSheetLoading}
-                                        >
-                                            <SelectTrigger id="analysis-type">
-                                            <SelectValue placeholder="Selecione o tipo" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="Análise de Atestados Médicos">Análise de Atestados Médicos</SelectItem>
-                                                <SelectItem value="Análise de Manutenção de Frota">Análise de Manutenção de Frota</SelectItem>
-                                                <SelectItem value="Análise de Viagens Atrasadas/Não Realizadas">Viagens Atrasadas/Não Realizadas</SelectItem>
-                                                <SelectItem value="Análise de Outras Ocorrências">Outras Ocorrências</SelectItem>
-                                                <SelectItem value="Análise de RH">Análise de RH</SelectItem>
-                                            </SelectContent>
-                                        </Select>
+                                            <h3 className="font-semibold text-lg"><ListChecks /> Resumo Executivo</h3>
+                                            <Textarea readOnly value={sheetAnalysisResult.summary} className="h-24 bg-background" />
                                         </div>
                                         <div className="space-y-2">
-                                        <Label htmlFor="sheet-upload">Arquivo do Documento</Label>
-                                        <div className="relative">
+                                            <h3 className="font-semibold text-lg"><BarChart2 /> Principais Descobertas</h3>
+                                            <div className="space-y-4">
+                                                {sheetAnalysisResult.keyFindings.map((finding, index) => (
+                                                    <div key={index} className="p-4 border rounded-lg bg-background/50">
+                                                        <h4 className="font-semibold">{finding.finding}</h4>
+                                                        <p className="text-sm text-muted-foreground mt-1"><span className="font-semibold">Detalhes:</span> {finding.details}</p>
+                                                        <p className="text-sm text-muted-foreground mt-1"><span className="font-semibold">Impacto:</span> {finding.implication}</p>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <h3 className="font-semibold text-lg"><Lightbulb /> Recomendações</h3>
+                                            <ul className="list-disc list-inside space-y-1 bg-background p-4 rounded-md">
+                                                {sheetAnalysisResult.recommendations.map((rec, index) => (
+                                                    <li key={index}>{rec}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            )}
+                        </CardContent>
+                    </Card>
+                </AccordionContent>
+            </AccordionItem>
+            
+            {userRole === 'diretor' && (
+                <AccordionItem value="item-4">
+                    <AccordionTrigger className="text-xl font-semibold">
+                        <div className="flex items-center gap-2">
+                            <Archive /> Repositório da Apresentação
+                        </div>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                    <Card className="shadow-lg mt-2 border-0">
+                            <CardHeader>
+                                <CardTitle>Assistente de Apresentação Semanal</CardTitle>
+                                <CardDescription>Cole aqui dados, links, rascunhos ou faça upload de arquivos. A IA usará este repositório como contexto para gerar resumos e análises para sua reunião.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-4">
+                                    <div>
+                                        <Label htmlFor="repository-content">Anotações e Rascunhos</Label>
+                                        <Textarea
+                                            id="repository-content"
+                                            placeholder="Cole aqui o conteúdo bruto, links para documentos, anotações da última reunião ou qualquer dado que a IA deva considerar para a apresentação..."
+                                            className="h-48 mt-2"
+                                            value={repositoryContent}
+                                            onChange={(e) => setRepositoryContent(e.target.value)}
+                                            disabled={isPresentationLoading}
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label htmlFor="repository-upload">Upload de Arquivos de Apoio</Label>
+                                         <div className="relative mt-2">
                                             <Input
-                                                id="sheet-upload"
+                                                id="repository-upload"
                                                 type="file"
-                                                accept=".xlsx, .xls, .csv, image/*, application/pdf"
-                                                onChange={(e) => handleFileChange(e, setFile)}
-                                                disabled={isSheetLoading}
+                                                onChange={(e) => handleFileChange(e, setRepositoryFile)}
                                                 className="pr-12"
+                                                disabled={isPresentationLoading}
                                             />
                                             <Upload className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
                                         </div>
-                                        </div>
+                                        {repositoryFile && <p className="text-sm text-muted-foreground mt-2">Arquivo selecionado: {repositoryFile.name}</p>}
                                     </div>
-                                    <Button
-                                        onClick={handleGenerateSheetAnalysis}
-                                        disabled={isSheetLoading || !file}
-                                        className="w-full"
-                                    >
-                                        {isSheetLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
-                                        {isSheetLoading ? 'Analisando Documento...' : 'Analisar com IA'}
+                                     <Button onClick={handleGeneratePresentation} disabled={isPresentationLoading || (!repositoryContent && !repositoryFile)} className="w-full">
+                                        {isPresentationLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}
+                                        {isPresentationLoading ? 'Gerando Resumo...' : 'Gerar Resumo da Apresentação com IA'}
                                     </Button>
-
-                                    {sheetAnalysisResult && (
-                                        <Card className="mt-6 bg-muted/20">
-                                            <CardHeader>
-                                                <CardTitle>{sheetAnalysisResult.title}</CardTitle>
-                                                <CardDescription>Abaixo estão os insights gerados pela IA com base no arquivo enviado.</CardDescription>
-                                            </CardHeader>
-                                            <CardContent className="space-y-6">
-                                                <div className="space-y-2">
-                                                    <h3 className="font-semibold text-lg"><ListChecks /> Resumo Executivo</h3>
-                                                    <Textarea readOnly value={sheetAnalysisResult.summary} className="h-24 bg-background" />
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <h3 className="font-semibold text-lg"><BarChart2 /> Principais Descobertas</h3>
-                                                    <div className="space-y-4">
-                                                        {sheetAnalysisResult.keyFindings.map((finding, index) => (
-                                                            <div key={index} className="p-4 border rounded-lg bg-background/50">
-                                                                <h4 className="font-semibold">{finding.finding}</h4>
-                                                                <p className="text-sm text-muted-foreground mt-1"><span className="font-semibold">Detalhes:</span> {finding.details}</p>
-                                                                <p className="text-sm text-muted-foreground mt-1"><span className="font-semibold">Impacto:</span> {finding.implication}</p>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <h3 className="font-semibold text-lg"><Lightbulb /> Recomendações</h3>
-                                                    <ul className="list-disc list-inside space-y-1 bg-background p-4 rounded-md">
-                                                        {sheetAnalysisResult.recommendations.map((rec, index) => (
-                                                            <li key={index}>{rec}</li>
-                                                        ))}
-                                                    </ul>
-                                                </div>
-                                            </CardContent>
-                                        </Card>
-                                    )}
-                                </CardContent>
-                            </Card>
-                        </AccordionContent>
-                    </AccordionItem>
-                    <AccordionItem value="item-4">
-                        <AccordionTrigger className="text-xl font-semibold">
-                            <div className="flex items-center gap-2">
-                                <Archive /> Repositório da Apresentação
-                            </div>
-                        </AccordionTrigger>
-                        <AccordionContent>
-                        <Card className="shadow-lg mt-2 border-0">
-                                <CardHeader>
-                                    <CardTitle>Assistente de Apresentação Semanal</CardTitle>
-                                    <CardDescription>Cole aqui dados, links, rascunhos ou faça upload de arquivos. A IA usará este repositório como contexto para gerar resumos e análises para sua reunião.</CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="space-y-4">
-                                        <div>
-                                            <Label htmlFor="repository-content">Anotações e Rascunhos</Label>
-                                            <Textarea
-                                                id="repository-content"
-                                                placeholder="Cole aqui o conteúdo bruto, links para documentos, anotações da última reunião ou qualquer dado que a IA deva considerar para a apresentação..."
-                                                className="h-48 mt-2"
-                                                value={repositoryContent}
-                                                onChange={(e) => setRepositoryContent(e.target.value)}
-                                                disabled={isPresentationLoading}
-                                            />
+                                </div>
+                            </CardContent>
+                            {presentationResult && (
+                                 <Card className="mt-6 bg-muted/20 mx-6 mb-6">
+                                    <CardHeader>
+                                        <CardTitle>{presentationResult.title}</CardTitle>
+                                        <CardDescription>Abaixo o resumo gerado pela IA para sua apresentação.</CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="space-y-6">
+                                        <div className="space-y-2">
+                                            <h3 className="font-semibold text-lg"><ListChecks /> Resumo Executivo</h3>
+                                            <Textarea readOnly value={presentationResult.summary} className="h-24 bg-background" />
                                         </div>
-                                        <div>
-                                            <Label htmlFor="repository-upload">Upload de Arquivos de Apoio</Label>
-                                             <div className="relative mt-2">
-                                                <Input
-                                                    id="repository-upload"
-                                                    type="file"
-                                                    onChange={(e) => handleFileChange(e, setRepositoryFile)}
-                                                    className="pr-12"
-                                                    disabled={isPresentationLoading}
-                                                />
-                                                <Upload className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
-                                            </div>
-                                            {repositoryFile && <p className="text-sm text-muted-foreground mt-2">Arquivo selecionado: {repositoryFile.name}</p>}
+                                        <div className="space-y-2">
+                                            <h3 className="font-semibold text-lg"><BarChart2 /> Pontos de Discussão</h3>
+                                             <ul className="list-disc list-inside space-y-1 bg-background p-4 rounded-md">
+                                                {presentationResult.talkingPoints.map((point, index) => (
+                                                    <li key={index}>{point}</li>
+                                                ))}
+                                            </ul>
                                         </div>
-                                         <Button onClick={handleGeneratePresentation} disabled={isPresentationLoading || (!repositoryContent && !repositoryFile)} className="w-full">
-                                            {isPresentationLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}
-                                            {isPresentationLoading ? 'Gerando Resumo...' : 'Gerar Resumo da Apresentação com IA'}
-                                        </Button>
-                                    </div>
-                                </CardContent>
-                                {presentationResult && (
-                                     <Card className="mt-6 bg-muted/20 mx-6 mb-6">
-                                        <CardHeader>
-                                            <CardTitle>{presentationResult.title}</CardTitle>
-                                            <CardDescription>Abaixo o resumo gerado pela IA para sua apresentação.</CardDescription>
-                                        </CardHeader>
-                                        <CardContent className="space-y-6">
-                                            <div className="space-y-2">
-                                                <h3 className="font-semibold text-lg"><ListChecks /> Resumo Executivo</h3>
-                                                <Textarea readOnly value={presentationResult.summary} className="h-24 bg-background" />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <h3 className="font-semibold text-lg"><BarChart2 /> Pontos de Discussão</h3>
-                                                 <ul className="list-disc list-inside space-y-1 bg-background p-4 rounded-md">
-                                                    {presentationResult.talkingPoints.map((point, index) => (
-                                                        <li key={index}>{point}</li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-                                            <div className="space-y-2">
-                                                <h3 className="font-semibold text-lg"><Lightbulb /> Próximos Passos</h3>
-                                                <ul className="list-disc list-inside space-y-1 bg-background p-4 rounded-md">
-                                                    {presentationResult.nextSteps.map((step, index) => (
-                                                        <li key={index}>{step}</li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                )}
-                        </Card>
-                        </AccordionContent>
-                    </AccordionItem>
-                </>
+                                        <div className="space-y-2">
+                                            <h3 className="font-semibold text-lg"><Lightbulb /> Próximos Passos</h3>
+                                            <ul className="list-disc list-inside space-y-1 bg-background p-4 rounded-md">
+                                                {presentationResult.nextSteps.map((step, index) => (
+                                                    <li key={index}>{step}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            )}
+                    </Card>
+                    </AccordionContent>
+                </AccordionItem>
             )}
         </Accordion>
     </div>
