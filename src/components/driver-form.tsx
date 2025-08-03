@@ -607,7 +607,7 @@ export function DriverForm() {
                                 <AccordionItem value={`item-${index+1}`} key={sectionTitle}>
                                     <AccordionTrigger>{sectionTitle}</AccordionTrigger>
                                     <AccordionContent>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 pt-2">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                                             {items.map((item) => (
                                                 <FormField key={item} control={startForm.control} name={`items.${item as ItemId}`}
                                                     render={({ field }) => (
@@ -758,5 +758,3 @@ export function DriverForm() {
     </Card>
   );
 }
-
-    

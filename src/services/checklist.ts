@@ -2,8 +2,8 @@
 'use server';
 
 import { db, storage } from '@/lib/firebase';
-import { collection, addDoc, getDoc, getDocs, query, orderBy, doc } from 'firebase/firestore';
-import { ref, uploadString, getDownloadURL, deleteObject } from 'firebase/storage';
+import { collection, addDoc, getDoc, getDocs, query, orderBy, doc, setDoc } from 'firebase/firestore';
+import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { v4 as uuidv4 } from 'uuid';
 
 export type ChecklistItemStatus = "ok" | "avaria" | "na";
@@ -20,6 +20,7 @@ export interface ChecklistRecord {
   signature: string | null;
   // Photo fields
   odometerPhoto?: string | null;
+  fuelGaugePhoto?: string | null;
   frontDiagonalPhoto?: string | null;
   rearDiagonalPhoto?: string | null;
   leftSidePhoto?: string | null;
@@ -35,9 +36,14 @@ async function uploadPhoto(photoBase64: string | null, recordId: string, type: s
     const storageRef = ref(storage, `checklist_photos/${recordId}-${type}-${uuidv4()}.jpg`);
     const base64String = photoBase64.split(',')[1];
     
-    await uploadString(storageRef, base64String, 'base64');
-    const downloadURL = await getDownloadURL(storageRef);
-    return downloadURL;
+    try {
+        await uploadString(storageRef, base64String, 'base64');
+        const downloadURL = await getDownloadURL(storageRef);
+        return downloadURL;
+    } catch (error) {
+        console.error(`Failed to upload photo for ${recordId}, type: ${type}`, error);
+        return null; // Return null on failure to prevent breaking the main function
+    }
 }
 
 /**
@@ -60,7 +66,8 @@ export async function addChecklistRecord(record: ChecklistRecordPayload): Promis
         uploadPhoto(record.rightSidePhoto || null, recordId, 'right-side'),
     ]);
 
-    const dataToSave = {
+    const dataToSave: ChecklistRecord = {
+        id: recordId,
         ...record,
         date: new Date().toISOString(),
         odometerPhoto: odometerPhotoUrl,
@@ -70,9 +77,11 @@ export async function addChecklistRecord(record: ChecklistRecordPayload): Promis
         rightSidePhoto: rightSidePhotoUrl,
     };
 
-    const docRef = await addDoc(collection(db, 'checklistRecords'), dataToSave);
+    const docRef = doc(db, 'checklistRecords', recordId);
+    await setDoc(docRef, dataToSave);
+    
     const docSnap = await getDoc(docRef);
-    return { id: docRef.id, ...(docSnap.data() as Omit<ChecklistRecord, 'id'>) };
+    return docSnap.data() as ChecklistRecord;
 }
 
 /**

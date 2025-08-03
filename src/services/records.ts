@@ -102,14 +102,16 @@ export async function deleteRecord(id: string, startPhotoUrl: string | null, end
     
     // As an extra safety, fetch the document to get the latest photo URLs
     const recordSnap = await getDoc(recordRef);
-    if (!recordSnap.exists()) return; // Document already deleted
+    if (!recordSnap.exists()) {
+      console.warn(`Record with id ${id} not found for deletion.`);
+      return; 
+    }
     const recordData = recordSnap.data() as Record;
 
     // Delete all associated photos from storage
     await Promise.all([
         deletePhoto(recordData.startOdometerPhoto),
         deletePhoto(recordData.endOdometerPhoto),
-        // Add any other photos associated with the record here in the future
     ]);
 
     // Finally, delete the document from Firestore
