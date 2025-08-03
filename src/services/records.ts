@@ -48,31 +48,38 @@ async function deletePhoto(photoUrl: string | null) {
             console.log(`Photo not found, skipping delete: ${photoUrl}`);
         } else {
             console.error(`Failed to delete photo: ${photoUrl}`, error);
+            // Don't rethrow, as we want to continue to delete the Firestore doc
         }
     }
 }
 
 
 export async function addRecord(record: RecordAddPayload): Promise<Record> {
+  // Use um ID pré-gerado para consistência entre Firestore e Storage
   const tempDocForId = doc(collection(db, "tripRecords"));
   const recordId = tempDocForId.id;
 
+  // Primeiro, faça o upload da foto inicial para o Storage
   const startOdometerPhotoUrl = await uploadPhoto(record.startOdometerPhoto, recordId, 'start-odometer');
 
+  // Prepare os dados para salvar no Firestore, usando a URL da foto, não a string base64
   const dataToSave: Omit<Record, 'id'> = {
       ...record,
       kmStart: record.kmStart ? Number(record.kmStart) : null,
       kmEnd: record.kmEnd ? Number(record.kmEnd) : null,
       date: new Date(record.date).toISOString(),
       startOdometerPhoto: startOdometerPhotoUrl,
-      endOdometerPhoto: null, // End photo is added on update
+      endOdometerPhoto: null, // Foto final será adicionada na atualização
   };
-
+  
   if(isNaN(dataToSave.kmStart!)) dataToSave.kmStart = null;
   if(isNaN(dataToSave.kmEnd!)) dataToSave.kmEnd = null;
 
-  const docRef = await addDoc(collection(db, "tripRecords"), dataToSave);
-  const docSnap = await getDoc(docRef);
+  // Crie o documento no Firestore usando o ID pré-gerado
+  await setDoc(doc(db, "tripRecords", recordId), dataToSave);
+  
+  // Retorne o registro completo
+  const docSnap = await getDoc(doc(db, "tripRecords", recordId));
   return { id: docSnap.id, ...(docSnap.data() as Omit<Record, 'id'>) };
 }
 
@@ -100,7 +107,6 @@ export async function updateRecord(id: string, data: RecordUpdatePayload): Promi
 export async function deleteRecord(id: string, startPhotoUrl: string | null, endOdometerUrl: string | null): Promise<void> {
     const recordRef = doc(db, "tripRecords", id);
     
-    // As an extra safety, fetch the document to get the latest photo URLs
     const recordSnap = await getDoc(recordRef);
     if (!recordSnap.exists()) {
       console.warn(`Record with id ${id} not found for deletion.`);
@@ -108,13 +114,11 @@ export async function deleteRecord(id: string, startPhotoUrl: string | null, end
     }
     const recordData = recordSnap.data() as Record;
 
-    // Delete all associated photos from storage
     await Promise.all([
         deletePhoto(recordData.startOdometerPhoto),
         deletePhoto(recordData.endOdometerPhoto),
     ]);
 
-    // Finally, delete the document from Firestore
     await deleteDoc(recordRef);
 }
 

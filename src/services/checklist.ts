@@ -77,8 +77,13 @@ export async function addChecklistRecord(record: ChecklistRecordPayload): Promis
         rightSidePhoto: rightSidePhotoUrl,
     };
 
+    // Remove os campos de foto em base64 antes de salvar no Firestore
+    const firestoreData = { ...dataToSave };
+    delete (firestoreData as any).signaturePhoto;
+
+
     const docRef = doc(db, 'checklistRecords', recordId);
-    await setDoc(docRef, dataToSave);
+    await setDoc(docRef, firestoreData);
     
     const docSnap = await getDoc(docRef);
     return docSnap.data() as ChecklistRecord;

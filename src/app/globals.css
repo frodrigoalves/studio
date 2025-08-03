@@ -72,5 +72,30 @@
   }
   body {
     @apply bg-background text-foreground;
+    overflow: hidden; /* Hide scrollbars from the animation */
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 200%;
+    height: 100%;
+    z-index: -1;
+    background-image: url('https://storage.googleapis.com/aai-web-samples/protim/bg-image.png');
+    background-size: 50% auto;
+    background-repeat: repeat;
+    opacity: 0.1; /* High transparency */
+    animation: panoramic-background 60s linear infinite;
+  }
+
+  @keyframes panoramic-background {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
   }
 }
