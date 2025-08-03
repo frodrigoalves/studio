@@ -3,11 +3,50 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Regra temporária para permitir leitura e escrita em todos os documentos
-    // para a fase de desenvolvimento e apresentação.
-    // ATENÇÃO: Para produção, estas regras devem ser mais restritivas.
+    
+    // As funções isAuth() e isAdmin() não são mais necessárias com as novas regras,
+    // mas são mantidas aqui como referência para futuras implementações de autenticação.
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuth() && ('analyst' in request.auth.token || 'diretor' in request.auth.token);
+    }
+
+    // Regra geral: por padrão, ninguém tem acesso.
     match /{document=**} {
-      allow read, write: if true;
+      allow read, write: if false;
+    }
+
+    // Permite a criação de novos registros para qualquer usuário (motoristas nos formulários públicos).
+    // Não permite leitura, atualização ou exclusão para usuários não-admins.
+    match /tripRecords/{tripId} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /checklistRecords/{checklistId} {
+       allow create: if true;
+       allow read, update, delete: if isAdmin();
+    }
+
+    match /fuelingRecords/{fuelingId} {
+       allow create: if true;
+       allow read, update, delete: if isAdmin();
+    }
+    
+    // Coleções que só podem ser acessadas por administradores.
+    match /dieselPrices/{priceId} {
+      allow read, write: if isAdmin();
+    }
+    
+    match /vehicleParameters/{vehicleId} {
+       allow read, write: if isAdmin();
+    }
+
+    match /maintenanceRecords/{maintId} {
+      allow read, write: if isAdmin();
     }
   }
 }
