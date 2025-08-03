@@ -1,52 +1,39 @@
-
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // As funções isAuth() e isAdmin() não são mais necessárias com as novas regras,
-    // mas são mantidas aqui como referência para futuras implementações de autenticação.
-    function isAuth() {
-      return request.auth != null;
-    }
-
-    function isAdmin() {
-      return isAuth() && ('analyst' in request.auth.token || 'diretor' in request.auth.token);
-    }
-
-    // Regra geral: por padrão, ninguém tem acesso.
     match /{document=**} {
-      allow read, write: if false;
+      allow read, write: if false; // Default deny all
     }
 
-    // Permite a criação de novos registros para qualquer usuário (motoristas nos formulários públicos).
-    // Não permite leitura, atualização ou exclusão para usuários não-admins.
-    match /tripRecords/{tripId} {
-      allow create: if true;
-      allow read, update, delete: if isAdmin();
+    // Rules for Trip Records
+    match /tripRecords/{recordId} {
+      allow create: if true; // Anyone can create a trip record (e.g., from the driver form)
+      allow get, list, update, delete: if request.auth != null && (request.auth.token.role == 'diretor' || request.auth.token.role == 'analyst');
     }
 
-    match /checklistRecords/{checklistId} {
-       allow create: if true;
-       allow read, update, delete: if isAdmin();
-    }
-
-    match /fuelingRecords/{fuelingId} {
-       allow create: if true;
-       allow read, update, delete: if isAdmin();
+    // Rules for Fueling Records
+    match /fuelingRecords/{recordId} {
+      allow create: if true; // Anyone can create a fueling record
+      allow get, list, write: if request.auth != null && (request.auth.token.role == 'diretor' || request.auth.token.role == 'analyst');
     }
     
-    // Coleções que só podem ser acessadas por administradores.
+    // Rules for Checklist Records
+    match /checklistRecords/{recordId} {
+        allow create: if true;
+        allow get, list, update, delete: if request.auth != null && (request.auth.token.role == 'diretor' || request.auth.token.role == 'analyst');
+    }
+
+    // Secure collections for admin panel
     match /dieselPrices/{priceId} {
-      allow read, write: if isAdmin();
-    }
-    
-    match /vehicleParameters/{vehicleId} {
-       allow read, write: if isAdmin();
+      allow get, list, write: if request.auth != null && (request.auth.token.role == 'diretor' || request.auth.token.role == 'analyst');
     }
 
-    match /maintenanceRecords/{maintId} {
-      allow read, write: if isAdmin();
+    match /vehicleParameters/{vehicleId} {
+      allow get, list, write: if request.auth != null && (request.auth.token.role == 'diretor' || request.auth.token.role == 'analyst');
+    }
+    
+    match /maintenanceRecords/{recordId} {
+      allow get, list, write: if request.auth != null && (request.auth.token.role == 'diretor' || request.auth.token.role == 'analyst');
     }
   }
 }
