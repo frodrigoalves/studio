@@ -113,22 +113,25 @@ export default function AdminDashboard() {
         setIsLoading(true);
         try {
             const [
-                allRecords, allPrices, allParameters,
-                vehiclesData, allFuelingRecords, maintenanceData, tripData,
-                lastVehicle, lastFueling, lastMaintenance
+                tripData,
+                allPrices,
+                allParameters,
+                allFuelingRecords,
+                maintenanceData,
+                lastVehicle,
+                lastFueling,
+                lastMaintenance
              ] = await Promise.all([
                 getRecords(),
                 getDieselPrices(),
                 getVehicleParameters(),
-                getVehicleParameters(),
                 getFuelingRecords(),
                 getMaintenanceRecords(),
-                getRecords(),
                 getMostRecentVehicleParameter(),
                 getMostRecentFuelingRecord(),
                 getMostRecentMaintenanceRecord()
             ]);
-            setRecords(allRecords);
+            setRecords(tripData);
             setDieselPrices(allPrices);
             setVehicleParameters(allParameters);
             setFuelingRecords(allFuelingRecords);
@@ -140,7 +143,7 @@ export default function AdminDashboard() {
 
             setDbStats({
                 vehicles: {
-                    count: vehiclesData.length,
+                    count: allParameters.length,
                     lastImport: lastVehicle?.lastUpdated || ''
                 },
                 fueling: {
