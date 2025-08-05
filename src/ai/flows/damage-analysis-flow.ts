@@ -18,13 +18,13 @@ const PhotoSetSchema = z.object({
   right: z.string().describe("Data URI for the right side photo."),
 });
 
-export const DamageAnalysisInputSchema = z.object({
+const DamageAnalysisInputSchema = z.object({
   previousPhotos: PhotoSetSchema.describe("The set of photos from the previous inspection."),
   currentPhotos: PhotoSetSchema.describe("The set of photos from the current inspection."),
 });
 export type DamageAnalysisInput = z.infer<typeof DamageAnalysisInputSchema>;
 
-export const DamageAnalysisOutputSchema = z.object({
+const DamageAnalysisOutputSchema = z.object({
   hasNewDamage: z.boolean().describe("Set to true if any new damage is detected between the photo sets."),
   damageDescription: z.string().describe("A detailed, neutral description of any new damage found. If no damage, state that clearly."),
   severity: z.enum(["low", "medium", "high", "none"]).describe("The estimated severity of the new damage."),
