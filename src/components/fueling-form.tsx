@@ -20,7 +20,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { addFuelingRecord } from "@/services/fueling";
-import { getLastTripRecordForCar } from "@/services/records";
 
 const fuelingFormSchema = z.object({
     attendantChapa: z.string().min(1, "Chapa é obrigatória."),
@@ -46,32 +45,12 @@ const initialValues: Omit<FuelingFormValues, 'odometer' | 'liters' | 'pump'> & {
 export function FuelingForm() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSearching, setIsSearching] = useState(false);
   
   const form = useForm<FuelingFormValues>({
     resolver: zodResolver(fuelingFormSchema),
     defaultValues: initialValues,
     mode: "onBlur",
   });
-
-  const handleCarBlur = useCallback(async (carId: string) => {
-    if(!carId) return;
-
-    setIsSearching(true);
-    try {
-        const lastRecord = await getLastTripRecordForCar(carId);
-        if(lastRecord && lastRecord.kmEnd) {
-            form.setValue('odometer', lastRecord.kmEnd);
-        } else {
-            form.setValue('odometer', '');
-        }
-    } catch (e) {
-        console.error("Failed to fetch last record for car", e);
-        form.setValue('odometer', '');
-    } finally {
-        setIsSearching(false);
-    }
-  }, [form]);
 
   async function onSubmit(data: FuelingFormValues) {
     setIsSubmitting(true);
@@ -133,8 +112,7 @@ export function FuelingForm() {
                   <FormLabel>Carro</FormLabel>
                   <FormControl>
                     <div className="relative">
-                        <Input placeholder="Número do veículo" {...field} onBlur={(e) => handleCarBlur(e.target.value)} />
-                         {isSearching && <Loader2 className="absolute right-3 top-2.5 h-5 w-5 animate-spin" />}
+                        <Input placeholder="Número do veículo" {...field} />
                     </div>
                   </FormControl>
                   <FormMessage />
@@ -148,7 +126,7 @@ export function FuelingForm() {
                 <FormItem>
                   <FormLabel>Hodômetro</FormLabel>
                   <FormControl>
-                    <Input type="number" placeholder="Preenchido automaticamente ou insira o KM" {...field} />
+                    <Input type="number" placeholder="Digite o KM do veículo" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

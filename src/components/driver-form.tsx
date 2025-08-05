@@ -152,7 +152,6 @@ export function DriverForm() {
   const [leftSidePhotoFile, setLeftSidePhotoFile] = useState<File | null>(null);
   const [rightSidePhotoFile, setRightSidePhotoFile] = useState<File | null>(null);
   const [endOdometerPhotoFile, setEndOdometerPhotoFile] = useState<File | null>(null);
-  const [activeTripExists, setActiveTripExists] = useState(false);
 
 
   // Refs for resetting file inputs
@@ -175,29 +174,6 @@ export function DriverForm() {
   });
   
   const watchItems = startForm.watch('items');
-
-  const checkExistingTrip = useCallback(async (plate: string) => {
-    if (!plate) return;
-    setIsSearching(true);
-    try {
-      const record = await getRecordByPlateAndStatus(plate, 'Em Andamento');
-      if (record) {
-        setActiveTripExists(true);
-      } else {
-        setActiveTripExists(false);
-      }
-    } catch (e) {
-      console.error("Failed to check for existing trip", e);
-      toast({
-        variant: "destructive",
-        title: "Erro de Verificação",
-        description: "Não foi possível verificar a chapa. Tente novamente.",
-      });
-    } finally {
-      setIsSearching(false);
-    }
-  }, [toast]);
-
 
   const handleChapaBlur = useCallback(async (plate: string) => {
     if(!plate || activeTab !== 'end') return;
@@ -280,16 +256,6 @@ export function DriverForm() {
 
   async function onStartSubmit(data: StartTripFormValues) {
     setIsSubmitting(true);
-
-    if (activeTripExists) {
-        toast({
-          variant: "destructive",
-          title: "Viagem já iniciada",
-          description: "Já existe uma viagem em andamento para esta chapa. Finalize a viagem anterior antes de iniciar uma nova.",
-        });
-        setIsSubmitting(false);
-        return;
-    }
     
     try {
         if (!odometerPhotoFile) {
@@ -354,7 +320,6 @@ export function DriverForm() {
       setRearDiagonalPhotoFile(null);
       setLeftSidePhotoFile(null);
       setRightSidePhotoFile(null);
-      setActiveTripExists(false);
 
       if (odometerPhotoRef.current) odometerPhotoRef.current.value = "";
       if (frontDiagonalPhotoRef.current) frontDiagonalPhotoRef.current.value = "";
@@ -444,12 +409,10 @@ export function DriverForm() {
     } else {
         setStartTripStep(0);
         startForm.reset(initialStartValues);
-        setActiveTripExists(false);
     }
   }, [activeTab, endForm, startForm]);
   
   const nextStep = async () => {
-    if (activeTripExists) return;
     const fields = stepFields[startTripStep];
     const isValid = await startForm.trigger(fields as any, { shouldFocus: true });
     if (isValid) {
@@ -489,16 +452,7 @@ export function DriverForm() {
                 {startTripStep === 0 && (
                     <div className="space-y-4">
                         <h3 className="text-lg font-semibold flex items-center gap-2"><User className="w-5 h-5 text-primary"/> Identificação</h3>
-                        <FormField control={startForm.control} name="plate" render={({ field }) => (<FormItem><FormLabel>Chapa do Motorista</FormLabel><FormControl><Input placeholder="Sua matrícula" {...field} onBlur={(e) => checkExistingTrip(e.target.value)} /></FormControl><FormMessage /></FormItem>)}/>
-                        {activeTripExists && (
-                          <Alert variant="destructive">
-                            <ShieldAlert className="h-4 w-4" />
-                            <AlertTitle>Viagem já iniciada!</AlertTitle>
-                            <AlertDescription>
-                              Já existe uma viagem em andamento para esta chapa. Por favor, vá para a aba "Finalizar Viagem" para encerrá-la.
-                            </AlertDescription>
-                          </Alert>
-                        )}
+                        <FormField control={startForm.control} name="plate" render={({ field }) => (<FormItem><FormLabel>Chapa do Motorista</FormLabel><FormControl><Input placeholder="Sua matrícula" {...field} /></FormControl><FormMessage /></FormItem>)}/>
                         <FormField control={startForm.control} name="driver" render={({ field }) => (<FormItem><FormLabel>Nome do Motorista</FormLabel><FormControl><Input placeholder="Seu nome completo" {...field} /></FormControl><FormMessage /></FormItem>)}/>
                         <FormField control={startForm.control} name="car" render={({ field }) => (<FormItem><FormLabel>Carro</FormLabel><FormControl><Input placeholder="Número do veículo" {...field} /></FormControl><FormMessage /></FormItem>)}/>
                         <FormField control={startForm.control} name="line" render={({ field }) => (<FormItem><FormLabel>Linha</FormLabel><FormControl><Input placeholder="Número da linha" {...field} /></FormControl><FormMessage /></FormItem>)}/>
@@ -651,11 +605,11 @@ export function DriverForm() {
                   ) : <div></div>}
 
                   {startTripStep < stepFields.length - 1 ? (
-                    <Button type="button" onClick={nextStep} disabled={activeTripExists}>
+                    <Button type="button" onClick={nextStep}>
                       Avançar <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                   ) : (
-                    <Button type="submit" className="bg-green-600 hover:bg-green-700" disabled={isSubmitting || activeTripExists}>
+                    <Button type="submit" className="bg-green-600 hover:bg-green-700" disabled={isSubmitting}>
                       {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
                       {isSubmitting ? "Enviando..." : "Concluir e Iniciar Jornada"}
                     </Button>
