@@ -111,9 +111,7 @@ export function FuelingForm() {
                 <FormItem>
                   <FormLabel>Carro</FormLabel>
                   <FormControl>
-                    <div className="relative">
-                        <Input placeholder="Número do veículo" {...field} />
-                    </div>
+                     <Input placeholder="Número do veículo" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

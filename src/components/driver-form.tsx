@@ -19,8 +19,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { addRecord, getRecordByPlateAndStatus, updateRecord, RecordUpdatePayload, Record, RecordAddPayload } from "@/services/records";
-import { extractOdometerFromImage, OcrInput } from "@/ai/flows/ocr-flow";
+import { addRecord, getRecordByPlateAndStatus, updateRecord, Record, RecordAddPayload, RecordUpdatePayload } from "@/services/records";
+import { extractOdometerFromImage } from "@/ai/flows/ocr-flow";
 import { cn } from "@/lib/utils";
 
 const fileToBase64 = (file: File | null): Promise<string | null> => {
@@ -132,8 +132,7 @@ export function DriverForm() {
         const odomB64 = await fileToBase64(file);
       if (!odomB64) throw new Error("Could not convert file to data URI");
       
-      const ocrInput: OcrInput = { odometerPhotoDataUri: odomB64 };
-      const result = await extractOdometerFromImage(ocrInput);
+      const result = await extractOdometerFromImage({ odometerPhotoDataUri: odomB64 });
 
       if (result.odometer) {
         startForm.setValue('kmStart', result.odometer, { shouldValidate: true });
