@@ -350,10 +350,10 @@ export default function RecordsPage() {
                 <CardTitle>Registros de KM</CardTitle>
                 <CardDescription>Visualize e gerencie todos os registros de hodômetro.</CardDescription>
             </div>
-            <div className="flex gap-2 w-full sm:w-auto">
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                  <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="w-1/2 sm:w-auto">
+                        <Button variant="outline" className="w-full sm:w-auto">
                             <FileDown className="mr-2 h-4 w-4" />
                             Exportar
                         </Button>
@@ -382,7 +382,7 @@ export default function RecordsPage() {
                 </DropdownMenu>
                 <Dialog open={isAddDialogOpen} onOpenChange={setAddDialogOpen}>
                     <DialogTrigger asChild>
-                        <Button className="w-1/2 sm:w-auto">
+                        <Button className="w-full sm:w-auto">
                             <PlusCircle className="mr-2 h-4 w-4" />
                             Adicionar
                         </Button>

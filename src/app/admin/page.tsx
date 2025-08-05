@@ -450,7 +450,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8">
+    <div className="max-w-7xl mx-auto space-y-8">
         
          <Card>
                 <CardHeader>
@@ -550,7 +550,7 @@ export default function AdminDashboard() {
                                             id="date"
                                             variant={"outline"}
                                             className={cn(
-                                                "w-[260px] justify-start text-left font-normal",
+                                                "w-full sm:w-[260px] justify-start text-left font-normal",
                                                 !dateRange && "text-muted-foreground"
                                             )}
                                         >
@@ -581,14 +581,14 @@ export default function AdminDashboard() {
                                         />
                                     </PopoverContent>
                                 </Popover>
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
                                      <Button variant="outline" size="sm" onClick={() => setDateRange({ from: startOfWeek(new Date(), { weekStartsOn: 1 }), to: endOfWeek(new Date(), { weekStartsOn: 1 })})}>Esta Semana</Button>
                                      <Button variant="outline" size="sm" onClick={() => setDateRange({ from: subDays(new Date(), 15), to: new Date()})}>Últimos 15 dias</Button>
                                      <Button variant="outline" size="sm" onClick={() => setDateRange({ from: startOfMonth(new Date()), to: endOfMonth(new Date())})}>Este Mês</Button>
                                 </div>
                             </div>
                         </div>
-                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-5">
+                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
                             <Card>
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                     <div className="flex items-center gap-2">

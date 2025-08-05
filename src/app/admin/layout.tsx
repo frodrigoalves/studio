@@ -238,7 +238,7 @@ export default function AdminLayout({
       <div className="flex flex-col flex-1 h-screen">
         <header className="p-4 border-b flex items-center gap-4 sticky top-0 bg-background/80 backdrop-blur-sm z-10">
             <SidebarTrigger />
-            <h1 className="text-xl font-semibold">{pageTitle}</h1>
+            <h1 className="text-xl font-semibold shrink-0">{pageTitle}</h1>
         </header>
         <main className="p-4 lg:p-6 flex-1 overflow-y-auto">{children}</main>
         <footer className="p-4 text-center text-xs text-muted-foreground border-t">
@@ -248,5 +248,3 @@ export default function AdminLayout({
     </SidebarProvider>
   );
 }
-
-    

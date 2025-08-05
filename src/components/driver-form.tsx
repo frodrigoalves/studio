@@ -557,7 +557,7 @@ export function DriverForm() {
                                     <RadioGroup
                                         onValueChange={field.onChange}
                                         value={field.value}
-                                        className="grid grid-cols-5 gap-2 pt-2"
+                                        className="grid grid-cols-3 sm:grid-cols-5 gap-2 pt-2"
                                     >
                                         {fuelOptions.map((opt, index) => {
                                             const colorClass = 
@@ -573,11 +573,11 @@ export function DriverForm() {
                                                          <RadioGroupItem value={opt.value} className="sr-only" />
                                                     </FormControl>
                                                     <FormLabel className={cn(
-                                                        "flex flex-col items-center justify-center rounded-md border-2 p-3 hover:bg-accent hover:text-accent-foreground cursor-pointer transition-all",
+                                                        "flex flex-col items-center justify-center rounded-md border-2 p-3 hover:bg-accent hover:text-accent-foreground cursor-pointer transition-all h-24",
                                                         field.value === opt.value && `${colorClass} font-bold shadow-md scale-105`
                                                     )}>
                                                         <Fuel className="mb-2 h-6 w-6" />
-                                                        <span className="text-xs">{opt.label}</span>
+                                                        <span className="text-xs text-center">{opt.label}</span>
                                                     </FormLabel>
                                                 </FormItem>
                                             )
