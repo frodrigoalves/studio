@@ -4,24 +4,43 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
+    // Regra: Apenas gestores autenticados podem ler ou escrever em coleções de gestão.
     function isManager() {
-      // Check for custom claims if you implement them. For now, just check auth.
       return request.auth != null;
     }
 
-    // Public forms can be written to by anyone.
-    // Reading/editing/deleting is restricted to managers.
-    match /{collectionName}/{docId} 
-      where collectionName in ['tripRecords', 'fuelingRecords', 'checklistRecords'] {
+    // --- REGRAS PARA FORMULÁRIOS PÚBLICOS ---
+    // Permite que qualquer pessoa (motoristas, abastecedores) crie novos registros
+    // sem precisar de login, mas protege os dados contra leitura ou modificação não autorizada.
+
+    match /tripRecords/{recordId} {
       allow create: if true;
-      allow read, get, list: if isManager();
-      allow update, delete: if isManager();
+      allow read, update, delete: if isManager();
+    }
+
+    match /fuelingRecords/{recordId} {
+      allow create: if true;
+      allow read, update, delete: if isManager();
+    }
+
+    match /checklistRecords/{recordId} {
+      allow create: if true;
+      allow read, update, delete: if isManager();
+    }
+
+    // --- REGRAS PARA PAINEL DE GESTÃO ---
+    // Apenas gestores autenticados podem acessar estas coleções.
+
+    match /dieselPrices/{priceId} {
+      allow read, write: if isManager();
     }
     
-    // Settings and other internal collections can only be managed by managers.
-    match /{collectionName}/{docId}
-      where collectionName in ['dieselPrices', 'vehicleParameters', 'maintenanceRecords'] {
-        allow read, get, list, create, update, delete: if isManager();
+    match /vehicleParameters/{carId} {
+      allow read, write: if isManager();
+    }
+
+    match /maintenanceRecords/{recordId} {
+      allow read, write: if isManager();
     }
   }
 }

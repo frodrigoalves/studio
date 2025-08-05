@@ -11,9 +11,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { signInUser } from '@/services/auth';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-const directorPassword = 'sol@123';
-const analystPassword = 'lua@456';
+// E-mail fixo para o administrador. O usuário só precisa fornecer a senha.
+const ADMIN_EMAIL = "admin@topbus.com";
+const ADMIN_PASSWORD = "TopBus@2024"; // Senha única para acesso de gestor
 
 export default function LoginPage() {
   const router = useRouter();
@@ -21,35 +24,49 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Adicionado um pequeno delay para simular uma verificação de rede
-    setTimeout(() => {
-        if (password === directorPassword) {
+    if (password !== ADMIN_PASSWORD) {
+        toast({
+            variant: "destructive",
+            title: "Senha Incorreta",
+            description: "A senha de acesso do gestor está incorreta.",
+        });
+        setIsLoading(false);
+        return;
+    }
+
+    try {
+        const user = await signInUser(ADMIN_EMAIL, password);
+        if (user) {
+            // Salva um objeto simples para compatibilidade com o layout
             localStorage.setItem('user', JSON.stringify({ role: 'diretor' }));
             toast({
                 title: "Login bem-sucedido!",
-                description: "Acesso de Diretor concedido. Redirecionando...",
+                description: "Acesso de Gestor concedido. Redirecionando...",
             });
             router.push('/admin');
-        } else if (password === analystPassword) {
-            localStorage.setItem('user', JSON.stringify({ role: 'analyst' }));
-            toast({
-                title: "Login bem-sucedido!",
-                description: "Acesso de Analista concedido. Redirecionando...",
+        }
+    } catch (error: any) {
+        console.error(error);
+        if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+             toast({
+                variant: "destructive",
+                title: "Credenciais Inválidas",
+                description: "O usuário admin não foi encontrado ou a senha está incorreta. Por favor, contate o suporte.",
             });
-            router.push('/admin');
         } else {
             toast({
                 variant: "destructive",
-                title: "Senha Incorreta",
-                description: "A senha inserida não corresponde a nenhum perfil de acesso.",
+                title: "Erro no Login",
+                description: "Ocorreu um erro inesperado durante o login.",
             });
         }
+    } finally {
         setIsLoading(false);
-    }, 500);
+    }
   };
 
   return (
@@ -57,16 +74,19 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center justify-center mb-6 text-center h-[50px]">
           <Image src="/logo.jpeg" alt="TopBus Logo" width={200} height={50} priority />
-          <p className="mt-2 text-lg text-muted-foreground">
-            Acesso ao Painel de Gestor
-          </p>
         </div>
         <Card>
           <CardHeader>
-            <CardTitle>Login</CardTitle>
-            <CardDescription>Insira sua senha de acesso para entrar no painel.</CardDescription>
+            <CardTitle>Painel de Gestão</CardTitle>
+            <CardDescription>Insira a senha de acesso para entrar no painel.</CardDescription>
           </CardHeader>
           <CardContent>
+            <Alert className="mb-4">
+                <AlertTitle>Acesso de Administrador</AlertTitle>
+                <AlertDescription>
+                    Use a senha fornecida para acessar todas as funcionalidades de gestão.
+                </AlertDescription>
+            </Alert>
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="password">Senha de Acesso</Label>

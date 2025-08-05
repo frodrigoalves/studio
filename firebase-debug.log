@@ -72,3 +72,12 @@ Dev App Server is now running.
 
 Issues? Report them at https://github.com/firebase/firebase-tools/issues and attach the *-debug.log files.
  
+[info] i  firestore: Change detected, updating rules... 
+[debug] [2025-08-05T00:56:48.410Z] >>> [apiv2][query] PUT http://127.0.0.1:8080/emulator/v1/projects/demo-app:securityRules [none]
+[debug] [2025-08-05T00:56:48.413Z] >>> [apiv2][body] PUT http://127.0.0.1:8080/emulator/v1/projects/demo-app:securityRules {"ignore_errors":true,"rules":{"files":[{"name":"security.rules","content":"\nrules_version = '2';\n\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    \n    // Regra: Apenas gestores autenticados podem ler ou escrever em coleções de gestão.\n    function isManager() {\n      return request.auth != null;\n    }\n\n    // --- REGRAS PARA FORMULÁRIOS PÚBLICOS ---\n    // Permite que qualquer pessoa (motoristas, abastecedores) crie novos registros\n    // sem precisar de login, mas protege os dados contra leitura ou modificação não autorizada.\n\n    match /tripRecords/{recordId} {\n      allow create: if true;\n      allow read, update, delete: if isManager();\n    }\n\n    match /fuelingRecords/{recordId} {\n      allow create: if true;\n      allow read, update, delete: if isManager();\n    }\n\n    match /checklistRecords/{recordId} {\n      allow create: if true;\n      allow read, update, delete: if isManager();\n    }\n\n    // --- REGRAS PARA PAINEL DE GESTÃO ---\n    // Apenas gestores autenticados podem acessar estas coleções.\n\n    match /dieselPrices/{priceId} {\n      allow read, write: if isManager();\n    }\n    \n    match /vehicleParameters/{carId} {\n      allow read, write: if isManager();\n    }\n\n    match /maintenanceRecords/{recordId} {\n      allow read, write: if isManager();\n    }\n  }\n}\n"}]}}
+[debug] [2025-08-05T00:56:48.531Z] Aug 05, 2025 12:56:48 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
+INFO: Detected non-HTTP/2 connection.
+ {"metadata":{"emulator":{"name":"firestore"},"message":"Aug 05, 2025 12:56:48 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead\nINFO: Detected non-HTTP/2 connection.\n"}}
+[debug] [2025-08-05T00:56:49.760Z] Aug 05, 2025 12:56:49 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
+INFO: Detected HTTP/2 connection.
+ {"metadata":{"emulator":{"name":"firestore"},"message":"Aug 05, 2025 12:56:49 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead\nINFO: Detected HTTP/2 connection.\n"}}

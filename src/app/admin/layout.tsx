@@ -22,11 +22,13 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Settings, FileText, LogOut, BrainCircuit, Loader2, Clock4, FileHeart, Wrench, Users, Fuel, ClipboardCheck, CircleDot, ShieldAlert } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
+import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+import { signOutUser } from "@/services/auth";
 
 interface User {
   role: 'diretor' | 'analyst';
-  email?: string; // Email is now optional
+  email?: string; 
 }
 
 const pageTitles: { [key: string]: string } = {
@@ -53,30 +55,37 @@ export default function AdminLayout({
   const [pageTitle, setPageTitle] = useState('Painel de Gestão');
 
   useEffect(() => {
-    try {
-      const storedUser = localStorage.getItem('user');
-      if (storedUser) {
-        const userData: User = JSON.parse(storedUser);
-        setUser(userData);
-      } else {
-        router.push('/login');
-      }
-    } catch (error) {
-      console.error("Failed to parse user from localStorage", error);
-      router.push('/login');
-    } finally {
-      setLoading(false);
-    }
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
+        if (firebaseUser) {
+            // Assume qualquer usuário logado como diretor para simplificar
+             const userData: User = { role: 'diretor', email: firebaseUser.email || 'Admin' };
+             setUser(userData);
+             localStorage.setItem('user', JSON.stringify(userData));
+        } else {
+            router.push('/login');
+        }
+        setLoading(false);
+    });
+    
+    // Cleanup a inscrição no desmonte do componente
+    return () => unsubscribe();
   }, [router]);
   
   useEffect(() => {
     setPageTitle(pageTitles[pathname] || 'Painel de Gestão');
   }, [pathname]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     setIsLoggingOut(true);
-    localStorage.removeItem('user');
-    router.push('/login');
+    try {
+        await signOutUser();
+        localStorage.removeItem('user');
+        router.push('/login');
+        toast({ title: 'Logout efetuado com sucesso.' });
+    } catch (error) {
+        toast({ variant: 'destructive', title: 'Erro ao fazer logout.' });
+        setIsLoggingOut(false);
+    }
   };
   
   const handleDevelopmentClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
@@ -116,16 +125,14 @@ export default function AdminLayout({
               </SidebarMenuButton>
             </SidebarMenuItem>
             
-            {user.role === 'diretor' && (
-               <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <Link href="/admin/vigia-digital">
-                      <ShieldAlert />
-                      Vigia Digital
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-            )}
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild>
+                <Link href="/admin/vigia-digital">
+                  <ShieldAlert />
+                  Vigia Digital
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
 
             <SidebarSeparator />
             <SidebarMenuItem>
@@ -209,11 +216,11 @@ export default function AdminLayout({
         <SidebarFooter>
           <div className="flex items-center gap-3 p-2 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center">
             <Avatar className="h-9 w-9">
-              <AvatarFallback>{user.role?.charAt(0).toUpperCase()}</AvatarFallback>
+              <AvatarFallback>{user.email?.charAt(0).toUpperCase()}</AvatarFallback>
             </Avatar>
              <div className="group-data-[collapsible=icon]:hidden">
               <p className="font-semibold truncate capitalize">{user.role === 'diretor' ? 'Diretoria' : 'Analista'}</p>
-              <p className="text-xs text-muted-foreground truncate capitalize">Perfil de Acesso</p>
+              <p className="text-xs text-muted-foreground truncate">{user.email}</p>
             </div>
             <Button variant="ghost" size="icon" className="ml-auto group-data-[collapsible=icon]:hidden" onClick={handleLogout} disabled={isLoggingOut}>
               {isLoggingOut ? <Loader2 className="animate-spin" /> : <LogOut />}
