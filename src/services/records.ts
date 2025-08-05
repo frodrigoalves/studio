@@ -19,15 +19,9 @@ export interface Record {
   status: "Finalizado" | "Em Andamento";
   startOdometerPhoto: string | null;
   endOdometerPhoto: string | null;
-  fuelLevel?: string;
-  frontDiagonalPhoto?: string | null;
-  rearDiagonalPhoto?: string | null;
-  leftSidePhoto?: string | null;
-  rightSidePhoto?: string | null;
-  fuelGaugePhoto?: string | null;
 }
 
-export type RecordAddPayload = Omit<Record, 'id'>;
+export type RecordAddPayload = Omit<Record, 'id' | 'date'> & { date: string };
 export type RecordUpdatePayload = Partial<Omit<Record, 'id' | 'driver' | 'car' | 'plate' | 'line' | 'kmStart' | 'startOdometerPhoto' | 'date'>>;
 
 async function uploadPhoto(photoBase64: string | null, recordId: string, type: string): Promise<string | null> {
@@ -60,7 +54,7 @@ async function deletePhoto(photoUrl: string | null) {
 }
 
 
-export async function addRecord(record: RecordAddPayload): Promise<Record> {
+export async function addRecord(record: Omit<RecordAddPayload, 'date'> & { date: string }): Promise<Record> {
   const tempDocForId = doc(collection(db, "tripRecords"));
   const recordId = tempDocForId.id;
 

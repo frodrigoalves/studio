@@ -5,7 +5,10 @@ import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, getDoc, getDocs, query, orderBy, doc, setDoc, limit, where, updateDoc } from 'firebase/firestore';
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { v4 as uuidv4 } from 'uuid';
-import { analyzeVehicleDamage, type DamageAnalysisInput, type DamageAnalysisOutput } from '@/ai/flows/damage-analysis-flow';
+import { analyzeVehicleDamage } from '@/ai/flows/damage-analysis-flow';
+
+type DamageAnalysisInput = any;
+type DamageAnalysisOutput = any;
 
 export type ChecklistItemStatus = "ok" | "avaria" | "na";
 
@@ -41,7 +44,7 @@ export interface ChecklistRecordWithDamage extends ChecklistRecord {
     previousChecklistPhotos?: PreviousChecklistPhotos;
 }
 
-export type ChecklistRecordPayload = Omit<ChecklistRecord, 'id' | 'date' | 'damageAnalysis'>;
+export type ChecklistRecordPayload = Omit<ChecklistRecord, 'id' | 'date' | 'damageAnalysis' | 'odometerPhoto'>;
 
 async function uploadPhoto(photoBase64: string | null, recordId: string, type: string): Promise<string | null> {
     if (!photoBase64 || !photoBase64.startsWith('data:image')) {
@@ -91,10 +94,9 @@ export async function addChecklistRecord(record: ChecklistRecordPayload): Promis
     const recordId = tempDocRef.id;
 
     const [
-        odometerPhotoUrl, frontDiagonalPhotoUrl,
+        frontDiagonalPhotoUrl,
         rearDiagonalPhotoUrl, leftSidePhotoUrl, rightSidePhotoUrl
     ] = await Promise.all([
-        uploadPhoto(record.odometerPhoto || null, recordId, 'odometer'),
         uploadPhoto(record.frontDiagonalPhoto || null, recordId, 'front-diagonal'),
         uploadPhoto(record.rearDiagonalPhoto || null, recordId, 'rear-diagonal'),
         uploadPhoto(record.leftSidePhoto || null, recordId, 'left-side'),
@@ -104,7 +106,6 @@ export async function addChecklistRecord(record: ChecklistRecordPayload): Promis
     const dataToSave: Omit<ChecklistRecord, 'id'> = {
         ...record,
         date: new Date().toISOString(),
-        odometerPhoto: odometerPhotoUrl,
         frontDiagonalPhoto: frontDiagonalPhotoUrl,
         rearDiagonalPhoto: rearDiagonalPhotoUrl,
         leftSidePhoto: leftSidePhotoUrl,
@@ -150,13 +151,11 @@ export async function addChecklistRecord(record: ChecklistRecordPayload): Promis
     
     const recordToSaveInDb = { ...finalRecord };
     // Remove base64 photos before saving to DB
-    delete (recordToSaveInDb as any).odometerPhoto;
     delete (recordToSaveInDb as any).frontDiagonalPhoto;
     delete (recordToSaveInDb as any).rearDiagonalPhoto;
     delete (recordToSaveInDb as any).leftSidePhoto;
     delete (recordToSaveInDb as any).rightSidePhoto;
 
-    recordToSaveInDb.odometerPhoto = odometerPhotoUrl;
     recordToSaveInDb.frontDiagonalPhoto = frontDiagonalPhotoUrl;
     recordToSaveInDb.rearDiagonalPhoto = rearDiagonalPhotoUrl;
     recordToSaveInDb.leftSidePhoto = leftSidePhotoUrl;

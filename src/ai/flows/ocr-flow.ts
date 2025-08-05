@@ -18,12 +18,12 @@ const OcrInputSchema = z.object({
       "A photo of a vehicle's dashboard, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
     ),
 });
-export type OcrInput = z.infer<typeof OcrInputSchema>;
+type OcrInput = z.infer<typeof OcrInputSchema>;
 
 const OcrOutputSchema = z.object({
   odometer: z.number().nullable().describe('The extracted odometer reading as a number. Should be null if no valid number is found.'),
 });
-export type OcrOutput = z.infer<typeof OcrOutputSchema>;
+type OcrOutput = z.infer<typeof OcrOutputSchema>;
 
 export async function extractOdometerFromImage(input: OcrInput): Promise<OcrOutput> {
   return ocrFlow(input);

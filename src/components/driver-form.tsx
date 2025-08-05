@@ -1,11 +1,11 @@
 
 "use client";
 
-import { useState, useCallback, useRef, useEffect, useMemo } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Camera, Loader2, Send, ArrowLeft, ArrowRight, User, Phone, ClipboardCheck, Signature, Car as CarIcon, GaugeCircle, Fuel, AlertCircle, ShieldAlert } from "lucide-react";
+import { Camera, Loader2, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -14,23 +14,14 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { addRecord, getRecordByPlateAndStatus, updateRecord, RecordUpdatePayload, Record, RecordAddPayload } from "@/services/records";
-import { addChecklistRecord, ChecklistRecordPayload, ChecklistItemStatus } from "@/services/checklist";
 import { extractOdometerFromImage, OcrInput } from "@/ai/flows/ocr-flow";
 import { cn } from "@/lib/utils";
-import { Progress } from "./ui/progress";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
-import { RadioGroup, RadioGroupItem } from "./ui/radio-group";
-import { Textarea } from "./ui/textarea";
-import { SignaturePad } from "./ui/signature-pad";
-import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
-
 
 const fileToBase64 = (file: File | null): Promise<string | null> => {
     if (!file) return Promise.resolve(null);
@@ -42,70 +33,24 @@ const fileToBase64 = (file: File | null): Promise<string | null> => {
     });
 };
 
-const checklistSections = {
-  "Estrutura Externa e Segurança": ["Adesivos", "Carroceria", "Janelas", "Placas", "Pneus", "Molas", "Suspensão a Ar", "Vazamento de ar"],
-  "Cabine e Componentes Internos": ["Bancos", "Cinto de Segurança", "Direção", "Extintor", "Limpador Pára-Brisa", "Portas", "Painel"],
-  "Sistemas Eletrônicos e Operacionais": ["Ar Condicionado", "Freios", "Parte Elétrica", "Letreiro", "Tacógrafo"],
-  "Acessibilidade e Passageiros": ["Documentos", "Elevador", "Gaveta Cobrador", "Selo de Roleta", "Validador"],
-};
-const allChecklistItems = Object.values(checklistSections).flat();
-type ItemId = typeof allChecklistItems[number];
-const itemSchema = z.enum(["ok", "avaria", "na"]);
-const itemsShape = allChecklistItems.reduce((acc, item) => {
-  acc[item] = itemSchema;
-  return acc;
-}, {} as Record<ItemId, typeof itemSchema>);
-
-
-// --- Schemas ---
-
 const startTripSchema = z.object({
-    // Step 1
     plate: z.string().min(1, "Chapa é obrigatória."),
     driver: z.string().min(1, "Nome é obrigatório."),
     car: z.string().min(1, "Carro é obrigatório."),
     line: z.string().min(1, "Linha é obrigatória."),
-    
-    // Step 2
     kmStart: z.coerce.number({ required_error: "Km Inicial é obrigatório."}).min(1, "Km Inicial é obrigatório."),
-    fuelLevel: z.string({ required_error: "Nível de combustível é obrigatório." }).min(1, "É obrigatório confirmar o nível de combustível."),
-
-    // Step 3
-    items: z.object(itemsShape),
-    observations: z.string().optional(),
-
-    // Step 4
-    signature: z.string().refine(sig => sig && sig.length > 0, { message: "A assinatura é obrigatória." }),
-}).refine(data => {
-    const hasAvaria = Object.values(data.items).some(status => status === 'avaria');
-    if (hasAvaria) {
-        return data.observations && data.observations.trim().length > 0;
-    }
-    return true;
-}, {
-    message: "É obrigatório descrever a avaria no campo de observações.",
-    path: ["observations"],
 });
-
-
-type StartTripFormValues = z.infer<typeof startTripSchema>;
 
 const endFormSchema = z.object({
   plate: z.string().min(1, "Chapa é obrigatória."),
-  driver: z.string().min(1, "Nome é obrigatório."),
-  car: z.string().min(1, "Carro é obrigatório."),
-  line: z.string().min(1, "Linha é obrigatória."),
+  driver: z.string().min(1, "Nome é obrigatório.").optional(),
+  car: z.string().min(1, "Carro é obrigatório.").optional(),
+  line: z.string().min(1, "Linha é obrigatória.").optional(),
   kmEnd: z.coerce.number({ required_error: "Km Final é obrigatório."}).min(1, "Km Final é obrigatório."),
 });
+
+type StartTripFormValues = z.infer<typeof startTripSchema>;
 type EndFormValues = z.infer<typeof endFormSchema>;
-
-const stepFields: (keyof StartTripFormValues)[][] = [
-    ['plate', 'driver', 'car', 'line'],
-    ['kmStart', 'fuelLevel'],
-    ['items', 'observations'],
-    ['signature']
-];
-
 
 const initialStartValues: StartTripFormValues = {
     plate: "",
@@ -113,10 +58,6 @@ const initialStartValues: StartTripFormValues = {
     car: "",
     line: "",
     kmStart: 0,
-    fuelLevel: '',
-    items: allChecklistItems.reduce((acc, item) => ({...acc, [item]: "ok" }), {} as Record<ItemId, ChecklistItemStatus>),
-    observations: "",
-    signature: ""
 };
 
 const initialEndValues: EndFormValues = { 
@@ -127,15 +68,6 @@ const initialEndValues: EndFormValues = {
     kmEnd: 0, 
 };
 
-const fuelOptions = [
-    { value: "vazio", label: "Vazio" },
-    { value: "1/4", label: "1/4" },
-    { value: "1/2", label: "1/2" },
-    { value: "3/4", label: "3/4" },
-    { value: "cheio", label: "Cheio" },
-];
-
-
 export function DriverForm() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("start");
@@ -143,29 +75,16 @@ export function DriverForm() {
   const [isSearching, setIsSearching] = useState(false);
   const [isOcrLoading, setIsOcrLoading] = useState(false);
   const [recordToEnd, setRecordToEnd] = useState<Record | null>(null);
-  const [startTripStep, setStartTripStep] = useState(0);
 
-  // State for file management
-  const [odometerPhotoFile, setOdometerPhotoFile] = useState<File | null>(null);
-  const [frontDiagonalPhotoFile, setFrontDiagonalPhotoFile] = useState<File | null>(null);
-  const [rearDiagonalPhotoFile, setRearDiagonalPhotoFile] = useState<File | null>(null);
-  const [leftSidePhotoFile, setLeftSidePhotoFile] = useState<File | null>(null);
-  const [rightSidePhotoFile, setRightSidePhotoFile] = useState<File | null>(null);
+  const [startOdometerPhotoFile, setStartOdometerPhotoFile] = useState<File | null>(null);
   const [endOdometerPhotoFile, setEndOdometerPhotoFile] = useState<File | null>(null);
 
-
-  // Refs for resetting file inputs
-  const odometerPhotoRef = useRef<HTMLInputElement>(null);
-  const frontDiagonalPhotoRef = useRef<HTMLInputElement>(null);
-  const rearDiagonalPhotoRef = useRef<HTMLInputElement>(null);
-  const leftSidePhotoRef = useRef<HTMLInputElement>(null);
-  const rightSidePhotoRef = useRef<HTMLInputElement>(null);
+  const startFileInputRef = useRef<HTMLInputElement>(null);
   const endFileInputRef = useRef<HTMLInputElement>(null);
   
   const startForm = useForm<StartTripFormValues>({
     resolver: zodResolver(startTripSchema),
     defaultValues: initialStartValues,
-    mode: "onChange",
   });
   
   const endForm = useForm<EndFormValues>({
@@ -173,8 +92,6 @@ export function DriverForm() {
     defaultValues: initialEndValues,
   });
   
-  const watchItems = startForm.watch('items');
-
   const handleChapaBlur = useCallback(async (plate: string) => {
     if(!plate || activeTab !== 'end') return;
 
@@ -208,25 +125,14 @@ export function DriverForm() {
   }, [activeTab, endForm, toast]);
   
   const handleOcr = async (file: File | null) => {
-    if (!file) {
-        toast({
-            variant: 'destructive',
-            title: 'Foto Obrigatória',
-            description: 'É necessário enviar a foto do hodômetro.',
-        });
-        return;
-    }
-    setIsOcrLoading(true);
+    if (!file) return;
 
+    setIsOcrLoading(true);
     try {
         const odomB64 = await fileToBase64(file);
-        
       if (!odomB64) throw new Error("Could not convert file to data URI");
       
-      const ocrInput: OcrInput = {
-          odometerPhotoDataUri: odomB64,
-      };
-
+      const ocrInput: OcrInput = { odometerPhotoDataUri: odomB64 };
       const result = await extractOdometerFromImage(ocrInput);
 
       if (result.odometer) {
@@ -258,44 +164,16 @@ export function DriverForm() {
     setIsSubmitting(true);
     
     try {
-        if (!odometerPhotoFile) {
-            toast({ variant: 'destructive', title: 'Foto Obrigatória', description: 'É necessário enviar a foto do hodômetro.'});
-            setIsSubmitting(false);
-            return;
-        }
+      if (!startOdometerPhotoFile) {
+        toast({ variant: 'destructive', title: 'Foto Obrigatória', description: 'É necessário enviar a foto do hodômetro.'});
+        setIsSubmitting(false);
+        return;
+      }
   
-      const [
-        odometerPhotoB64,
-        frontDiagonalPhotoB64, rearDiagonalPhotoB64, 
-        leftSidePhotoB64, rightSidePhotoB64
-      ] = await Promise.all([
-        fileToBase64(odometerPhotoFile),
-        fileToBase64(frontDiagonalPhotoFile),
-        fileToBase64(rearDiagonalPhotoFile),
-        fileToBase64(leftSidePhotoFile),
-        fileToBase64(rightSidePhotoFile),
-      ]);
-  
-      const hasAvaria = Object.values(data.items).some(status => status === 'avaria');
-      const checklistPayload: ChecklistRecordPayload = {
-        driverChapa: data.plate,
-        driverName: data.driver,
-        carId: data.car,
-        items: data.items,
-        observations: data.observations || null,
-        hasIssue: hasAvaria,
-        signature: data.signature,
-        odometerPhoto: odometerPhotoB64,
-        fuelGaugePhoto: null, 
-        frontDiagonalPhoto: frontDiagonalPhotoB64,
-        rearDiagonalPhoto: rearDiagonalPhotoB64,
-        leftSidePhoto: leftSidePhotoB64,
-        rightSidePhoto: rightSidePhotoB64,
-      };
-      await addChecklistRecord(checklistPayload);
+      const startOdometerPhotoB64 = await fileToBase64(startOdometerPhotoFile);
   
       const recordPayload: RecordAddPayload = {
-        date: new Date().toISOString().split('T')[0],
+        date: new Date().toISOString(),
         driver: data.driver,
         car: data.car,
         plate: data.plate,
@@ -303,31 +181,18 @@ export function DriverForm() {
         kmStart: data.kmStart,
         kmEnd: null,
         status: "Em Andamento",
-        startOdometerPhoto: odometerPhotoB64,
+        startOdometerPhoto: startOdometerPhotoB64,
         endOdometerPhoto: null,
       };
       await addRecord(recordPayload);
   
       toast({
         title: "Jornada iniciada com sucesso!",
-        description: "Todos os dados foram salvos. Boa viagem!",
+        description: "Seus dados foram salvos. Boa viagem!",
       });
       startForm.reset(initialStartValues);
-      
-      // Reset file states and input values
-      setOdometerPhotoFile(null);
-      setFrontDiagonalPhotoFile(null);
-      setRearDiagonalPhotoFile(null);
-      setLeftSidePhotoFile(null);
-      setRightSidePhotoFile(null);
-
-      if (odometerPhotoRef.current) odometerPhotoRef.current.value = "";
-      if (frontDiagonalPhotoRef.current) frontDiagonalPhotoRef.current.value = "";
-      if (rearDiagonalPhotoRef.current) rearDiagonalPhotoRef.current.value = "";
-      if (leftSidePhotoRef.current) leftSidePhotoRef.current.value = "";
-      if (rightSidePhotoRef.current) rightSidePhotoRef.current.value = "";
-
-      setStartTripStep(0);
+      setStartOdometerPhotoFile(null);
+      if (startFileInputRef.current) startFileInputRef.current.value = "";
   
     } catch (e) {
       console.error("Failed to start trip", e);
@@ -407,22 +272,9 @@ export function DriverForm() {
         setRecordToEnd(null);
         endForm.reset(initialEndValues);
     } else {
-        setStartTripStep(0);
         startForm.reset(initialStartValues);
     }
   }, [activeTab, endForm, startForm]);
-  
-  const nextStep = async () => {
-    const fields = stepFields[startTripStep];
-    const isValid = await startForm.trigger(fields as any, { shouldFocus: true });
-    if (isValid) {
-      setStartTripStep((prev) => prev + 1);
-    }
-  };
-
-  const prevStep = () => setStartTripStep((prev) => prev - 1);
-  const progress = useMemo(() => ((startTripStep + 1) / (stepFields.length + 1)) * 100, [startTripStep]);
-
 
   return (
     <Card className={cn(
@@ -434,187 +286,61 @@ export function DriverForm() {
       <CardContent className="p-2 sm:p-4">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="start">Iniciar Viagem (com Vistoria)</TabsTrigger>
+            <TabsTrigger value="start">Iniciar Viagem</TabsTrigger>
             <TabsTrigger value="end">Finalizar Viagem</TabsTrigger>
           </TabsList>
           
           <TabsContent value="start" className="pt-4">
             <Form {...startForm}>
-              <form onSubmit={startForm.handleSubmit(onStartSubmit)} className="space-y-6 px-2">
+              <form onSubmit={startForm.handleSubmit(onStartSubmit)} className="space-y-4 px-2">
+                <FormField control={startForm.control} name="plate" render={({ field }) => (<FormItem><FormLabel>Chapa do Motorista</FormLabel><FormControl><Input placeholder="Sua matrícula" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                <FormField control={startForm.control} name="driver" render={({ field }) => (<FormItem><FormLabel>Nome do Motorista</FormLabel><FormControl><Input placeholder="Seu nome completo" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                <FormField control={startForm.control} name="car" render={({ field }) => (<FormItem><FormLabel>Carro</FormLabel><FormControl><Input placeholder="Número do veículo" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                <FormField control={startForm.control} name="line" render={({ field }) => (<FormItem><FormLabel>Linha</FormLabel><FormControl><Input placeholder="Número da linha" {...field} /></FormControl><FormMessage /></FormItem>)}/>
                 
-                <div className="flex items-center gap-4">
-                    <Progress value={progress} className="h-2 flex-grow" />
-                    <div className="text-sm text-muted-foreground font-medium">
-                        Passo {startTripStep + 1} de {stepFields.length}
-                    </div>
-                </div>
-                
-                {startTripStep === 0 && (
-                    <div className="space-y-4">
-                        <h3 className="text-lg font-semibold flex items-center gap-2"><User className="w-5 h-5 text-primary"/> Identificação</h3>
-                        <FormField control={startForm.control} name="plate" render={({ field }) => (<FormItem><FormLabel>Chapa do Motorista</FormLabel><FormControl><Input placeholder="Sua matrícula" {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                        <FormField control={startForm.control} name="driver" render={({ field }) => (<FormItem><FormLabel>Nome do Motorista</FormLabel><FormControl><Input placeholder="Seu nome completo" {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                        <FormField control={startForm.control} name="car" render={({ field }) => (<FormItem><FormLabel>Carro</FormLabel><FormControl><Input placeholder="Número do veículo" {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                        <FormField control={startForm.control} name="line" render={({ field }) => (<FormItem><FormLabel>Linha</FormLabel><FormControl><Input placeholder="Número da linha" {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                    </div>
-                )}
-                
-                {startTripStep === 1 && (
-                     <div className="space-y-4">
-                        <h3 className="text-lg font-semibold flex items-center gap-2"><GaugeCircle className="w-5 h-5 text-primary"/> Painel do Veículo</h3>
-                        <FormItem>
-                            <FormLabel>1. Foto do Hodômetro</FormLabel>
-                            <FormControl>
-                                <div className="relative">
-                                    <Input 
-                                        type="file" 
-                                        accept="image/*" 
-                                        capture="camera" 
-                                        className="pr-12" 
-                                        ref={odometerPhotoRef}
-                                        onChange={(e) => {
-                                            const file = e.target.files?.[0] || null;
-                                            setOdometerPhotoFile(file);
-                                            handleOcr(file);
-                                        }}
-                                    />
-                                    <Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
-                                </div>
-                            </FormControl>
-                        </FormItem>
-                        <FormField 
-                            control={startForm.control} 
-                            name="kmStart" 
-                            render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>2. Confirmar KM Inicial</FormLabel>
-                                <FormControl>
-                                    <div className="relative">
-                                        <Input 
-                                            type="number" 
-                                            placeholder="Aguardando foto..." 
-                                            {...field}
-                                        />
-                                        {isOcrLoading && <Loader2 className="absolute right-3 top-2.5 h-5 w-5 animate-spin" />}
-                                    </div>
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}/>
-                       <FormField
-                          control={startForm.control}
-                          name="fuelLevel"
-                          render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>3. Confirmar Nível de Combustível</FormLabel>
-                                <FormControl>
-                                    <RadioGroup
-                                        onValueChange={field.onChange}
-                                        value={field.value}
-                                        className="grid grid-cols-3 sm:grid-cols-5 gap-2 pt-2"
-                                    >
-                                        {fuelOptions.map((opt, index) => {
-                                            const colorClass = 
-                                                index === 0 ? "bg-red-200 border-red-400 text-red-800" :
-                                                index === 1 ? "bg-yellow-200 border-yellow-400 text-yellow-800" :
-                                                index === 2 ? "bg-blue-200 border-blue-400 text-blue-800" :
-                                                index === 3 ? "bg-green-200 border-green-400 text-green-800" :
-                                                "bg-emerald-300 border-emerald-500 text-emerald-900";
-
-                                            return (
-                                                <FormItem key={opt.value}>
-                                                    <FormControl>
-                                                         <RadioGroupItem value={opt.value} className="sr-only" />
-                                                    </FormControl>
-                                                    <FormLabel className={cn(
-                                                        "flex flex-col items-center justify-center rounded-md border-2 p-3 hover:bg-accent hover:text-accent-foreground cursor-pointer transition-all h-24",
-                                                        field.value === opt.value && `${colorClass} font-bold shadow-md scale-105`
-                                                    )}>
-                                                        <Fuel className="mb-2 h-6 w-6" />
-                                                        <span className="text-xs text-center">{opt.label}</span>
-                                                    </FormLabel>
-                                                </FormItem>
-                                            )
-                                        })}
-                                    </RadioGroup>
-                                </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                    </div>
-                )}
-
-                {startTripStep === 2 && (
-                    <div className="space-y-6">
-                        <h3 className="text-lg font-semibold flex items-center gap-2"><ClipboardCheck className="w-5 h-5 text-primary"/> Checklist de Vistoria</h3>
-                        <Alert variant="default" className="bg-blue-50 border-blue-200">
-                            <Phone className="h-4 w-4 !text-blue-700" />
-                            <AlertTitle className="text-blue-800 font-semibold">ATENÇÃO OPERADORES!</AlertTitle>
-                            <AlertDescription className="text-blue-700">
-                               <p>Manutenção: <strong>(31) 99959-3176</strong> (WhatsApp)</p>
-                               <p>Tráfego: <strong>(31) 99959-3089</strong> / Fixo: <strong>3673-7000</strong></p>
-                            </AlertDescription>
-                        </Alert>
-                        <Accordion type="single" collapsible defaultValue="item-1">
-                            {Object.entries(checklistSections).map(([sectionTitle, items], index) => (
-                                <AccordionItem value={`item-${index+1}`} key={sectionTitle}>
-                                    <AccordionTrigger>{sectionTitle}</AccordionTrigger>
-                                    <AccordionContent>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                                            {items.map((item) => (
-                                                <FormField key={item} control={startForm.control} name={`items.${item as ItemId}`}
-                                                    render={({ field }) => (
-                                                    <FormItem className={cn("space-y-2 p-3 rounded-lg border transition-all", watchItems[item as ItemId] === 'avaria' ? 'border-destructive bg-destructive/10' : 'bg-muted/30')}>
-                                                        <FormLabel className="text-sm font-semibold flex items-center justify-between w-full"><span>{item}</span>{watchItems[item as ItemId] === 'avaria' && <span className="text-xs font-bold text-destructive">AVARIA</span>}{watchItems[item as ItemId] === 'ok' && <span className="text-xs font-bold text-green-600">OK</span>}{watchItems[item as ItemId] === 'na' && <span className="text-xs font-medium text-muted-foreground">N/A</span>}</FormLabel>
-                                                        <FormControl><RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex items-center space-x-2 pt-1"><FormItem className="flex-1"><FormControl><RadioGroupItem value="ok" className="sr-only" /></FormControl><FormLabel className={cn("block w-full p-2 text-center rounded-md cursor-pointer border text-xs h-9 flex items-center justify-center", field.value === 'ok' ? 'bg-green-600 text-white border-green-700 font-bold' : 'bg-background')}>OK</FormLabel></FormItem><FormItem className="flex-1"><FormControl><RadioGroupItem value="avaria" className="sr-only" /></FormControl><FormLabel className={cn("block w-full p-2 text-center rounded-md cursor-pointer border text-xs h-9 flex items-center justify-center", field.value === 'avaria' ? 'bg-destructive text-destructive-foreground border-destructive/80 font-bold' : 'bg-background')}>Avaria</FormLabel></FormItem><FormItem className="flex-1"><FormControl><RadioGroupItem value="na" className="sr-only" /></FormControl><FormLabel className={cn("block w-full p-2 text-center rounded-md cursor-pointer border text-xs h-9 flex items-center justify-center", field.value === 'na' ? 'bg-muted-foreground text-background border-muted-foreground/80' : 'bg-background')}>N/A</FormLabel></FormItem></RadioGroup></FormControl>
-                                                    </FormItem>
-                                                    )}
-                                                />
-                                            ))}
-                                        </div>
-                                    </AccordionContent>
-                                </AccordionItem>
-                            ))}
-                        </Accordion>
-                         <FormField control={startForm.control} name="observations" render={({ field }) => ( <FormItem><FormLabel className="text-base font-semibold">Observações Gerais</FormLabel><FormDescription>Se algum item estiver com avaria, é obrigatório descrever o problema aqui.</FormDescription><FormControl><Textarea placeholder="Ex: Pneu dianteiro direito visivelmente baixo, trinca no para-brisa, etc." className="resize-none" rows={4} {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                    </div>
-                )}
-                
-                {startTripStep === 3 && (
-                    <div className="space-y-4">
-                        <h3 className="text-lg font-semibold flex items-center gap-2"><Signature className="w-5 h-5 text-primary"/> Confirmação e Assinatura</h3>
-                        <div className="space-y-6">
-                            <p className="text-sm text-muted-foreground">Tire fotos externas opcionais e assine para confirmar a veracidade de todas as informações fornecidas na vistoria e no registro de KM.</p>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <FormItem><FormLabel>Diagonal Frontal (Opcional)</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" ref={frontDiagonalPhotoRef} onChange={(e) => setFrontDiagonalPhotoFile(e.target.files?.[0] || null)} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl></FormItem>
-                                <FormItem><FormLabel>Diagonal Traseira (Opcional)</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" ref={rearDiagonalPhotoRef} onChange={(e) => setRearDiagonalPhotoFile(e.target.files?.[0] || null)} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl></FormItem>
-                                <FormItem><FormLabel>Lateral Esquerda (Opcional)</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" ref={leftSidePhotoRef} onChange={(e) => setLeftSidePhotoFile(e.target.files?.[0] || null)} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl></FormItem>
-                                <FormItem><FormLabel>Lateral Direita (Opcional)</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" ref={rightSidePhotoRef} onChange={(e) => setRightSidePhotoFile(e.target.files?.[0] || null)} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl></FormItem>
-                            </div>
-                            <FormField control={startForm.control} name="signature" render={({ field }) => ( <FormItem><FormLabel className="text-lg font-semibold">Assinatura do Motorista</FormLabel><FormControl><SignaturePad onSignatureEnd={(signature) => field.onChange(signature ?? "")} className="w-full h-48 border rounded-lg bg-background" /></FormControl><FormMessage /></FormItem>)}/>
+                <FormItem>
+                    <FormLabel>Foto do Hodômetro (Início)</FormLabel>
+                    <FormControl>
+                        <div className="relative">
+                            <Input 
+                                type="file" 
+                                accept="image/*" 
+                                capture="camera" 
+                                className="pr-12" 
+                                ref={startFileInputRef}
+                                onChange={(e) => {
+                                    const file = e.target.files?.[0] || null;
+                                    setStartOdometerPhotoFile(file);
+                                    handleOcr(file);
+                                }}
+                            />
+                            <Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
                         </div>
-                    </div>
-                )}
-
-                <div className="flex justify-between pt-4">
-                  {startTripStep > 0 ? (
-                    <Button type="button" variant="outline" onClick={prevStep}>
-                      <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
-                    </Button>
-                  ) : <div></div>}
-
-                  {startTripStep < stepFields.length - 1 ? (
-                    <Button type="button" onClick={nextStep}>
-                      Avançar <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  ) : (
-                    <Button type="submit" className="bg-green-600 hover:bg-green-700" disabled={isSubmitting}>
-                      {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                      {isSubmitting ? "Enviando..." : "Concluir e Iniciar Jornada"}
-                    </Button>
-                  )}
-                </div>
+                    </FormControl>
+                </FormItem>
+                <FormField 
+                    control={startForm.control} 
+                    name="kmStart" 
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Confirmar KM Inicial</FormLabel>
+                        <FormControl>
+                            <div className="relative">
+                                <Input 
+                                    type="number" 
+                                    placeholder="Aguardando foto..." 
+                                    {...field}
+                                />
+                                {isOcrLoading && <Loader2 className="absolute right-3 top-2.5 h-5 w-5 animate-spin" />}
+                            </div>
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )}/>
+                <Button type="submit" className="w-full bg-green-600 hover:bg-green-700" disabled={isSubmitting}>
+                  {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                  {isSubmitting ? "Enviando..." : "Iniciar Jornada"}
+                </Button>
               </form>
             </Form>
           </TabsContent>

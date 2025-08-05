@@ -22,7 +22,7 @@ const DamageAnalysisInputSchema = z.object({
   previousPhotos: PhotoSetSchema.describe("The set of photos from the previous inspection."),
   currentPhotos: PhotoSetSchema.describe("The set of photos from the current inspection."),
 });
-export type DamageAnalysisInput = z.infer<typeof DamageAnalysisInputSchema>;
+type DamageAnalysisInput = z.infer<typeof DamageAnalysisInputSchema>;
 
 const DamageAnalysisOutputSchema = z.object({
   hasNewDamage: z.boolean().describe("Set to true if any new damage is detected between the photo sets."),
@@ -30,7 +30,7 @@ const DamageAnalysisOutputSchema = z.object({
   severity: z.enum(["low", "medium", "high", "none"]).describe("The estimated severity of the new damage."),
   confidenceScore: z.number().min(0).max(1).describe("A confidence score (0.0 to 1.0) of the analysis."),
 });
-export type DamageAnalysisOutput = z.infer<typeof DamageAnalysisOutputSchema>;
+type DamageAnalysisOutput = z.infer<typeof DamageAnalysisOutputSchema>;
 
 
 export async function analyzeVehicleDamage(input: DamageAnalysisInput): Promise<DamageAnalysisOutput> {

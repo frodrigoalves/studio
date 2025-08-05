@@ -1,11 +1,11 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
-import { Loader2, Send } from "lucide-react";
+import { Loader2, Send, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -24,7 +24,17 @@ import { addChecklistRecord, type ChecklistRecordPayload, type ChecklistItemStat
 import { Textarea } from "./ui/textarea";
 import { cn } from "@/lib/utils";
 import { SignaturePad } from "./ui/signature-pad";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
 
+const fileToBase64 = (file: File | null): Promise<string | null> => {
+    if (!file) return Promise.resolve(null);
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = (error) => reject(error);
+    });
+};
 
 const checklistSections = {
   "Estrutura Externa e Segurança": ["Adesivos", "Carroceria", "Janelas", "Placas", "Pneus", "Molas", "Suspensão a Ar", "Vazamento de ar"],
@@ -39,7 +49,6 @@ type ItemId = typeof allChecklistItems[number];
 
 const itemSchema = z.enum(["ok", "avaria", "na"]);
 
-// Cria um objeto Zod dinamicamente com todos os itens do checklist
 const itemsShape = allChecklistItems.reduce((acc, item) => {
   acc[item] = itemSchema;
   return acc;
@@ -54,20 +63,18 @@ const checklistFormSchema = z.object({
   signature: z.string().refine(sig => sig && sig.length > 0, { message: "A assinatura é obrigatória." }),
 }).refine(data => {
     const hasAvaria = Object.values(data.items).some(status => status === 'avaria');
-    // If there is an 'avaria', observations must not be empty.
     if (hasAvaria) {
         return data.observations && data.observations.trim().length > 0;
     }
     return true;
 }, {
     message: "É obrigatório descrever a avaria no campo de observações.",
-    path: ["observations"], // Set the error path to the observations field.
+    path: ["observations"],
 });
 
 
 type ChecklistFormValues = z.infer<typeof checklistFormSchema>;
 
-// Otimização: Todos os itens começam como 'ok' por padrão
 const initialValues: ChecklistFormValues = {
   driverChapa: "",
   driverName: "",
@@ -80,6 +87,15 @@ const initialValues: ChecklistFormValues = {
 export function ChecklistForm() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [frontDiagonalPhotoFile, setFrontDiagonalPhotoFile] = useState<File | null>(null);
+  const [rearDiagonalPhotoFile, setRearDiagonalPhotoFile] = useState<File | null>(null);
+  const [leftSidePhotoFile, setLeftSidePhotoFile] = useState<File | null>(null);
+  const [rightSidePhotoFile, setRightSidePhotoFile] = useState<File | null>(null);
+
+  const frontDiagonalPhotoRef = useRef<HTMLInputElement>(null);
+  const rearDiagonalPhotoRef = useRef<HTMLInputElement>(null);
+  const leftSidePhotoRef = useRef<HTMLInputElement>(null);
+  const rightSidePhotoRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<ChecklistFormValues>({
     resolver: zodResolver(checklistFormSchema),
@@ -93,6 +109,16 @@ export function ChecklistForm() {
     try {
       const hasAvaria = Object.values(data.items).some(status => status === 'avaria');
 
+      const [
+        frontDiagonalPhotoB64, rearDiagonalPhotoB64, 
+        leftSidePhotoB64, rightSidePhotoB64
+      ] = await Promise.all([
+        fileToBase64(frontDiagonalPhotoFile),
+        fileToBase64(rearDiagonalPhotoFile),
+        fileToBase64(leftSidePhotoFile),
+        fileToBase64(rightSidePhotoFile),
+      ]);
+
       const payload: ChecklistRecordPayload = {
         driverChapa: data.driverChapa,
         driverName: data.driverName,
@@ -101,6 +127,10 @@ export function ChecklistForm() {
         observations: data.observations || null,
         hasIssue: hasAvaria,
         signature: data.signature,
+        frontDiagonalPhoto: frontDiagonalPhotoB64,
+        rearDiagonalPhoto: rearDiagonalPhotoB64,
+        leftSidePhoto: leftSidePhotoB64,
+        rightSidePhoto: rightSidePhotoB64,
       };
       
       await addChecklistRecord(payload);
@@ -110,6 +140,17 @@ export function ChecklistForm() {
         description: "Checklist enviado com sucesso.",
       });
       form.reset(initialValues);
+      
+      setFrontDiagonalPhotoFile(null);
+      setRearDiagonalPhotoFile(null);
+      setLeftSidePhotoFile(null);
+      setRightSidePhotoFile(null);
+
+      if (frontDiagonalPhotoRef.current) frontDiagonalPhotoRef.current.value = "";
+      if (rearDiagonalPhotoRef.current) rearDiagonalPhotoRef.current.value = "";
+      if (leftSidePhotoRef.current) leftSidePhotoRef.current.value = "";
+      if (rightSidePhotoRef.current) rightSidePhotoRef.current.value = "";
+
     } catch (e) {
       console.error("Failed to save checklist record", e);
       toast({
@@ -179,68 +220,83 @@ export function ChecklistForm() {
             </div>
             
              <div className="space-y-6">
-              {Object.entries(checklistSections).map(([sectionTitle, items]) => (
-                <div key={sectionTitle} className="space-y-4">
-                  <CardTitle className="text-lg">{sectionTitle}</CardTitle>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {items.map((item) => (
-                      <FormField
-                        key={item}
-                        control={form.control}
-                        name={`items.${item as ItemId}`}
-                        render={({ field }) => (
-                          <FormItem className={cn(
-                                "space-y-2 p-3 rounded-lg border transition-all",
-                                watchItems[item as ItemId] === 'avaria' ? 'border-destructive bg-destructive/10' : 'bg-muted/30'
-                            )}>
-                            <FormLabel className="text-sm font-semibold flex items-center justify-between w-full">
-                                <span>{item}</span>
-                                {watchItems[item as ItemId] === 'avaria' && <span className="text-xs font-bold text-destructive">AVARIA</span>}
-                                {watchItems[item as ItemId] === 'ok' && <span className="text-xs font-bold text-green-600">OK</span>}
-                                {watchItems[item as ItemId] === 'na' && <span className="text-xs font-medium text-muted-foreground">N/A</span>}
-                            </FormLabel>
-                            <FormControl>
-                               <RadioGroup
-                                onValueChange={field.onChange}
-                                defaultValue={field.value}
-                                className="flex items-center space-x-2 pt-1"
-                              >
-                                <FormItem className="flex-1">
-                                    <FormControl>
-                                        <RadioGroupItem value="ok" className="sr-only" />
-                                    </FormControl>
-                                    <FormLabel className={cn(
-                                        "block w-full p-2 text-center rounded-md cursor-pointer border text-xs h-9 flex items-center justify-center",
-                                        field.value === 'ok' ? 'bg-green-600 text-white border-green-700 font-bold' : 'bg-background'
-                                    )}>OK</FormLabel>
-                                </FormItem>
-                                 <FormItem className="flex-1">
-                                    <FormControl>
-                                        <RadioGroupItem value="avaria" className="sr-only" />
-                                    </FormControl>
-                                    <FormLabel className={cn(
-                                        "block w-full p-2 text-center rounded-md cursor-pointer border text-xs h-9 flex items-center justify-center",
-                                        field.value === 'avaria' ? 'bg-destructive text-destructive-foreground border-destructive/80 font-bold' : 'bg-background'
-                                    )}>Avaria</FormLabel>
-                                </FormItem>
-                                <FormItem className="flex-1">
-                                    <FormControl>
-                                        <RadioGroupItem value="na" className="sr-only" />
-                                    </FormControl>
-                                    <FormLabel className={cn(
-                                        "block w-full p-2 text-center rounded-md cursor-pointer border text-xs h-9 flex items-center justify-center",
-                                        field.value === 'na' ? 'bg-muted-foreground text-background border-muted-foreground/80' : 'bg-background'
-                                    )}>N/A</FormLabel>
-                                </FormItem>
-                              </RadioGroup>
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                    ))}
-                  </div>
+                <CardTitle className="text-lg">Fotos Externas (Obrigatório)</CardTitle>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <FormItem><FormLabel>Diagonal Frontal</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" ref={frontDiagonalPhotoRef} onChange={(e) => setFrontDiagonalPhotoFile(e.target.files?.[0] || null)} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl></FormItem>
+                    <FormItem><FormLabel>Diagonal Traseira</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" ref={rearDiagonalPhotoRef} onChange={(e) => setRearDiagonalPhotoFile(e.target.files?.[0] || null)} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl></FormItem>
+                    <FormItem><FormLabel>Lateral Esquerda</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" ref={leftSidePhotoRef} onChange={(e) => setLeftSidePhotoFile(e.target.files?.[0] || null)} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl></FormItem>
+                    <FormItem><FormLabel>Lateral Direita</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" ref={rightSidePhotoRef} onChange={(e) => setRightSidePhotoFile(e.target.files?.[0] || null)} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl></FormItem>
                 </div>
-              ))}
+             </div>
+
+             <div className="space-y-2">
+                <CardTitle className="text-lg">Itens de Vistoria</CardTitle>
+                <Accordion type="single" collapsible className="w-full">
+                {Object.entries(checklistSections).map(([sectionTitle, items]) => (
+                    <AccordionItem value={sectionTitle} key={sectionTitle}>
+                        <AccordionTrigger>{sectionTitle}</AccordionTrigger>
+                        <AccordionContent>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                            {items.map((item) => (
+                            <FormField
+                                key={item}
+                                control={form.control}
+                                name={`items.${item as ItemId}`}
+                                render={({ field }) => (
+                                <FormItem className={cn(
+                                        "space-y-2 p-3 rounded-lg border transition-all",
+                                        watchItems[item as ItemId] === 'avaria' ? 'border-destructive bg-destructive/10' : 'bg-muted/30'
+                                    )}>
+                                    <FormLabel className="text-sm font-semibold flex items-center justify-between w-full">
+                                        <span>{item}</span>
+                                        {watchItems[item as ItemId] === 'avaria' && <span className="text-xs font-bold text-destructive">AVARIA</span>}
+                                        {watchItems[item as ItemId] === 'ok' && <span className="text-xs font-bold text-green-600">OK</span>}
+                                        {watchItems[item as ItemId] === 'na' && <span className="text-xs font-medium text-muted-foreground">N/A</span>}
+                                    </FormLabel>
+                                    <FormControl>
+                                    <RadioGroup
+                                        onValueChange={field.onChange}
+                                        defaultValue={field.value}
+                                        className="flex items-center space-x-2 pt-1"
+                                    >
+                                        <FormItem className="flex-1">
+                                            <FormControl>
+                                                <RadioGroupItem value="ok" className="sr-only" />
+                                            </FormControl>
+                                            <FormLabel className={cn(
+                                                "block w-full p-2 text-center rounded-md cursor-pointer border text-xs h-9 flex items-center justify-center",
+                                                field.value === 'ok' ? 'bg-green-600 text-white border-green-700 font-bold' : 'bg-background'
+                                            )}>OK</FormLabel>
+                                        </FormItem>
+                                        <FormItem className="flex-1">
+                                            <FormControl>
+                                                <RadioGroupItem value="avaria" className="sr-only" />
+                                            </FormControl>
+                                            <FormLabel className={cn(
+                                                "block w-full p-2 text-center rounded-md cursor-pointer border text-xs h-9 flex items-center justify-center",
+                                                field.value === 'avaria' ? 'bg-destructive text-destructive-foreground border-destructive/80 font-bold' : 'bg-background'
+                                            )}>Avaria</FormLabel>
+                                        </FormItem>
+                                        <FormItem className="flex-1">
+                                            <FormControl>
+                                                <RadioGroupItem value="na" className="sr-only" />
+                                            </FormControl>
+                                            <FormLabel className={cn(
+                                                "block w-full p-2 text-center rounded-md cursor-pointer border text-xs h-9 flex items-center justify-center",
+                                                field.value === 'na' ? 'bg-muted-foreground text-background border-muted-foreground/80' : 'bg-background'
+                                            )}>N/A</FormLabel>
+                                        </FormItem>
+                                    </RadioGroup>
+                                    </FormControl>
+                                </FormItem>
+                                )}
+                            />
+                            ))}
+                        </div>
+                        </AccordionContent>
+                    </AccordionItem>
+                ))}
+                </Accordion>
             </div>
             
             <FormField
@@ -276,7 +332,7 @@ export function ChecklistForm() {
                   </FormDescription>
                   <FormControl>
                     <SignaturePad
-                        onSignatureEnd={(signature) => field.onChange(signature)}
+                        onSignatureEnd={(signature) => field.onChange(signature ?? "")}
                         className="w-full h-48 border rounded-lg bg-background"
                     />
                   </FormControl>

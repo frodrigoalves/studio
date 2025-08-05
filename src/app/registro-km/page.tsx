@@ -29,8 +29,8 @@ export default function RegistroKmPage() {
       <div className="w-full max-w-md">
         <div className="flex flex-col items-center justify-center mb-6 text-center">
           <Image src="/logo.jpeg" alt="TopBus Logo" width={200} height={50} priority />
-           <h1 className="text-xl font-semibold mt-4">Registro de Km e Vistoria</h1>
-            <p className="text-sm text-muted-foreground mt-1">Preenchimento de KM e Vistoria</p>
+           <h1 className="text-xl font-semibold mt-4">Registro de Km</h1>
+            <p className="text-sm text-muted-foreground mt-1">Abra e feche sua jornada de trabalho.</p>
         </div>
         <DriverForm />
       </div>
