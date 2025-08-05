@@ -32,7 +32,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from '@/hooks/use-toast';
-import { getRecords, addRecord, updateRecord, deleteRecord, type Record, type RecordAddPayload } from '@/services/records';
+import { getRecords, addRecord, updateRecord, deleteRecord, type Record, type RecordAddPayload, RecordUpdatePayload } from '@/services/records';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
@@ -48,9 +48,9 @@ const fileToBase64 = (file: File): Promise<string> => {
     });
 };
 
-type NewRecordState = Omit<Record, 'id' | 'status' | 'startOdometerPhoto' | 'endOdometerPhoto'> & {
-    startOdometerPhoto: File | null;
-    endOdometerPhoto: File | null;
+type NewRecordState = Omit<RecordAddPayload, 'startOdometerPhoto' | 'endOdometerPhoto' | 'status'> & {
+    startOdometerPhotoFile: File | null;
+    endOdometerPhotoFile: File | null;
 };
 
 export default function RecordsPage() {
@@ -73,15 +73,15 @@ export default function RecordsPage() {
     const endPhotoInputRef = useRef<HTMLInputElement>(null);
     
     const initialNewRecordState: NewRecordState = {
-        date: new Date().toISOString().split('T')[0],
+        date: new Date().toISOString(),
         driver: '',
         car: '',
         plate: '',
         line: '',
         kmStart: null,
         kmEnd: null,
-        startOdometerPhoto: null,
-        endOdometerPhoto: null,
+        startOdometerPhotoFile: null,
+        endOdometerPhotoFile: null,
     };
 
     const [newRecord, setNewRecord] = useState<NewRecordState>(initialNewRecordState);
@@ -120,11 +120,12 @@ export default function RecordsPage() {
       }
       setIsSaving(true);
       try {
-        const startPhotoBase64 = newRecord.startOdometerPhoto ? await fileToBase64(newRecord.startOdometerPhoto) : null;
-        const endPhotoBase64 = newRecord.endOdometerPhoto ? await fileToBase64(newRecord.endOdometerPhoto) : null;
+        const startPhotoBase64 = newRecord.startOdometerPhotoFile ? await fileToBase64(newRecord.startOdometerPhotoFile) : null;
+        const endPhotoBase64 = newRecord.endOdometerPhotoFile ? await fileToBase64(newRecord.endOdometerPhotoFile) : null;
 
         const newRecordPayload: RecordAddPayload = {
           ...newRecord,
+          date: new Date(newRecord.date).toISOString(),
           kmStart: newRecord.kmStart ? Number(newRecord.kmStart) : null,
           kmEnd: newRecord.kmEnd ? Number(newRecord.kmEnd) : null,
           status: newRecord.kmEnd ? "Finalizado" : "Em Andamento",
@@ -157,8 +158,19 @@ export default function RecordsPage() {
                 kmEnd: editRecordData.kmEnd ? Number(editRecordData.kmEnd) : null,
                 status: editRecordData.kmEnd ? "Finalizado" : "Em Andamento" as "Finalizado" | "Em Andamento",
             };
+
+            const payload: RecordUpdatePayload = {
+                date: new Date(dataToUpdate.date).toISOString(),
+                driver: dataToUpdate.driver,
+                car: dataToUpdate.car,
+                plate: dataToUpdate.plate,
+                line: dataToUpdate.line,
+                kmStart: dataToUpdate.kmStart,
+                kmEnd: dataToUpdate.kmEnd,
+                status: dataToUpdate.status,
+            };
             
-            await updateRecord(id, dataToUpdate);
+            await updateRecord(id, payload);
             setEditDialogOpen(false);
             setEditRecordData(null);
             fetchRecords(); // Refresh data
@@ -174,7 +186,7 @@ export default function RecordsPage() {
         if (!selectedRecord) return;
         setIsDeleting(true);
         try {
-            await deleteRecord(selectedRecord.id, selectedRecord.startOdometerPhoto, selectedRecord.endOdometerPhoto);
+            await deleteRecord(selectedRecord.id);
             setDeleteDialogOpen(false);
             setSelectedRecord(null);
             fetchRecords();
@@ -200,10 +212,9 @@ export default function RecordsPage() {
     
     const handleAuthorization = async () => {
         setIsAuthorizing(true);
-        await new Promise(resolve => setTimeout(resolve, 500)); // Simulate check
-        setIsAuthorizing(false);
-
-        if (authPassword === 'diretoria') {
+        // This should be a real check, but for now, it's a hardcoded password.
+        const directorPasswords = ["sol@123"]; 
+        if (directorPasswords.includes(authPassword)) {
             setAuthDialogOpen(false);
             setAuthPassword('');
             if (authAction === 'edit' && selectedRecord) {
@@ -219,6 +230,7 @@ export default function RecordsPage() {
                 description: 'A senha da diretoria está incorreta.',
             });
         }
+         setIsAuthorizing(false);
     };
     
     const getExportData = () => {
@@ -332,12 +344,7 @@ export default function RecordsPage() {
 
     const photoCollection = selectedRecord ? [
         { label: "Hodômetro (Início)", url: selectedRecord.startOdometerPhoto },
-        { label: "Marcador Combustível", url: selectedRecord.fuelGaugePhoto },
         { label: "Hodômetro (Fim)", url: selectedRecord.endOdometerPhoto },
-        { label: "Diagonal Frontal", url: selectedRecord.frontDiagonalPhoto },
-        { label: "Diagonal Traseira", url: selectedRecord.rearDiagonalPhoto },
-        { label: "Lateral Esquerda", url: selectedRecord.leftSidePhoto },
-        { label: "Lateral Direita", url: selectedRecord.rightSidePhoto },
     ].filter(p => p.url) : [];
 
 
@@ -413,24 +420,24 @@ export default function RecordsPage() {
                             </div>
                            <div className="space-y-2">
                                 <Label htmlFor="date">Data</Label>
-                                <Input id="date" type="date" value={newRecord.date} onChange={(e) => setNewRecord({...newRecord, date: e.target.value})} />
+                                <Input id="date" type="date" value={new Date(newRecord.date).toISOString().split('T')[0]} onChange={(e) => setNewRecord({...newRecord, date: e.target.value})} />
                             </div>
                            <div className="space-y-2">
                                 <Label htmlFor="kmStart">KM Início</Label>
-                                <Input id="kmStart" type="number" value={newRecord.kmStart ?? ''} onChange={(e) => setNewRecord({...newRecord, kmStart: e.target.value === '' ? null : e.target.valueAsNumber})} />
+                                <Input id="kmStart" type="number" value={newRecord.kmStart ?? ''} onChange={(e) => setNewRecord({...newRecord, kmStart: e.target.value === '' ? null : Number(e.target.value)})} />
                             </div>
                            <div className="space-y-2">
                                 <Label htmlFor="kmEnd">KM Fim</Label>
-                                <Input id="kmEnd" type="number" value={newRecord.kmEnd ?? ''} onChange={(e) => setNewRecord({...newRecord, kmEnd: e.target.value === '' ? null : e.target.valueAsNumber})} />
+                                <Input id="kmEnd" type="number" value={newRecord.kmEnd ?? ''} onChange={(e) => setNewRecord({...newRecord, kmEnd: e.target.value === '' ? null : Number(e.target.value)})} />
                             </div>
                             <div className="space-y-2 sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                         <Label htmlFor="startOdometerPhoto">Foto Odômetro (Início)</Label>
-                                        <Input id="startOdometerPhoto" type="file" accept="image/*" ref={startPhotoInputRef} onChange={(e) => setNewRecord({...newRecord, startOdometerPhoto: e.target.files ? e.target.files[0] : null})} />
+                                        <Input id="startOdometerPhoto" type="file" accept="image/*" ref={startPhotoInputRef} onChange={(e) => setNewRecord({...newRecord, startOdometerPhotoFile: e.target.files ? e.target.files[0] : null})} />
                                 </div>
                                 <div className="space-y-2">
                                         <Label htmlFor="endOdometerPhoto">Foto Odômetro (Fim)</Label>
-                                        <Input id="endOdometerPhoto" type="file" accept="image/*" ref={endPhotoInputRef} onChange={(e) => setNewRecord({...newRecord, endOdometerPhoto: e.target.files ? e.target.files[0] : null})} />
+                                        <Input id="endOdometerPhoto" type="file" accept="image/*" ref={endPhotoInputRef} onChange={(e) => setNewRecord({...newRecord, endOdometerPhotoFile: e.target.files ? e.target.files[0] : null})} />
                                 </div>
                             </div>
                         </div>
@@ -501,7 +508,7 @@ export default function RecordsPage() {
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>Ações</DropdownMenuLabel>
                       <DropdownMenuItem onClick={() => openAuthDialog(record, 'edit')}>Editar</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => openPhotosDialog(record)} disabled={photoCollection.length === 0}>Ver Fotos</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => openPhotosDialog(record)} disabled={!record.startOdometerPhoto && !record.endOdometerPhoto}>Ver Fotos</DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem className="text-destructive" onClick={() => openAuthDialog(record, 'delete')}>
                         <Trash2 className="mr-2 h-4 w-4" />
@@ -623,7 +630,7 @@ export default function RecordsPage() {
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="edit-date">Data</Label>
-                        <Input id="edit-date" type="date" value={editRecordData.date.split('T')[0]} onChange={(e) => setEditRecordData({...editRecordData, date: e.target.value})} />
+                        <Input id="edit-date" type="date" value={new Date(editRecordData.date).toISOString().split('T')[0]} onChange={(e) => setEditRecordData({...editRecordData, date: new Date(e.target.value).toISOString()})} />
                     </div>
                    <div className="space-y-2">
                         <Label htmlFor="edit-kmStart">KM Início</Label>
@@ -647,3 +654,5 @@ export default function RecordsPage() {
     </>
   );
 }
+
+    
