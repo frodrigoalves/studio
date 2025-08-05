@@ -12,8 +12,8 @@ import { Label } from '@/components/ui/label';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-const directorPassword = 'diretoria';
-const analystPassword = 'analise2024';
+const directorPassword = 'sol@123';
+const analystPassword = 'lua@456';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -25,29 +25,31 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    if (password === directorPassword) {
-      localStorage.setItem('user', JSON.stringify({ role: 'diretor' }));
-      toast({
-        title: "Login bem-sucedido!",
-        description: "Acesso de Diretor concedido. Redirecionando...",
-      });
-      router.push('/admin');
-    } else if (password === analystPassword) {
-      localStorage.setItem('user', JSON.stringify({ role: 'analyst' }));
-      toast({
-        title: "Login bem-sucedido!",
-        description: "Acesso de Analista concedido. Redirecionando...",
-      });
-      router.push('/admin');
-    } else {
-      toast({
-        variant: "destructive",
-        title: "Senha Incorreta",
-        description: "A senha inserida não corresponde a nenhum perfil de acesso.",
-      });
-    }
-
-    setIsLoading(false);
+    // Adicionado um pequeno delay para simular uma verificação de rede
+    setTimeout(() => {
+        if (password === directorPassword) {
+            localStorage.setItem('user', JSON.stringify({ role: 'diretor' }));
+            toast({
+                title: "Login bem-sucedido!",
+                description: "Acesso de Diretor concedido. Redirecionando...",
+            });
+            router.push('/admin');
+        } else if (password === analystPassword) {
+            localStorage.setItem('user', JSON.stringify({ role: 'analyst' }));
+            toast({
+                title: "Login bem-sucedido!",
+                description: "Acesso de Analista concedido. Redirecionando...",
+            });
+            router.push('/admin');
+        } else {
+            toast({
+                variant: "destructive",
+                title: "Senha Incorreta",
+                description: "A senha inserida não corresponde a nenhum perfil de acesso.",
+            });
+        }
+        setIsLoading(false);
+    }, 500);
   };
 
   return (
@@ -75,7 +77,7 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   disabled={isLoading}
-                  placeholder="Insira a senha de 'Diretor' ou 'Analista'"
+                  placeholder="Insira a senha de acesso"
                 />
               </div>
               <Button type="submit" className="w-full" disabled={isLoading}>
