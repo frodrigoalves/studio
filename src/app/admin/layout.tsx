@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Settings, FileText, LogOut, BrainCircuit, Loader2, Clock4, FileHeart, Wrench, Users, Fuel, ClipboardCheck, CircleDot, ShieldAlert } from "lucide-react";
+import { Settings, FileText, LogOut, BrainCircuit, Loader2, Clock4, FileHeart, Wrench, Users, Fuel, ClipboardCheck, CircleDot, ShieldAlert, Clapperboard } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
@@ -38,6 +38,7 @@ const pageTitles: { [key: string]: string } = {
     '/admin/checklist': 'Registros de Vistoria',
     '/admin/vigia-digital': 'Vigia Digital - Análise de Danos',
     '/admin/settings': 'Configurações e Importação',
+    '/admin/institucional': 'Vídeo Institucional',
 };
 
 
@@ -60,14 +61,17 @@ export default function AdminLayout({
             // Assume qualquer usuário logado como diretor para simplificar
              const userData: User = { role: 'diretor', email: firebaseUser.email || 'Admin' };
              setUser(userData);
-             localStorage.setItem('user', JSON.stringify(userData));
         } else {
-            router.push('/login');
+             const localUser = localStorage.getItem('user');
+             if (localUser) {
+                setUser(JSON.parse(localUser));
+             } else {
+                router.push('/login');
+             }
         }
         setLoading(false);
     });
     
-    // Cleanup a inscrição no desmonte do componente
     return () => unsubscribe();
   }, [router]);
   
@@ -125,14 +129,26 @@ export default function AdminLayout({
               </SidebarMenuButton>
             </SidebarMenuItem>
             
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild>
-                <Link href="/admin/vigia-digital">
-                  <ShieldAlert />
-                  Vigia Digital
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
+            {user.role === 'diretor' && (
+              <>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <Link href="/admin/vigia-digital">
+                      <ShieldAlert />
+                      Vigia Digital
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                 <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <Link href="/admin/institucional">
+                      <Clapperboard />
+                      Vídeo Institucional
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </>
+            )}
 
             <SidebarSeparator />
             <SidebarMenuItem>
@@ -216,7 +232,7 @@ export default function AdminLayout({
         <SidebarFooter>
           <div className="flex items-center gap-3 p-2 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center">
             <Avatar className="h-9 w-9">
-              <AvatarFallback>{user.email?.charAt(0).toUpperCase()}</AvatarFallback>
+              <AvatarFallback>{user.email?.charAt(0).toUpperCase() || user.role.charAt(0).toUpperCase()}</AvatarFallback>
             </Avatar>
              <div className="group-data-[collapsible=icon]:hidden">
               <p className="font-semibold truncate capitalize">{user.role === 'diretor' ? 'Diretoria' : 'Analista'}</p>
@@ -241,3 +257,5 @@ export default function AdminLayout({
     </SidebarProvider>
   );
 }
+
+    
