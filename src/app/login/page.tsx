@@ -28,21 +28,9 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    if (password !== ADMIN_PASSWORD) {
-        toast({
-            variant: "destructive",
-            title: "Senha Incorreta",
-            description: "A senha de acesso do gestor está incorreta.",
-        });
-        setIsLoading(false);
-        return;
-    }
-
     try {
         const user = await signInUser(ADMIN_EMAIL, password);
         if (user) {
-            // Salva um objeto simples para compatibilidade com o layout
-            localStorage.setItem('user', JSON.stringify({ role: 'diretor' }));
             toast({
                 title: "Login bem-sucedido!",
                 description: "Acesso de Gestor concedido. Redirecionando...",
@@ -51,11 +39,11 @@ export default function LoginPage() {
         }
     } catch (error: any) {
         console.error(error);
-        if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+        if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
              toast({
                 variant: "destructive",
                 title: "Credenciais Inválidas",
-                description: "O usuário admin não foi encontrado ou a senha está incorreta. Por favor, contate o suporte.",
+                description: "A senha está incorreta ou o usuário de gestão não existe. Contate o suporte.",
             });
         } else {
             toast({

@@ -26,10 +26,6 @@ import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { signOutUser } from "@/services/auth";
 
-interface User {
-  role: 'diretor' | 'analyst';
-  email?: string; 
-}
 
 const pageTitles: { [key: string]: string } = {
     '/admin': 'Painel BI',
@@ -50,24 +46,17 @@ export default function AdminLayout({
   const router = useRouter();
   const pathname = usePathname();
   const { toast } = useToast();
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<FirebaseUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [pageTitle, setPageTitle] = useState('Painel de Gestão');
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
         if (firebaseUser) {
-            // Assume qualquer usuário logado como diretor para simplificar
-             const userData: User = { role: 'diretor', email: firebaseUser.email || 'Admin' };
-             setUser(userData);
+             setUser(firebaseUser);
         } else {
-             const localUser = localStorage.getItem('user');
-             if (localUser) {
-                setUser(JSON.parse(localUser));
-             } else {
-                router.push('/login');
-             }
+            router.push('/login');
         }
         setLoading(false);
     });
@@ -83,7 +72,6 @@ export default function AdminLayout({
     setIsLoggingOut(true);
     try {
         await signOutUser();
-        localStorage.removeItem('user');
         router.push('/login');
         toast({ title: 'Logout efetuado com sucesso.' });
     } catch (error) {
@@ -129,26 +117,22 @@ export default function AdminLayout({
               </SidebarMenuButton>
             </SidebarMenuItem>
             
-            {user.role === 'diretor' && (
-              <>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <Link href="/admin/vigia-digital">
-                      <ShieldAlert />
-                      Vigia Digital
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <Link href="/admin/institucional">
-                      <Clapperboard />
-                      Vídeo Institucional
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </>
-            )}
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild>
+                <Link href="/admin/vigia-digital">
+                  <ShieldAlert />
+                  Vigia Digital
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+             <SidebarMenuItem>
+              <SidebarMenuButton asChild>
+                <Link href="/admin/institucional">
+                  <Clapperboard />
+                  Vídeo Institucional
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
 
             <SidebarSeparator />
             <SidebarMenuItem>
@@ -232,10 +216,10 @@ export default function AdminLayout({
         <SidebarFooter>
           <div className="flex items-center gap-3 p-2 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center">
             <Avatar className="h-9 w-9">
-              <AvatarFallback>{user.email?.charAt(0).toUpperCase() || user.role.charAt(0).toUpperCase()}</AvatarFallback>
+              <AvatarFallback>{user.email?.charAt(0).toUpperCase() || 'A'}</AvatarFallback>
             </Avatar>
              <div className="group-data-[collapsible=icon]:hidden">
-              <p className="font-semibold truncate capitalize">{user.role === 'diretor' ? 'Diretoria' : 'Analista'}</p>
+              <p className="font-semibold truncate capitalize">Gestor</p>
               <p className="text-xs text-muted-foreground truncate">{user.email}</p>
             </div>
             <Button variant="ghost" size="icon" className="ml-auto group-data-[collapsible=icon]:hidden" onClick={handleLogout} disabled={isLoggingOut}>
@@ -257,5 +241,3 @@ export default function AdminLayout({
     </SidebarProvider>
   );
 }
-
-    
