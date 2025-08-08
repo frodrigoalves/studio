@@ -31,6 +31,9 @@ export default function LoginPage() {
     try {
         const user = await signInUser(ADMIN_EMAIL, password);
         if (user) {
+            // Remove any previously stored simple role
+            localStorage.removeItem('userRole');
+            
             toast({
                 title: "Login bem-sucedido!",
                 description: "Acesso de Gestor concedido. Redirecionando...",
@@ -39,17 +42,17 @@ export default function LoginPage() {
         }
     } catch (error: any) {
         console.error(error);
-        if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+        if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
              toast({
                 variant: "destructive",
                 title: "Credenciais Inválidas",
-                description: "A senha está incorreta ou o usuário de gestão não existe. Contate o suporte.",
+                description: "A senha está incorreta. Verifique e tente novamente.",
             });
         } else {
             toast({
                 variant: "destructive",
                 title: "Erro no Login",
-                description: "Ocorreu um erro inesperado durante o login.",
+                description: `Ocorreu um erro inesperado: ${error.message}`,
             });
         }
     } finally {
@@ -72,7 +75,7 @@ export default function LoginPage() {
             <Alert className="mb-4">
                 <AlertTitle>Acesso de Administrador</AlertTitle>
                 <AlertDescription>
-                    Use a senha fornecida para acessar todas as funcionalidades de gestão.
+                    Use a senha <span className="font-semibold">TopBus@2024</span> para acessar. Na primeira vez, o usuário administrador será criado automaticamente.
                 </AlertDescription>
             </Alert>
             <form onSubmit={handleLogin} className="space-y-4">

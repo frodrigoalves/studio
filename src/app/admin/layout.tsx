@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Settings, FileText, LogOut, BrainCircuit, Loader2, Clock4, FileHeart, Wrench, Users, Fuel, ClipboardCheck, CircleDot, ShieldAlert, Clapperboard } from "lucide-react";
+import { Settings, FileText, LogOut, BrainCircuit, Loader2, Clock4, FileHeart, Wrench, Users, Fuel, ClipboardCheck, CircleDot, ShieldAlert, Clapperboard, Archive } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
@@ -132,6 +132,15 @@ export default function AdminLayout({
                   Vídeo Institucional
                 </Link>
               </SidebarMenuButton>
+            </SidebarMenuItem>
+            
+             <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                    <Link href="/admin/apresentacao">
+                    <Archive />
+                    Apresentação
+                    </Link>
+                </SidebarMenuButton>
             </SidebarMenuItem>
 
             <SidebarSeparator />

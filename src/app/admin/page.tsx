@@ -69,7 +69,6 @@ export default function AdminDashboard() {
     const { toast } = useToast();
     
     // Common state
-    const [userRole, setUserRole] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     // Dashboard state
@@ -101,12 +100,6 @@ export default function AdminDashboard() {
     const [file, setFile] = useState<File | null>(null);
     const [isSheetLoading, setIsSheetLoading] = useState(false);
     const [sheetAnalysisResult, setSheetAnalysisResult] = useState<SheetAnalysisOutput | null>(null);
-
-    // Presentation Repository state
-    const [repositoryContent, setRepositoryContent] = useState('');
-    const [repositoryFile, setRepositoryFile] = useState<File | null>(null);
-    const [isPresentationLoading, setIsPresentationLoading] = useState(false);
-    const [presentationResult, setPresentationResult] = useState<PresentationOutput | null>(null);
 
 
     const fetchAndSetData = useCallback(async () => {
@@ -176,11 +169,6 @@ export default function AdminDashboard() {
     }, [toast]);
     
     useEffect(() => {
-        const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-            const userData = JSON.parse(storedUser);
-            setUserRole(userData.role);
-        }
         fetchAndSetData();
     }, [fetchAndSetData]);
 
@@ -399,45 +387,6 @@ export default function AdminDashboard() {
           });
         } finally {
           setIsSheetLoading(false);
-        }
-    };
-
-    const handleGeneratePresentation = async () => {
-        if (!repositoryContent && !repositoryFile) {
-            toast({
-                variant: 'destructive',
-                title: 'Nenhum conteúdo fornecido',
-                description: 'Por favor, adicione anotações ou um arquivo para gerar o resumo.',
-            });
-            return;
-        }
-
-        setIsPresentationLoading(true);
-        setPresentationResult(null);
-
-        try {
-            let fileDataUri: string | undefined = undefined;
-            if (repositoryFile) {
-                fileDataUri = await fileToDataURI(repositoryFile);
-            }
-
-            const input: PresentationInput = {
-                repositoryContent: repositoryContent || undefined,
-                fileDataUri: fileDataUri,
-            };
-
-            const result = await generatePresentationSummary(input);
-            setPresentationResult(result);
-
-        } catch (error) {
-            console.error('Failed to generate presentation', error);
-            toast({
-                variant: 'destructive',
-                title: 'Erro na Geração',
-                description: 'A IA não conseguiu processar o conteúdo. Tente novamente.',
-            });
-        } finally {
-            setIsPresentationLoading(false);
         }
     };
 
@@ -890,86 +839,6 @@ export default function AdminDashboard() {
                 </AccordionContent>
             </AccordionItem>
             
-            {userRole === 'diretor' && (
-                <AccordionItem value="item-4">
-                    <AccordionTrigger className="text-xl font-semibold">
-                        <div className="flex items-center gap-2">
-                            <Archive /> Repositório da Apresentação
-                        </div>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                    <Card className="shadow-lg mt-2 border-0">
-                            <CardHeader>
-                                <CardTitle>Assistente de Apresentação Semanal</CardTitle>
-                                <CardDescription>Cole aqui dados, links, rascunhos ou faça upload de arquivos. A IA usará este repositório como contexto para gerar resumos e análises para sua reunião.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="space-y-4">
-                                    <div>
-                                        <Label htmlFor="repository-content">Anotações e Rascunhos</Label>
-                                        <Textarea
-                                            id="repository-content"
-                                            placeholder="Cole aqui o conteúdo bruto, links para documentos, anotações da última reunião ou qualquer dado que a IA deva considerar para a apresentação..."
-                                            className="h-48 mt-2"
-                                            value={repositoryContent}
-                                            onChange={(e) => setRepositoryContent(e.target.value)}
-                                            disabled={isPresentationLoading}
-                                        />
-                                    </div>
-                                    <div>
-                                        <Label htmlFor="repository-upload">Upload de Arquivos de Apoio</Label>
-                                         <div className="relative mt-2">
-                                            <Input
-                                                id="repository-upload"
-                                                type="file"
-                                                onChange={(e) => handleFileChange(e, setRepositoryFile)}
-                                                className="pr-12"
-                                                disabled={isPresentationLoading}
-                                            />
-                                            <Upload className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
-                                        </div>
-                                        {repositoryFile && <p className="text-sm text-muted-foreground mt-2">Arquivo selecionado: {repositoryFile.name}</p>}
-                                    </div>
-                                     <Button onClick={handleGeneratePresentation} disabled={isPresentationLoading || (!repositoryContent && !repositoryFile)} className="w-full">
-                                        {isPresentationLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <BrainCircuit className="mr-2 h-4 w-4" />}
-                                        {isPresentationLoading ? 'Gerando Resumo...' : 'Gerar Resumo da Apresentação com IA'}
-                                    </Button>
-                                </div>
-                            </CardContent>
-                            {presentationResult && (
-                                 <Card className="mt-6 bg-muted/20 mx-6 mb-6">
-                                    <CardHeader>
-                                        <CardTitle>{presentationResult.title}</CardTitle>
-                                        <CardDescription>Abaixo o resumo gerado pela IA para sua apresentação.</CardDescription>
-                                    </CardHeader>
-                                    <CardContent className="space-y-6">
-                                        <div className="space-y-2">
-                                            <h3 className="font-semibold text-lg"><ListChecks /> Resumo Executivo</h3>
-                                            <Textarea readOnly value={presentationResult.summary} className="h-24 bg-background" />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <h3 className="font-semibold text-lg"><BarChart2 /> Pontos de Discussão</h3>
-                                             <ul className="list-disc list-inside space-y-1 bg-background p-4 rounded-md">
-                                                {presentationResult.talkingPoints.map((point, index) => (
-                                                    <li key={index}>{point}</li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <h3 className="font-semibold text-lg"><Lightbulb /> Próximos Passos</h3>
-                                            <ul className="list-disc list-inside space-y-1 bg-background p-4 rounded-md">
-                                                {presentationResult.nextSteps.map((step, index) => (
-                                                    <li key={index}>{step}</li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            )}
-                    </Card>
-                    </AccordionContent>
-                </AccordionItem>
-            )}
         </Accordion>
     </div>
   );
