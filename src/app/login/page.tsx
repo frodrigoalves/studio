@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-const ADMIN_PASSWORD = "diretoria";
+const ADMIN_PASSWORD = "topbus123";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -29,8 +29,6 @@ export default function LoginPage() {
             title: "Login bem-sucedido!",
             description: "Acesso de Gestor concedido. Redirecionando...",
         });
-        // Use a session storage item to simulate a logged-in state
-        // This is a simple approach without full-blown auth.
         sessionStorage.setItem('isAdminAuthenticated', 'true');
         router.push('/admin');
     } else {
