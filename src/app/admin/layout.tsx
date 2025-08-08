@@ -22,9 +22,6 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Settings, FileText, LogOut, BrainCircuit, Loader2, Clock4, FileHeart, Wrench, Users, Fuel, ClipboardCheck, CircleDot, ShieldAlert, Clapperboard, Archive } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { onAuthStateChanged, type User as FirebaseUser } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
-import { signOutUser } from "@/services/auth";
 
 
 const pageTitles: { [key: string]: string } = {
@@ -46,22 +43,19 @@ export default function AdminLayout({
   const router = useRouter();
   const pathname = usePathname();
   const { toast } = useToast();
-  const [user, setUser] = useState<FirebaseUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [pageTitle, setPageTitle] = useState('Painel de Gestão');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-        if (firebaseUser) {
-             setUser(firebaseUser);
-        } else {
-            router.push('/login');
-        }
-        setLoading(false);
-    });
-    
-    return () => unsubscribe();
+    const isAdmin = sessionStorage.getItem('isAdminAuthenticated') === 'true';
+    if (!isAdmin) {
+      router.push('/login');
+    } else {
+      setIsAuthenticated(true);
+    }
+    setLoading(false);
   }, [router]);
   
   useEffect(() => {
@@ -70,14 +64,9 @@ export default function AdminLayout({
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
-    try {
-        await signOutUser();
-        router.push('/login');
-        toast({ title: 'Logout efetuado com sucesso.' });
-    } catch (error) {
-        toast({ variant: 'destructive', title: 'Erro ao fazer logout.' });
-        setIsLoggingOut(false);
-    }
+    sessionStorage.removeItem('isAdminAuthenticated');
+    router.push('/login');
+    toast({ title: 'Logout efetuado com sucesso.' });
   };
   
   const handleDevelopmentClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
@@ -88,7 +77,7 @@ export default function AdminLayout({
     });
   }
 
-  if (loading || !user) {
+  if (loading || !isAuthenticated) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
         <Loader2 className="h-16 w-16 animate-spin text-primary" />
@@ -225,11 +214,11 @@ export default function AdminLayout({
         <SidebarFooter>
           <div className="flex items-center gap-3 p-2 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center">
             <Avatar className="h-9 w-9">
-              <AvatarFallback>{user.email?.charAt(0).toUpperCase() || 'A'}</AvatarFallback>
+              <AvatarFallback>{'G'}</AvatarFallback>
             </Avatar>
              <div className="group-data-[collapsible=icon]:hidden">
               <p className="font-semibold truncate capitalize">Gestor</p>
-              <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+              <p className="text-xs text-muted-foreground truncate">admin@topbus.com</p>
             </div>
             <Button variant="ghost" size="icon" className="ml-auto group-data-[collapsible=icon]:hidden" onClick={handleLogout} disabled={isLoggingOut}>
               {isLoggingOut ? <Loader2 className="animate-spin" /> : <LogOut />}

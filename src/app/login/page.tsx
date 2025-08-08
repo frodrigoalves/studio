@@ -11,10 +11,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { signInUser } from '@/services/auth';
 
-// E-mail fixo para o administrador. O usuário só precisa fornecer a senha.
-const ADMIN_EMAIL = "admin@topbus.com";
+const ADMIN_PASSWORD = "diretoria";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -22,36 +20,25 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    try {
-        const user = await signInUser(ADMIN_EMAIL, password);
-        if (user) {
-            toast({
-                title: "Login bem-sucedido!",
-                description: "Acesso de Gestor concedido. Redirecionando...",
-            });
-            router.push('/admin');
-        }
-    } catch (error: any) {
-        console.error(error);
-        // Handle specific auth errors for better user feedback
-        if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found') {
-             toast({
-                variant: "destructive",
-                title: "Credenciais Inválidas",
-                description: "A senha está incorreta ou o usuário administrador não foi criado no Firebase.",
-            });
-        } else {
-            toast({
-                variant: "destructive",
-                title: "Erro no Login",
-                description: `Ocorreu um erro inesperado. Verifique o console para mais detalhes.`,
-            });
-        }
-    } finally {
+    if (password === ADMIN_PASSWORD) {
+        toast({
+            title: "Login bem-sucedido!",
+            description: "Acesso de Gestor concedido. Redirecionando...",
+        });
+        // Use a session storage item to simulate a logged-in state
+        // This is a simple approach without full-blown auth.
+        sessionStorage.setItem('isAdminAuthenticated', 'true');
+        router.push('/admin');
+    } else {
+        toast({
+            variant: "destructive",
+            title: "Senha Incorreta",
+            description: "A senha de acesso está incorreta. Tente novamente.",
+        });
         setIsLoading(false);
     }
   };
