@@ -201,7 +201,7 @@ export function DriverForm() {
       await addRecord(recordPayload);
   
       toast({
-        title: "Jornada iniciada com sucesso!",
+        title: "Início de viagem registrado com sucesso!",
         description: "Seus dados foram salvos. Boa viagem!",
       });
       startForm.reset(initialStartValues);
@@ -308,7 +308,7 @@ export function DriverForm() {
       <CardContent className="p-2 sm:p-4">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="start">Iniciar Viagem</TabsTrigger>
+            <TabsTrigger value="start">Registrar Início</TabsTrigger>
             <TabsTrigger value="end">Finalizar Viagem</TabsTrigger>
           </TabsList>
           
@@ -390,7 +390,7 @@ export function DriverForm() {
 
                 <Button type="submit" className="w-full bg-green-600 hover:bg-green-700" disabled={isSubmitting}>
                   {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                  {isSubmitting ? "Enviando..." : "Iniciar Jornada"}
+                  {isSubmitting ? "Enviando..." : "Salvar Início"}
                 </Button>
               </form>
             </Form>

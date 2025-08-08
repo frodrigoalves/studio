@@ -540,7 +540,7 @@ export default function RecordsPage() {
     <Dialog open={isPhotosDialogOpen} onOpenChange={setPhotosDialogOpen}>
         <DialogContent className="sm:max-w-4xl">
             <DialogHeader>
-                <DialogTitle>Fotos da Jornada</DialogTitle>
+                <DialogTitle>Fotos do Registro</DialogTitle>
                 <DialogDescription>
                     Fotos registradas para a viagem de {selectedRecord?.driver} com o carro {selectedRecord?.car}.
                 </DialogDescription>

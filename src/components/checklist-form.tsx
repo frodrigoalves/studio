@@ -168,7 +168,7 @@ export function ChecklistForm() {
       <CardHeader>
         <CardTitle>Checklist de Vistoria</CardTitle>
         <CardDescription>
-          Realize a vistoria do veículo no início da jornada de trabalho. Os itens já vêm marcados como "OK", altere apenas o que for necessário.
+          Realize a vistoria do veículo no início do turno de trabalho. Os itens já vêm marcados como "OK", altere apenas o que for necessário.
         </CardDescription>
       </CardHeader>
       <CardContent className="p-4 sm:p-6">
