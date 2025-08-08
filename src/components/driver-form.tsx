@@ -21,6 +21,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { addRecord, getRecordByPlateAndStatus, updateRecord, Record, RecordAddPayload, RecordUpdatePayload } from "@/services/records";
 import { extractOdometerFromImage } from "@/ai/flows/ocr-flow";
+import { extractFuelLevelFromImage } from "@/ai/flows/fuel-level-flow";
 import { cn } from "@/lib/utils";
 import { Separator } from "./ui/separator";
 import { FuelGauge } from "./ui/fuel-gauge";
@@ -80,6 +81,7 @@ export function DriverForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [isOcrLoading, setIsOcrLoading] = useState(false);
+  const [isFuelLevelLoading, setIsFuelLevelLoading] = useState<"start" | "end" | null>(null);
   const [recordToEnd, setRecordToEnd] = useState<Record | null>(null);
 
   const [startOdometerPhotoFile, setStartOdometerPhotoFile] = useState<File | null>(null);
@@ -134,7 +136,7 @@ export function DriverForm() {
     }
   }, [activeTab, endForm, toast]);
   
-  const handleOcr = async (file: File | null) => {
+  const handleOdometerOcr = async (file: File | null) => {
     if (!file) return;
 
     setIsOcrLoading(true);
@@ -166,6 +168,46 @@ export function DriverForm() {
       });
     } finally {
       setIsOcrLoading(false);
+    }
+  };
+
+  const handleFuelLevelOcr = async (file: File | null, formType: "start" | "end") => {
+    if (!file) return;
+    
+    setIsFuelLevelLoading(formType);
+    try {
+        const fuelB64 = await fileToBase64(file);
+        if (!fuelB64) throw new Error("Could not convert file to data URI");
+        
+        const result = await extractFuelLevelFromImage({ fuelGaugePhotoDataUri: fuelB64 });
+
+        if (result.fuelLevel !== null) {
+            const roundedLevel = Math.round(result.fuelLevel);
+            if (formType === 'start') {
+                startForm.setValue('startFuelLevel', roundedLevel, { shouldValidate: true });
+            } else {
+                endForm.setValue('endFuelLevel', roundedLevel, { shouldValidate: true });
+            }
+            toast({
+                title: "Nível de Combustível Detectado!",
+                description: `Nível preenchido: ${roundedLevel}%. Por favor, confirme ou ajuste o valor.`,
+            });
+        } else {
+             toast({
+                variant: 'destructive',
+                title: "Leitura do Combustível Falhou",
+                description: "Não foi possível detectar o nível da imagem. Por favor, marque o valor manualmente.",
+            });
+        }
+    } catch (error) {
+        console.error("Fuel level OCR failed", error);
+        toast({
+            variant: 'destructive',
+            title: "Erro na Leitura da Imagem",
+            description: "Ocorreu um problema ao processar a foto. Tente novamente ou marque o valor manualmente.",
+        });
+    } finally {
+        setIsFuelLevelLoading(null);
     }
   };
 
@@ -298,6 +340,69 @@ export function DriverForm() {
     }
   }, [activeTab, endForm, startForm]);
 
+  const FuelSection = ({ formType }: { formType: "start" | "end" }) => {
+    const form = formType === 'start' ? startForm : endForm;
+    const levelFieldName = formType === 'start' ? 'startFuelLevel' : 'endFuelLevel';
+    const photoFile = formType === 'start' ? startFuelPhotoFile : endFuelPhotoFile;
+    const setPhotoFile = formType === 'start' ? setStartFuelPhotoFile : setEndFuelPhotoFile;
+    const photoInputRef = formType === 'start' ? startFuelPhotoInputRef : endFuelPhotoInputRef;
+    const isLoading = isFuelLevelLoading === formType;
+
+    return (
+      <div className="space-y-4">
+        <Separator />
+        <div className="relative w-full max-w-xs mx-auto">
+          <Controller
+            control={form.control as any}
+            name={levelFieldName}
+            render={({ field }) => (
+              <FormItem>
+                <FormControl>
+                  <FuelGauge value={field.value} onValueChange={field.onChange} />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+          <div className="absolute inset-0 flex items-center justify-center -z-10">
+              <div className="relative w-48 h-48 sm:w-56 sm:h-56">
+                <FormItem>
+                    <FormLabel htmlFor={`${formType}-fuel-photo-upload`} className={cn("absolute inset-0 bg-muted/80 rounded-full flex flex-col items-center justify-center cursor-pointer border-2 border-dashed transition-colors", photoFile ? 'border-primary/50' : 'border-border')}>
+                        {isLoading ? (
+                             <Loader2 className="h-8 w-8 text-primary animate-spin" />
+                        ) : (
+                            <>
+                                <Camera className={cn("h-8 w-8 mb-2 transition-colors", photoFile ? 'text-primary' : 'text-muted-foreground')} />
+                                <span className={cn("text-xs text-center transition-colors", photoFile ? 'text-primary font-semibold' : 'text-muted-foreground')}>
+                                    {photoFile ? 'Foto Carregada' : 'Foto do Combustível'}
+                                </span>
+                            </>
+                        )}
+                    </FormLabel>
+                    <FormControl>
+                        <Input
+                            id={`${formType}-fuel-photo-upload`}
+                            type="file"
+                            accept="image/*"
+                            capture="camera"
+                            className="sr-only"
+                            ref={photoInputRef}
+                            onChange={(e) => {
+                                const file = e.target.files?.[0] || null;
+                                setPhotoFile(file);
+                                handleFuelLevelOcr(file, formType);
+                            }}
+                        />
+                    </FormControl>
+                </FormItem>
+              </div>
+          </div>
+        </div>
+        <p className="text-xs text-center text-muted-foreground px-4">Tire uma foto do medidor de combustível. A IA tentará ler o valor. Confirme ou ajuste o nível arrastando o dedo sobre o medidor.</p>
+      </div>
+    );
+  };
+
+
   return (
     <Card className={cn(
         "shadow-2xl shadow-primary/10 transition-all duration-300 border-2",
@@ -335,7 +440,7 @@ export function DriverForm() {
                                 onChange={(e) => {
                                     const file = e.target.files?.[0] || null;
                                     setStartOdometerPhotoFile(file);
-                                    handleOcr(file);
+                                    handleOdometerOcr(file);
                                 }}
                             />
                             <Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
@@ -361,31 +466,8 @@ export function DriverForm() {
                         <FormMessage />
                     </FormItem>
                 )}/>
-
-                <Separator />
                 
-                <Controller
-                    control={startForm.control}
-                    name="startFuelLevel"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Nível de Combustível (Início)</FormLabel>
-                            <FormControl>
-                                <FuelGauge value={field.value} onValueChange={field.onChange} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                 <FormItem>
-                    <FormLabel>Foto do Combustível (Início)</FormLabel>
-                    <FormControl>
-                        <div className="relative">
-                            <Input type="file" accept="image/*" capture="camera" className="pr-12" ref={startFuelPhotoInputRef} onChange={(e) => setStartFuelPhotoFile(e.target.files?.[0] || null)}/>
-                            <Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
-                        </div>
-                    </FormControl>
-                </FormItem>
+                <FuelSection formType="start" />
 
 
                 <Button type="submit" className="w-full bg-green-600 hover:bg-green-700" disabled={isSubmitting}>
@@ -478,30 +560,8 @@ export function DriverForm() {
                   </FormControl>
                   <FormMessage />
                 </FormItem>
-                <Separator />
-
-                <Controller
-                    control={endForm.control}
-                    name="endFuelLevel"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Nível de Combustível (Fim)</FormLabel>
-                            <FormControl>
-                                <FuelGauge value={field.value} onValueChange={field.onChange} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <FormItem>
-                    <FormLabel>Foto do Combustível (Fim)</FormLabel>
-                    <FormControl>
-                        <div className="relative">
-                            <Input type="file" accept="image/*" capture="camera" className="pr-12" ref={endFuelPhotoInputRef} onChange={(e) => setEndFuelPhotoFile(e.target.files?.[0] || null)}/>
-                            <Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
-                        </div>
-                    </FormControl>
-                </FormItem>
+                
+                <FuelSection formType="end" />
 
                 <Button type="submit" variant="destructive" className="w-full" disabled={isSubmitting}>
                    {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
