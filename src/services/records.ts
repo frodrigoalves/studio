@@ -19,10 +19,14 @@ export interface Record {
   status: "Finalizado" | "Em Andamento";
   startOdometerPhoto: string | null;
   endOdometerPhoto: string | null;
+  startFuelLevel?: number | null;
+  endFuelLevel?: number | null;
+  startFuelPhoto?: string | null;
+  endFuelPhoto?: string | null;
 }
 
 export type RecordAddPayload = Omit<Record, 'id'>;
-export type RecordUpdatePayload = Partial<Omit<Record, 'id' | 'startOdometerPhoto' | 'endOdometerPhoto'>>;
+export type RecordUpdatePayload = Partial<Omit<Record, 'id' | 'startOdometerPhoto' | 'endOdometerPhoto' | 'startFuelPhoto' | 'endFuelPhoto'>>;
 
 async function uploadPhoto(photoBase64: string | null, recordId: string, type: string): Promise<string | null> {
     if (!photoBase64 || !photoBase64.startsWith('data:image')) {
@@ -58,9 +62,11 @@ export async function addRecord(record: RecordAddPayload): Promise<Record> {
   const tempDocForId = doc(collection(db, "tripRecords"));
   const recordId = tempDocForId.id;
 
-  const [startOdometerPhotoUrl, endOdometerPhotoUrl] = await Promise.all([
+  const [startOdometerPhotoUrl, endOdometerPhotoUrl, startFuelPhotoUrl, endFuelPhotoUrl] = await Promise.all([
      uploadPhoto(record.startOdometerPhoto, recordId, 'start-odometer'),
      uploadPhoto(record.endOdometerPhoto, recordId, 'end-odometer'),
+     uploadPhoto(record.startFuelPhoto, recordId, 'start-fuel'),
+     uploadPhoto(record.endFuelPhoto, recordId, 'end-fuel'),
   ]);
   
   const dataToSave: Omit<Record, 'id'> = {
@@ -70,6 +76,10 @@ export async function addRecord(record: RecordAddPayload): Promise<Record> {
       date: new Date(record.date).toISOString(),
       startOdometerPhoto: startOdometerPhotoUrl,
       endOdometerPhoto: endOdometerPhotoUrl,
+      startFuelLevel: record.startFuelLevel,
+      startFuelPhoto: startFuelPhotoUrl,
+      endFuelLevel: record.endFuelLevel,
+      endFuelPhoto: endFuelPhotoUrl,
   };
   
   if(isNaN(dataToSave.kmStart!)) dataToSave.kmStart = null;
@@ -84,6 +94,9 @@ export async function addRecord(record: RecordAddPayload): Promise<Record> {
 export async function updateRecord(id: string, data: RecordUpdatePayload): Promise<void> {
     
     const recordRef = doc(db, "tripRecords", id);
+    const originalDoc = await getDoc(recordRef);
+    const originalData = originalDoc.data() as Record;
+
     const dataToUpdate: { [key: string]: any } = { ...data };
 
     if (data.kmStart !== undefined) {
@@ -98,6 +111,23 @@ export async function updateRecord(id: string, data: RecordUpdatePayload): Promi
     
      if (data.date) {
         dataToUpdate.date = new Date(data.date).toISOString();
+    }
+    
+    // Handle photo updates if new base64 is provided
+    if ('endOdometerPhoto' in data && typeof data.endOdometerPhoto === 'string' && data.endOdometerPhoto.startsWith('data:image')) {
+        const newUrl = await uploadPhoto(data.endOdometerPhoto, id, 'end-odometer');
+        if (originalData.endOdometerPhoto) {
+            await deletePhoto(originalData.endOdometerPhoto);
+        }
+        dataToUpdate.endOdometerPhoto = newUrl;
+    }
+
+    if ('endFuelPhoto' in data && typeof data.endFuelPhoto === 'string' && data.endFuelPhoto.startsWith('data:image')) {
+        const newUrl = await uploadPhoto(data.endFuelPhoto, id, 'end-fuel');
+        if (originalData.endFuelPhoto) {
+            await deletePhoto(originalData.endFuelPhoto);
+        }
+        dataToUpdate.endFuelPhoto = newUrl;
     }
 
 
@@ -117,6 +147,8 @@ export async function deleteRecord(id: string): Promise<void> {
     await Promise.all([
         deletePhoto(recordData.startOdometerPhoto),
         deletePhoto(recordData.endOdometerPhoto),
+        deletePhoto(recordData.startFuelPhoto),
+        deletePhoto(recordData.endFuelPhoto),
     ]);
 
     await deleteDoc(recordRef);
@@ -160,5 +192,3 @@ export async function getLastTripRecordForCar(carId: string): Promise<Record | n
     const docSnap = querySnapshot.docs[0];
     return { id: docSnap.id, ...docSnap.data() } as Record;
 }
-
-    

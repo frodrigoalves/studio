@@ -3,7 +3,7 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { Camera, Loader2, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,8 @@ import { useToast } from "@/hooks/use-toast";
 import { addRecord, getRecordByPlateAndStatus, updateRecord, Record, RecordAddPayload, RecordUpdatePayload } from "@/services/records";
 import { extractOdometerFromImage } from "@/ai/flows/ocr-flow";
 import { cn } from "@/lib/utils";
+import { Separator } from "./ui/separator";
+import { FuelGauge } from "./ui/fuel-gauge";
 
 const fileToBase64 = (file: File | null): Promise<string | null> => {
     if (!file) return Promise.resolve(null);
@@ -39,6 +41,7 @@ const startTripSchema = z.object({
     car: z.string().min(1, "Carro é obrigatório."),
     line: z.string().min(1, "Linha é obrigatória."),
     kmStart: z.coerce.number({ required_error: "Km Inicial é obrigatório."}).min(1, "Km Inicial é obrigatório."),
+    startFuelLevel: z.number().min(0).max(100),
 });
 
 const endFormSchema = z.object({
@@ -47,6 +50,7 @@ const endFormSchema = z.object({
   car: z.string().min(1, "Carro é obrigatório.").optional(),
   line: z.string().min(1, "Linha é obrigatória.").optional(),
   kmEnd: z.coerce.number({ required_error: "Km Final é obrigatório."}).min(1, "Km Final é obrigatório."),
+  endFuelLevel: z.number().min(0).max(100),
 });
 
 type StartTripFormValues = z.infer<typeof startTripSchema>;
@@ -58,6 +62,7 @@ const initialStartValues: StartTripFormValues = {
     car: "",
     line: "",
     kmStart: 0,
+    startFuelLevel: 50,
 };
 
 const initialEndValues: EndFormValues = { 
@@ -66,6 +71,7 @@ const initialEndValues: EndFormValues = {
     car: "", 
     line: "", 
     kmEnd: 0, 
+    endFuelLevel: 50,
 };
 
 export function DriverForm() {
@@ -78,9 +84,13 @@ export function DriverForm() {
 
   const [startOdometerPhotoFile, setStartOdometerPhotoFile] = useState<File | null>(null);
   const [endOdometerPhotoFile, setEndOdometerPhotoFile] = useState<File | null>(null);
+  const [startFuelPhotoFile, setStartFuelPhotoFile] = useState<File | null>(null);
+  const [endFuelPhotoFile, setEndFuelPhotoFile] = useState<File | null>(null);
 
   const startFileInputRef = useRef<HTMLInputElement>(null);
   const endFileInputRef = useRef<HTMLInputElement>(null);
+  const startFuelPhotoInputRef = useRef<HTMLInputElement>(null);
+  const endFuelPhotoInputRef = useRef<HTMLInputElement>(null);
   
   const startForm = useForm<StartTripFormValues>({
     resolver: zodResolver(startTripSchema),
@@ -163,13 +173,16 @@ export function DriverForm() {
     setIsSubmitting(true);
     
     try {
-      if (!startOdometerPhotoFile) {
-        toast({ variant: 'destructive', title: 'Foto Obrigatória', description: 'É necessário enviar a foto do hodômetro.'});
+      if (!startOdometerPhotoFile || !startFuelPhotoFile) {
+        toast({ variant: 'destructive', title: 'Fotos Obrigatórias', description: 'É necessário enviar a foto do hodômetro e do medidor de combustível.'});
         setIsSubmitting(false);
         return;
       }
   
-      const startOdometerPhotoB64 = await fileToBase64(startOdometerPhotoFile);
+      const [startOdometerPhotoB64, startFuelPhotoB64] = await Promise.all([
+          fileToBase64(startOdometerPhotoFile),
+          fileToBase64(startFuelPhotoFile),
+      ]);
   
       const recordPayload: RecordAddPayload = {
         date: new Date().toISOString(),
@@ -182,6 +195,8 @@ export function DriverForm() {
         status: "Em Andamento",
         startOdometerPhoto: startOdometerPhotoB64,
         endOdometerPhoto: null,
+        startFuelLevel: data.startFuelLevel,
+        startFuelPhoto: startFuelPhotoB64,
       };
       await addRecord(recordPayload);
   
@@ -191,7 +206,9 @@ export function DriverForm() {
       });
       startForm.reset(initialStartValues);
       setStartOdometerPhotoFile(null);
+      setStartFuelPhotoFile(null);
       if (startFileInputRef.current) startFileInputRef.current.value = "";
+      if (startFuelPhotoInputRef.current) startFuelPhotoInputRef.current.value = "";
   
     } catch (e) {
       console.error("Failed to start trip", e);
@@ -208,8 +225,8 @@ export function DriverForm() {
   async function onEndSubmit(data: EndFormValues) {
      setIsSubmitting(true);
      try {
-        if (!endOdometerPhotoFile) {
-             toast({ variant: "destructive", title: "Foto Obrigatória", description: "Por favor, envie a foto do odômetro final." });
+        if (!endOdometerPhotoFile || !endFuelPhotoFile) {
+             toast({ variant: "destructive", title: "Fotos Obrigatórias", description: "Por favor, envie as fotos do odômetro e do medidor de combustível." });
              setIsSubmitting(false);
              return;
         }
@@ -234,12 +251,17 @@ export function DriverForm() {
             return;
         }
 
-        const photoBase64 = await fileToBase64(endOdometerPhotoFile);
+        const [endOdometerPhotoB64, endFuelPhotoB64] = await Promise.all([
+            fileToBase64(endOdometerPhotoFile),
+            fileToBase64(endFuelPhotoFile),
+        ]);
         
-        const dataToUpdate: RecordUpdatePayload = {
+        const dataToUpdate: Partial<Record> = {
           status: "Finalizado",
           kmEnd: data.kmEnd,
-          endOdometerPhoto: photoBase64,
+          endOdometerPhoto: endOdometerPhotoB64,
+          endFuelLevel: data.endFuelLevel,
+          endFuelPhoto: endFuelPhotoB64,
         };
 
         await updateRecord(recordToEnd.id, dataToUpdate);
@@ -251,9 +273,10 @@ export function DriverForm() {
         endForm.reset(initialEndValues);
         setRecordToEnd(null);
         setEndOdometerPhotoFile(null);
-         if (endFileInputRef.current) {
-            endFileInputRef.current.value = "";
-        }
+        setEndFuelPhotoFile(null);
+        if (endFileInputRef.current) endFileInputRef.current.value = "";
+        if (endFuelPhotoInputRef.current) endFuelPhotoInputRef.current.value = "";
+
      } catch (e) {
         console.error("Failed to end trip", e);
         toast({
@@ -297,6 +320,8 @@ export function DriverForm() {
                 <FormField control={startForm.control} name="car" render={({ field }) => (<FormItem><FormLabel>Carro</FormLabel><FormControl><Input placeholder="Número do veículo" {...field} /></FormControl><FormMessage /></FormItem>)}/>
                 <FormField control={startForm.control} name="line" render={({ field }) => (<FormItem><FormLabel>Linha</FormLabel><FormControl><Input placeholder="Número da linha" {...field} /></FormControl><FormMessage /></FormItem>)}/>
                 
+                <Separator />
+                
                 <FormItem>
                     <FormLabel>Foto do Hodômetro (Início)</FormLabel>
                     <FormControl>
@@ -336,6 +361,33 @@ export function DriverForm() {
                         <FormMessage />
                     </FormItem>
                 )}/>
+
+                <Separator />
+                
+                <Controller
+                    control={startForm.control}
+                    name="startFuelLevel"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Nível de Combustível (Início)</FormLabel>
+                            <FormControl>
+                                <FuelGauge value={field.value} onValueChange={field.onChange} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                 <FormItem>
+                    <FormLabel>Foto do Combustível (Início)</FormLabel>
+                    <FormControl>
+                        <div className="relative">
+                            <Input type="file" accept="image/*" capture="camera" className="pr-12" ref={startFuelPhotoInputRef} onChange={(e) => setStartFuelPhotoFile(e.target.files?.[0] || null)}/>
+                            <Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                        </div>
+                    </FormControl>
+                </FormItem>
+
+
                 <Button type="submit" className="w-full bg-green-600 hover:bg-green-700" disabled={isSubmitting}>
                   {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
                   {isSubmitting ? "Enviando..." : "Iniciar Jornada"}
@@ -402,6 +454,7 @@ export function DriverForm() {
                       </FormItem>
                     )}
                   />
+                <Separator />
                 <FormField
                   control={endForm.control}
                   name="kmEnd"
@@ -425,6 +478,31 @@ export function DriverForm() {
                   </FormControl>
                   <FormMessage />
                 </FormItem>
+                <Separator />
+
+                <Controller
+                    control={endForm.control}
+                    name="endFuelLevel"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Nível de Combustível (Fim)</FormLabel>
+                            <FormControl>
+                                <FuelGauge value={field.value} onValueChange={field.onChange} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                <FormItem>
+                    <FormLabel>Foto do Combustível (Fim)</FormLabel>
+                    <FormControl>
+                        <div className="relative">
+                            <Input type="file" accept="image/*" capture="camera" className="pr-12" ref={endFuelPhotoInputRef} onChange={(e) => setEndFuelPhotoFile(e.target.files?.[0] || null)}/>
+                            <Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                        </div>
+                    </FormControl>
+                </FormItem>
+
                 <Button type="submit" variant="destructive" className="w-full" disabled={isSubmitting}>
                    {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
                   {isSubmitting ? "Finalizando..." : "Registrar Fim"}

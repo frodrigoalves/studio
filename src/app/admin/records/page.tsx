@@ -48,9 +48,11 @@ const fileToBase64 = (file: File): Promise<string> => {
     });
 };
 
-type NewRecordState = Omit<RecordAddPayload, 'startOdometerPhoto' | 'endOdometerPhoto' | 'status'> & {
+type NewRecordState = Omit<RecordAddPayload, 'startOdometerPhoto' | 'endOdometerPhoto' | 'startFuelPhoto' | 'endFuelPhoto' | 'status'> & {
     startOdometerPhotoFile: File | null;
     endOdometerPhotoFile: File | null;
+    startFuelPhotoFile: File | null;
+    endFuelPhotoFile: File | null;
 };
 
 export default function RecordsPage() {
@@ -82,6 +84,10 @@ export default function RecordsPage() {
         kmEnd: null,
         startOdometerPhotoFile: null,
         endOdometerPhotoFile: null,
+        startFuelLevel: 50,
+        endFuelLevel: 50,
+        startFuelPhotoFile: null,
+        endFuelPhotoFile: null,
     };
 
     const [newRecord, setNewRecord] = useState<NewRecordState>(initialNewRecordState);
@@ -122,6 +128,8 @@ export default function RecordsPage() {
       try {
         const startPhotoBase64 = newRecord.startOdometerPhotoFile ? await fileToBase64(newRecord.startOdometerPhotoFile) : null;
         const endPhotoBase64 = newRecord.endOdometerPhotoFile ? await fileToBase64(newRecord.endOdometerPhotoFile) : null;
+        const startFuelPhotoBase64 = newRecord.startFuelPhotoFile ? await fileToBase64(newRecord.startFuelPhotoFile) : null;
+        const endFuelPhotoBase64 = newRecord.endFuelPhotoFile ? await fileToBase64(newRecord.endFuelPhotoFile) : null;
 
         const newRecordPayload: RecordAddPayload = {
           ...newRecord,
@@ -131,6 +139,8 @@ export default function RecordsPage() {
           status: newRecord.kmEnd ? "Finalizado" : "Em Andamento",
           startOdometerPhoto: startPhotoBase64,
           endOdometerPhoto: endPhotoBase64,
+          startFuelPhoto: startFuelPhotoBase64,
+          endFuelPhoto: endFuelPhotoBase64,
         };
       
         await addRecord(newRecordPayload);
@@ -213,8 +223,7 @@ export default function RecordsPage() {
     const handleAuthorization = async () => {
         setIsAuthorizing(true);
         // This should be a real check, but for now, it's a hardcoded password.
-        const directorPasswords = ["sol@123"]; 
-        if (directorPasswords.includes(authPassword)) {
+        if (authPassword === "diretoria") {
             setAuthDialogOpen(false);
             setAuthPassword('');
             if (authAction === 'edit' && selectedRecord) {
@@ -244,6 +253,8 @@ export default function RecordsPage() {
             'KM Fim': r.kmEnd,
             'KM Total': (r.kmEnd && r.kmStart) ? r.kmEnd - r.kmStart : 0,
             'Status': r.status,
+            'Combustível Início (%)': r.startFuelLevel,
+            'Combustível Fim (%)': r.endFuelLevel,
         }));
     };
     
@@ -279,7 +290,7 @@ export default function RecordsPage() {
         }
         const doc = new jsPDF();
         const tableData = getExportData();
-        const tableColumn = ["Data", "Motorista", "Veículo", "Linha", "Chapa", "KM Início", "KM Fim", "KM Total", "Status"];
+        const tableColumn = Object.keys(tableData[0]);
         const tableRows = tableData.map(obj => tableColumn.map(key => obj[key as keyof typeof obj] ?? ''));
 
         (doc as any).autoTable({
@@ -326,9 +337,9 @@ export default function RecordsPage() {
         toast({ title: "E-mail Pronto", description: "Seu cliente de e-mail foi aberto."});
     };
     
-    const PhotoDisplay = ({ label, url }: { label: string; url: string | null | undefined }) => (
+    const PhotoDisplay = ({ label, url, fuelLevel }: { label: string; url: string | null | undefined, fuelLevel?: number | null }) => (
         <div className="space-y-2">
-            <h4 className="font-semibold text-center">{label}</h4>
+            <h4 className="font-semibold text-center">{label} {fuelLevel && `(${fuelLevel}%)`}</h4>
             {url ? (
                 <div className="relative w-full aspect-video rounded-md overflow-hidden border">
                     <Image src={url} alt={label} layout="fill" objectFit="contain" />
@@ -344,7 +355,9 @@ export default function RecordsPage() {
 
     const photoCollection = selectedRecord ? [
         { label: "Hodômetro (Início)", url: selectedRecord.startOdometerPhoto },
+        { label: "Combustível (Início)", url: selectedRecord.startFuelPhoto, fuelLevel: selectedRecord.startFuelLevel },
         { label: "Hodômetro (Fim)", url: selectedRecord.endOdometerPhoto },
+        { label: "Combustível (Fim)", url: selectedRecord.endFuelPhoto, fuelLevel: selectedRecord.endFuelLevel },
     ].filter(p => p.url) : [];
 
 
@@ -462,9 +475,9 @@ export default function RecordsPage() {
               <TableHead className="hidden md:table-cell">Veículo</TableHead>
               <TableHead className="hidden md:table-cell">Linha</TableHead>
               <TableHead>Chapa</TableHead>
-              <TableHead className="text-right hidden lg:table-cell">KM Início</TableHead>
-              <TableHead className="text-right hidden lg:table-cell">KM Fim</TableHead>
               <TableHead className="text-right">KM Total</TableHead>
+              <TableHead className="text-center">Comb. Início</TableHead>
+              <TableHead className="text-center">Comb. Fim</TableHead>
               <TableHead className="text-center">Status</TableHead>
               <TableHead>
                 <span className="sr-only">Ações</span>
@@ -487,11 +500,11 @@ export default function RecordsPage() {
                 <TableCell>
                   <Badge variant="secondary">{record.plate}</Badge>
                 </TableCell>
-                <TableCell className="text-right hidden lg:table-cell">{record.kmStart ?? "—"}</TableCell>
-                <TableCell className="text-right hidden lg:table-cell">{record.kmEnd ?? "—"}</TableCell>
                 <TableCell className="text-right font-medium">
                     {(record.kmEnd && record.kmStart) ? `${record.kmEnd - record.kmStart} km` : "—"}
                 </TableCell>
+                 <TableCell className="text-center font-mono">{record.startFuelLevel?.toFixed(0) ?? '—'}%</TableCell>
+                 <TableCell className="text-center font-mono">{record.endFuelLevel?.toFixed(0) ?? '—'}%</TableCell>
                 <TableCell className="text-center">
                   <Badge variant={record.status === "Finalizado" ? "default" : "outline"} className={record.status === "Finalizado" ? "bg-green-100 text-green-800" : ""}>
                     {record.status}
@@ -508,7 +521,7 @@ export default function RecordsPage() {
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>Ações</DropdownMenuLabel>
                       <DropdownMenuItem onClick={() => openAuthDialog(record, 'edit')}>Editar</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => openPhotosDialog(record)} disabled={!record.startOdometerPhoto && !record.endOdometerPhoto}>Ver Fotos</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => openPhotosDialog(record)}>Ver Fotos</DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem className="text-destructive" onClick={() => openAuthDialog(record, 'delete')}>
                         <Trash2 className="mr-2 h-4 w-4" />
@@ -538,7 +551,7 @@ export default function RecordsPage() {
                         {photoCollection.map((photo, index) => (
                             <CarouselItem key={index}>
                                 <div className="p-1">
-                                    <PhotoDisplay label={photo.label} url={photo.url} />
+                                    <PhotoDisplay label={photo.label} url={photo.url} fuelLevel={photo.fuelLevel}/>
                                 </div>
                             </CarouselItem>
                         ))}
@@ -654,5 +667,3 @@ export default function RecordsPage() {
     </>
   );
 }
-
-    
