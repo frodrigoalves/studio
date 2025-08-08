@@ -37,17 +37,18 @@ export default function LoginPage() {
         }
     } catch (error: any) {
         console.error(error);
-        if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+        // Handle specific auth errors for better user feedback
+        if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found') {
              toast({
                 variant: "destructive",
                 title: "Credenciais Inválidas",
-                description: "A senha está incorreta. Verifique e tente novamente.",
+                description: "A senha está incorreta ou o usuário administrador não foi criado no Firebase.",
             });
         } else {
             toast({
                 variant: "destructive",
                 title: "Erro no Login",
-                description: `Ocorreu um erro inesperado: ${error.message}`,
+                description: `Ocorreu um erro inesperado. Verifique o console para mais detalhes.`,
             });
         }
     } finally {
