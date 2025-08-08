@@ -12,11 +12,9 @@ import { Label } from '@/components/ui/label';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { signInUser } from '@/services/auth';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 // E-mail fixo para o administrador. O usuário só precisa fornecer a senha.
 const ADMIN_EMAIL = "admin@topbus.com";
-const ADMIN_PASSWORD = "TopBus@2024"; // Senha única para acesso de gestor
 
 export default function LoginPage() {
   const router = useRouter();
@@ -31,9 +29,6 @@ export default function LoginPage() {
     try {
         const user = await signInUser(ADMIN_EMAIL, password);
         if (user) {
-            // Remove any previously stored simple role
-            localStorage.removeItem('userRole');
-            
             toast({
                 title: "Login bem-sucedido!",
                 description: "Acesso de Gestor concedido. Redirecionando...",
@@ -72,12 +67,6 @@ export default function LoginPage() {
             <CardDescription>Insira a senha de acesso para entrar no painel.</CardDescription>
           </CardHeader>
           <CardContent>
-            <Alert className="mb-4">
-                <AlertTitle>Acesso de Administrador</AlertTitle>
-                <AlertDescription>
-                    Use a senha <span className="font-semibold">TopBus@2024</span> para acessar. Na primeira vez, o usuário administrador será criado automaticamente.
-                </AlertDescription>
-            </Alert>
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="password">Senha de Acesso</Label>
