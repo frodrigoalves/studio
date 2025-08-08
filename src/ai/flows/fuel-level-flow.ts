@@ -40,9 +40,9 @@ const prompt = ai.definePrompt({
     1.  **Analyze the Gauge:** Look at the fuel gauge in the image. The gauge has markings for empty (0 or E) and full (1 or F).
     2.  **Estimate Percentage:** Determine the position of the needle.
         - If the needle is on '0' or 'E', the level is 0%.
-        - If the needle is on '1/4', the level is 25%.
+        - If the needle is on the marker for one-quarter, the level is 25%.
         - If the needle is on '1/2', the level is 50%.
-        - If the needle is on '3/4', the level is 75%.
+        - If the needle is on the marker for three-quarters, the level is 75%.
         - If the needle is on '1' or 'F', the level is 100%.
     3.  **Interpolate:** If the needle is between markings, estimate the value. For example, if it's halfway between 1/2 and 3/4, the level is approximately 62% or 63%.
     4.  **Return Value:** Return the estimated percentage in the 'fuelLevel' field.
