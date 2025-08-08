@@ -110,5 +110,3 @@ export const FuelGauge = ({ value, onValueChange, className, disabled = false }:
     </div>
   );
 };
-
-    

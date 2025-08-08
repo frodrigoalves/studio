@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
@@ -349,55 +348,58 @@ export function DriverForm() {
     const isLoading = isFuelLevelLoading === formType;
 
     return (
-      <div className="space-y-4 pt-4">
-        <Separator />
-         <div className="space-y-2">
-           <div className="relative aspect-square w-full max-w-xs mx-auto">
-                <div className="absolute inset-0 flex items-center justify-center">
-                    <FormItem className="w-48 h-48 sm:w-56 sm:h-56">
-                        <FormLabel htmlFor={`${formType}-fuel-photo-upload`} className={cn("bg-muted/80 rounded-full flex flex-col items-center justify-center cursor-pointer border-2 border-dashed transition-colors w-full h-full", photoFile ? 'border-primary/50' : 'border-border')}>
-                            {isLoading ? (
-                                <Loader2 className="h-8 w-8 text-primary animate-spin" />
-                            ) : (
-                                <>
-                                    <Camera className={cn("h-8 w-8 mb-2 transition-colors", photoFile ? 'text-primary' : 'text-muted-foreground')} />
-                                    <span className={cn("text-xs text-center transition-colors", photoFile ? 'text-primary font-semibold' : 'text-muted-foreground')}>
-                                        {photoFile ? 'Foto Carregada' : 'Foto do Combustível'}
-                                    </span>
-                                </>
-                            )}
-                        </FormLabel>
-                        <FormControl>
-                            <Input
-                                id={`${formType}-fuel-photo-upload`}
-                                type="file"
-                                accept="image/*"
-                                capture="camera"
-                                className="sr-only"
-                                ref={photoInputRef}
-                                onChange={(e) => {
-                                    const file = e.target.files?.[0] || null;
-                                    setPhotoFile(file);
-                                    handleFuelLevelOcr(file, formType);
-                                }}
-                            />
-                        </FormControl>
-                    </FormItem>
-                </div>
-                <Controller
-                    control={form.control as any}
-                    name={levelFieldName}
-                    render={({ field }) => (
-                    <FuelGauge 
-                        value={field.value} 
-                        onValueChange={field.onChange} 
-                    />
-                    )}
+        <div className="space-y-4 pt-4">
+            <Separator />
+            <Controller
+                control={form.control as any}
+                name={levelFieldName}
+                render={({ field }) => (
+                <FuelGauge 
+                    value={field.value} 
+                    onValueChange={field.onChange} 
                 />
-            </div>
+                )}
+            />
+            <FormItem className="w-full">
+                <FormLabel
+                    htmlFor={`${formType}-fuel-photo-upload`}
+                    className={cn(
+                        "w-full flex items-center justify-center gap-2 border-2 border-dashed rounded-lg p-3 cursor-pointer transition-colors",
+                        photoFile ? "border-primary/50 text-primary" : "border-border text-muted-foreground",
+                        isLoading && "animate-pulse"
+                    )}
+                >
+                    {isLoading ? (
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                    ) : (
+                        <Camera className="h-5 w-5" />
+                    )}
+                    <span className="text-sm font-medium">
+                        {isLoading
+                            ? "Analisando..."
+                            : photoFile
+                            ? "Foto Carregada"
+                            : "Foto do Combustível"}
+                    </span>
+                </FormLabel>
+                <FormControl>
+                    <Input
+                        id={`${formType}-fuel-photo-upload`}
+                        type="file"
+                        accept="image/*"
+                        capture="camera"
+                        className="sr-only"
+                        ref={photoInputRef}
+                        onChange={(e) => {
+                            const file = e.target.files?.[0] || null;
+                            setPhotoFile(file);
+                            handleFuelLevelOcr(file, formType);
+                        }}
+                    />
+                </FormControl>
+            </FormItem>
             <p className="text-xs text-center text-muted-foreground px-4">Tire uma foto do medidor. A IA tentará ler o valor. Confirme ou ajuste usando os botões ou arrastando o dedo sobre o medidor.</p>
         </div>
-      </div>
     );
   };
 
@@ -574,5 +576,3 @@ export function DriverForm() {
     </Card>
   );
 }
-
-    
