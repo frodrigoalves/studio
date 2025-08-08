@@ -46,6 +46,20 @@
           "order": "ASCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "checklistRecords",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "damageAnalysis.hasNewDamage",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "date",
+          "order": "DESCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": []
