@@ -31,7 +31,6 @@ const pageTitles: { [key: string]: string } = {
     '/admin/checklist': 'Registros de Vistoria',
     '/admin/vigia-digital': 'Vigia Digital - Análise de Danos',
     '/admin/settings': 'Configurações e Importação',
-    '/admin/institucional': 'Vídeo Institucional',
 };
 
 
@@ -114,24 +113,7 @@ export default function AdminLayout({
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
-             <SidebarMenuItem>
-              <SidebarMenuButton asChild>
-                <Link href="/admin/institucional">
-                  <Clapperboard />
-                  Vídeo Institucional
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            
-             <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                    <Link href="/admin/apresentacao">
-                    <Archive />
-                    Apresentação
-                    </Link>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-
+           
             <SidebarSeparator />
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
