@@ -1,57 +1,35 @@
-
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Helper Functions
-    function isAdmin() {
-      return request.auth != null;
+    // Regra geral para desenvolvimento: permite acesso total.
+    // Em produção, você deve restringir o acesso com base na autenticação do usuário (request.auth != null).
+    
+    match /tripRecords/{recordId} {
+      allow read, write: if true;
     }
 
-    // Default deny all
-    match /{document=**} {
-      allow read, write: if false;
+    match /checklistRecords/{recordId} {
+      allow read, write: if true;
     }
 
-    // Admin Access
-    match /tripRecords/{docId} {
- allow read, write: if isAdmin();
- allow create, get, list: if isAdmin();
+    match /fuelingRecords/{recordId} {
+      allow read, write: if true;
     }
-     match /checklistRecords/{docId} {
-      allow read, write: if isAdmin();
-      allow create: if true;
-    }
-     match /fuelingRecords/{docId} {
-      allow read, write: if isAdmin();
-      allow create: if true;
-    }
-     match /dieselPrices/{docId} {
-      allow read, write: if isAdmin();
-    }
-    match /vehicleParameters/{docId} {
-        allow read, write: if isAdmin();
-        allow get: if true;
-    }
-    match /maintenanceRecords/{docId} {
-        allow read, write: if isAdmin();
-    }
-    match /tireRecords/{docId} {
-        allow read, write: if isAdmin();
-        allow create: if true;
+    
+    match /maintenanceRecords/{recordId} {
+      allow read, write: if true;
     }
 
-    // Placeholder rules for demonstration based on user's example
-    match /collectionA/{document=**} {
-      allow read: if isAdmin(); // L14 - Modified
-    }
-    match /collectionB/{document=**} {
-      allow list: if isAdmin(); // L19 - Modified
-    }
-    match /collectionC/{document=**} {
-      allow read: if isAdmin(); // L20 - Modified
+    match /tireRecords/{recordId} {
+      allow read, write: if true;
     }
 
+    match /vehicleParameters/{carId} {
+      allow read, write: if true;
+    }
+
+    match /dieselPrices/{priceId} {
+      allow read, write: if true;
+    }
   }
 }
