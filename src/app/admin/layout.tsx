@@ -42,10 +42,12 @@ export default function AdminLayout({
   const router = useRouter();
   const pathname = usePathname();
   const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // Changed to false to bypass loading screen
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [pageTitle, setPageTitle] = useState('Painel de Gestão');
 
+  /*
+  // Temporarily disabled for development
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
@@ -56,6 +58,7 @@ export default function AdminLayout({
     });
     return () => unsubscribe();
   }, [router]);
+  */
   
   useEffect(() => {
     setPageTitle(pageTitles[pathname] || 'Painel de Gestão');
