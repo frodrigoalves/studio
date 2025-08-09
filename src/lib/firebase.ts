@@ -18,16 +18,21 @@ const db = getFirestore(app);
 const storage = getStorage(app);
 const auth = getAuth(app);
 
-// Connect to emulators in development
-if (typeof window !== 'undefined' && window.location.hostname === "localhost") {
-    console.log("Development mode: Connecting to Firebase Emulators");
-    try {
-        connectFirestoreEmulator(db, 'localhost', 8080);
-        connectAuthEmulator(auth, 'http://localhost:9099');
-        connectStorageEmulator(storage, 'localhost', 9199);
-        console.log("Successfully connected to emulators");
-    } catch (error) {
-        console.error("Error connecting to emulators:", error);
+// Connect to emulators in development.
+// This check works for both client-side and server-side rendering in Next.js.
+if (process.env.NODE_ENV === 'development') {
+    // Check if emulators are already connected to prevent errors on hot-reloads
+    // in the development environment.
+    if (!auth.emulatorConfig) {
+        console.log("Development mode: Connecting to Firebase Emulators");
+        try {
+            connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
+            connectFirestoreEmulator(db, 'localhost', 8080);
+            connectStorageEmulator(storage, 'localhost', 9199);
+            console.log("Successfully connected to emulators for both client and server.");
+        } catch (error) {
+            console.error("Error connecting to emulators:", error);
+        }
     }
 }
 
