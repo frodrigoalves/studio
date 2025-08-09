@@ -1,37 +1,61 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Default rule for admins: allow full access if authenticated
+    
+    // Helper function to check for admin access
+    function isAdmin() {
+      return request.auth != null;
+    }
+    
+    // Default deny all access unless specified otherwise
     match /{document=**} {
-      allow read, write: if request.auth != null;
+      allow read, write: if false;
     }
 
-    // Public access for tripRecords
-    // Allows creating new records, and allows getting/listing records
-    // for the end-of-trip functionality.
-    match /tripRecords/{tripId} {
-      allow create: if true;
-      allow get, list: if true; // Allow public read and query
-      allow update, delete: if request.auth != null; // Admins only
+    // Rules for Trip Records (KM Registration)
+    match /tripRecords/{recordId} {
+      // Public: allow creating new records, getting a single record, and listing/querying
+      allow create, get, list: if true;
+      // Admin: allow reading, updating, and deleting
+      allow read, update, delete: if isAdmin();
     }
 
-    // Public access for checklistRecords
-    // Only allows creating new records.
-    match /checklistRecords/{checklistId} {
-      allow create: if true;
-      allow read, update, delete: if request.auth != null; // Admins only
+    // Rules for Checklist Records (Vistoria)
+    match /checklistRecords/{recordId} {
+        // Public: allow creating new checklist records
+        allow create: if true;
+        // Admin: allow full access
+        allow read, update, delete: if isAdmin();
     }
-
-    // Public access for fuelingRecords
-    // Only allows creating new records.
-    match /fuelingRecords/{fuelingId} {
-      allow create: if true;
-      allow read, update, delete: if request.auth != null; // Admins only
+    
+    // Rules for Fueling Records
+    match /fuelingRecords/{recordId} {
+        // Public: allow creating new fueling records
+        allow create: if true;
+        // Admin: allow full access
+        allow read, update, delete: if isAdmin();
     }
-
-    // Admins have full access to other collections like dieselPrices, etc.
-    // by the default rule above.
+    
+    // Rules for Diesel Prices
+    match /dieselPrices/{priceId} {
+        // Admin only
+        allow read, write: if isAdmin();
+    }
+    
+    // Rules for Vehicle Parameters
+    match /vehicleParameters/{carId} {
+        // Public: allow reading a single vehicle's parameters
+        allow get: if true;
+        // Admin: allow full access
+        allow read, write: if isAdmin();
+    }
+    
+    // Rules for Maintenance Records
+    match /maintenanceRecords/{recordId} {
+        // Admin only
+        allow read, write: if isAdmin();
+    }
   }
 }
