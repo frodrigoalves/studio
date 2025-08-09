@@ -3,8 +3,14 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    match /{allPaths=**} {
-      allow read, write;
+    // Permite que qualquer pessoa escreva (faça upload) de imagens nas pastas específicas.
+    // A leitura continua restrita por padrão, garantindo que um usuário não possa ver as fotos de outro.
+    match /trip_photos/{allPaths=**} {
+      allow write;
+    }
+
+    match /checklist_photos/{allPaths=**} {
+      allow write;
     }
   }
 }
