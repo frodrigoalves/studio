@@ -72,12 +72,14 @@ export const FuelGauge = ({ value, onValueChange, className, disabled = false }:
                     <g className="origin-center transform rotate-90">
                         {segments}
 
-                        <g className="text-muted-foreground text-[10px] font-semibold">
-                        <text x="20" y="95" textAnchor="middle" transform="rotate(-30, 20, 95)">E</text>
-                        <text x="100" y="95" textAnchor="middle" transform="rotate(30, 100, 95)">F</text>
+                        <g className="text-muted-foreground text-[12px] font-semibold fill-current">
+                          {/* "E" at the start of the arc (-120 deg) */}
+                          <text x="25.04" y="99.45" textAnchor="middle" transform="rotate(-30, 25.04, 99.45)">E</text>
+                          {/* "F" at the end of the arc (+120 deg) */}
+                          <text x="94.96" y="99.45" textAnchor="middle" transform="rotate(30, 94.96, 99.45)">F</text>
                         </g>
                         
-                        <g className="text-foreground">
+                        <g className="text-foreground fill-current">
                             <Fuel x="52" y="40" width="16" height="16" className="text-muted-foreground" />
                              <text x="60" y="75" textAnchor="middle" className="text-4xl font-bold">
                                 {Math.round(value)}
