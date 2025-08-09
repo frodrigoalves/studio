@@ -16,8 +16,8 @@ service cloud.firestore {
 
     // Admin Access
     match /tripRecords/{docId} {
-      allow read, write: if isAdmin();
-      allow create, get, list: if true;
+ allow read, write: if isAdmin();
+ allow create, get, list: if isAdmin();
     }
      match /checklistRecords/{docId} {
       allow read, write: if isAdmin();
@@ -41,5 +41,17 @@ service cloud.firestore {
         allow read, write: if isAdmin();
         allow create: if true;
     }
+
+    // Placeholder rules for demonstration based on user's example
+    match /collectionA/{document=**} {
+      allow read: if isAdmin(); // L14 - Modified
+    }
+    match /collectionB/{document=**} {
+      allow list: if isAdmin(); // L19 - Modified
+    }
+    match /collectionC/{document=**} {
+      allow read: if isAdmin(); // L20 - Modified
+    }
+
   }
 }
