@@ -3,7 +3,7 @@
 
 import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, getDocs, doc, updateDoc, query, where, getDoc, orderBy, limit, deleteDoc, setDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import { ref, uploadString, getDownloadURL, deleteObject } from 'firebase/storage';
 import { v4 as uuidv4 } from 'uuid';
 
 
@@ -35,13 +35,22 @@ async function uploadPhoto(photoBase64: string | null, recordId: string, type: s
 
     const storageRef = ref(storage, `trip_photos/${recordId}-${type}-${uuidv4()}.jpg`);
     
-    // Convert base64 to blob
-    const response = await fetch(photoBase64);
-    const blob = await response.blob();
+    // Extract MIME type and pure Base64 data
+    const match = photoBase64.match(/^data:(image\/[a-z]+);base64,(.*)$/);
+    if (!match) {
+        // Fallback for simple base64 strings if needed, though dataURL is expected
+        console.warn(`Invalid base64 format for photo type: ${type}. Upload might fail.`);
+        await uploadString(storageRef, photoBase64, 'base64');
+        return getDownloadURL(storageRef);
+    }
     
+    const mimeType = match[1];
+    const base64Data = match[2];
+
     try {
-        const metadata = { contentType: blob.type || 'image/jpeg' };
-        await uploadBytes(storageRef, blob, metadata);
+        const metadata = { contentType: mimeType };
+        // Use uploadString with 'base64' encoding and metadata
+        await uploadString(storageRef, base64Data, 'base64', metadata);
         const downloadURL = await getDownloadURL(storageRef);
         return downloadURL;
     } catch (error) {
@@ -70,28 +79,26 @@ export async function addRecord(record: RecordAddPayload): Promise<Record> {
   const tempDocForId = doc(collection(db, "tripRecords"));
   const recordId = tempDocForId.id;
 
-  const [startOdometerPhotoUrl, endOdometerPhotoUrl, startFuelPhotoUrl, endFuelPhotoUrl] = await Promise.all([
+  // Only upload photos that exist for the start of the trip
+  const [startOdometerPhotoUrl, startFuelPhotoUrl] = await Promise.all([
      uploadPhoto(record.startOdometerPhoto, recordId, 'start-odometer'),
-     uploadPhoto(record.endOdometerPhoto, recordId, 'end-odometer'),
      uploadPhoto(record.startFuelPhoto, recordId, 'start-fuel'),
-     uploadPhoto(record.endFuelPhoto, recordId, 'end-fuel'),
   ]);
   
   const dataToSave: Omit<Record, 'id'> = {
       ...record,
       kmStart: record.kmStart ? Number(record.kmStart) : null,
-      kmEnd: record.kmEnd ? Number(record.kmEnd) : null,
+      kmEnd: null,
       date: new Date(record.date).toISOString(),
       startOdometerPhoto: startOdometerPhotoUrl,
-      endOdometerPhoto: endOdometerPhotoUrl,
+      endOdometerPhoto: null, // Always null on creation
       startFuelLevel: record.startFuelLevel,
       startFuelPhoto: startFuelPhotoUrl,
-      endFuelLevel: record.endFuelLevel,
-      endFuelPhoto: endFuelPhotoUrl,
+      endFuelLevel: null, // Always null on creation
+      endFuelPhoto: null, // Always null on creation
   };
   
   if(isNaN(dataToSave.kmStart!)) dataToSave.kmStart = null;
-  if(isNaN(dataToSave.kmEnd!)) dataToSave.kmEnd = null;
 
   await setDoc(doc(db, "tripRecords", recordId), dataToSave);
   
@@ -102,8 +109,11 @@ export async function addRecord(record: RecordAddPayload): Promise<Record> {
 export async function updateRecord(id: string, data: RecordUpdatePayload): Promise<void> {
     
     const recordRef = doc(db, "tripRecords", id);
-    const originalDoc = await getDoc(recordRef);
-    const originalData = originalDoc.data() as Record;
+    const originalDocSnap = await getDoc(recordRef);
+    if (!originalDocSnap.exists()) {
+        throw new Error(`Record with id ${id} not found.`);
+    }
+    const originalData = originalDocSnap.data() as Record;
 
     const dataToUpdate: { [key: string]: any } = { ...data };
 
@@ -121,21 +131,27 @@ export async function updateRecord(id: string, data: RecordUpdatePayload): Promi
         dataToUpdate.date = new Date(data.date).toISOString();
     }
     
-    // Handle photo updates if new base64 is provided
-    if ('endOdometerPhoto' in data && typeof data.endOdometerPhoto === 'string' && data.endOdometerPhoto.startsWith('data:image')) {
-        const newUrl = await uploadPhoto(data.endOdometerPhoto, id, 'end-odometer');
+    // Handle photo updates only if a new base64 string is provided
+    if (data.endOdometerPhoto && typeof data.endOdometerPhoto === 'string' && data.endOdometerPhoto.startsWith('data:image')) {
         if (originalData.endOdometerPhoto) {
             await deletePhoto(originalData.endOdometerPhoto);
         }
-        dataToUpdate.endOdometerPhoto = newUrl;
+        dataToUpdate.endOdometerPhoto = await uploadPhoto(data.endOdometerPhoto, id, 'end-odometer');
     }
 
-    if ('endFuelPhoto' in data && typeof data.endFuelPhoto === 'string' && data.endFuelPhoto.startsWith('data:image')) {
-        const newUrl = await uploadPhoto(data.endFuelPhoto, id, 'end-fuel');
+    if (data.endFuelPhoto && typeof data.endFuelPhoto === 'string' && data.endFuelPhoto.startsWith('data:image')) {
         if (originalData.endFuelPhoto) {
             await deletePhoto(originalData.endFuelPhoto);
         }
-        dataToUpdate.endFuelPhoto = newUrl;
+        dataToUpdate.endFuelPhoto = await uploadPhoto(data.endFuelPhoto, id, 'end-fuel');
+    }
+
+    // Remove base64 strings from the payload to avoid saving them in Firestore
+    if (dataToUpdate.startOdometerPhoto && typeof dataToUpdate.startOdometerPhoto === 'string' && dataToUpdate.startOdometerPhoto.startsWith('data:image')) {
+       delete dataToUpdate.startOdometerPhoto;
+    }
+     if (dataToUpdate.startFuelPhoto && typeof dataToUpdate.startFuelPhoto === 'string' && dataToUpdate.startFuelPhoto.startsWith('data:image')) {
+       delete dataToUpdate.startFuelPhoto;
     }
 
 
