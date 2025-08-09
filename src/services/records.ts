@@ -180,17 +180,18 @@ export async function getRecordByPlateAndStatus(plate: string, status: "Em Andam
     const q = query(
         collection(db, "tripRecords"), 
         where("plate", "==", plate), 
-        where("status", "==", status),
-        orderBy("date", "desc"),
-        limit(1)
+        where("status", "==", status)
     );
     const querySnapshot = await getDocs(q);
     if (querySnapshot.empty) {
         return null;
     }
     
-    const docSnap = querySnapshot.docs[0];
-    return { id: docSnap.id, ...docSnap.data() } as Record;
+    // Sort by date descending in code, as composite index might not exist yet
+    const records = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Record));
+    records.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    
+    return records[0];
 }
 
 export async function getLastTripRecordForCar(carId: string): Promise<Record | null> {
