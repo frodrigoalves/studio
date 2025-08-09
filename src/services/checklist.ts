@@ -16,6 +16,7 @@ interface PreviousChecklistPhotos {
     front: string;
     rear: string;
     left: string;
+
     right: string;
 }
 
@@ -50,14 +51,24 @@ async function uploadPhoto(photoBase64: string | null, recordId: string, type: s
     if (!photoBase64 || !photoBase64.startsWith('data:image')) {
         return null;
     }
-    const storageRef = ref(storage, `checklist_photos/${recordId}-${type}-${uuidv4()}.jpg`);
+
+    const mimeTypeMatch = photoBase64.match(/^data:(image\/[a-z]+);base64,/);
+    const mimeType = mimeTypeMatch ? mimeTypeMatch[1] : 'image/jpeg';
+    const base64Data = photoBase64.split(',')[1];
     
     // Convert base64 to blob
-    const response = await fetch(photoBase64);
-    const blob = await response.blob();
+    const byteCharacters = atob(base64Data);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], { type: mimeType });
+
+    const storageRef = ref(storage, `checklist_photos/${recordId}-${type}-${uuidv4()}`);
     
     try {
-        const metadata = { contentType: blob.type || 'image/jpeg' };
+        const metadata = { contentType: mimeType };
         await uploadBytes(storageRef, blob, metadata);
         const downloadURL = await getDownloadURL(storageRef);
         return downloadURL;
@@ -66,6 +77,7 @@ async function uploadPhoto(photoBase64: string | null, recordId: string, type: s
         throw error;
     }
 }
+
 
 /**
  * Busca o último checklist registrado para um carro específico.
@@ -87,6 +99,38 @@ async function getLastChecklistForCar(carId: string): Promise<ChecklistRecord | 
     return { id: docSnap.id, ...docSnap.data() } as ChecklistRecord;
 }
 
+
+async function runDamageAnalysisInBackground(recordId: string, currentRecord: ChecklistRecord, previousChecklist: ChecklistRecord) {
+    try {
+        console.log(`Analyzing damage for car ${currentRecord.carId} between current checklist and previous one from ${previousChecklist.date}`);
+        const analysisInput: DamageAnalysisInput = {
+            previousPhotos: {
+                front: previousChecklist.frontDiagonalPhoto!,
+                rear: previousChecklist.rearDiagonalPhoto!,
+                left: previousChecklist.leftSidePhoto!,
+                right: previousChecklist.rightSidePhoto!,
+            },
+            currentPhotos: {
+                front: currentRecord.frontDiagonalPhoto!,
+                rear: currentRecord.rearDiagonalPhoto!,
+                left: currentRecord.leftSidePhoto!,
+                right: currentRecord.rightSidePhoto!,
+            }
+        };
+        const damageAnalysisResult = await analyzeVehicleDamage(analysisInput);
+        
+        if (damageAnalysisResult) {
+            const recordRef = doc(db, 'checklistRecords', recordId);
+            await updateDoc(recordRef, {
+                damageAnalysis: { ...damageAnalysisResult, acknowledged: false }
+            });
+            console.log(`Damage analysis complete for ${recordId}. Result: ${damageAnalysisResult.hasNewDamage}`);
+        }
+
+    } catch (error) {
+        console.error(`Error during background damage analysis for ${recordId}:`, error);
+    }
+}
 
 /**
  * Salva um único registro de vistoria no Firestore.
@@ -116,50 +160,12 @@ export async function addChecklistRecord(record: ChecklistRecordPayload): Promis
         rightSidePhoto: rightSidePhotoUrl,
     };
     
-    // --- Damage Analysis Logic ---
-    let damageAnalysisResult: DamageAnalysisOutput | undefined = undefined;
-    const previousChecklist = await getLastChecklistForCar(record.carId);
-
-    const hasAllCurrentPhotos = dataToSave.frontDiagonalPhoto && dataToSave.rearDiagonalPhoto && dataToSave.leftSidePhoto && dataToSave.rightSidePhoto;
-    const hasAllPreviousPhotos = previousChecklist?.frontDiagonalPhoto && previousChecklist?.rearDiagonalPhoto && previousChecklist?.leftSidePhoto && previousChecklist?.rightSidePhoto;
-
-    if (previousChecklist && hasAllCurrentPhotos && hasAllPreviousPhotos) {
-        console.log(`Analyzing damage for car ${record.carId} between current checklist and previous one from ${previousChecklist.date}`);
-        try {
-            const analysisInput: DamageAnalysisInput = {
-                previousPhotos: {
-                    front: previousChecklist.frontDiagonalPhoto!,
-                    rear: previousChecklist.rearDiagonalPhoto!,
-                    left: previousChecklist.leftSidePhoto!,
-                    right: previousChecklist.rightSidePhoto!,
-                },
-                currentPhotos: {
-                    front: dataToSave.frontDiagonalPhoto!,
-                    rear: dataToSave.rearDiagonalPhoto!,
-                    left: dataToSave.leftSidePhoto!,
-                    right: dataToSave.rightSidePhoto!,
-                }
-            };
-            damageAnalysisResult = await analyzeVehicleDamage(analysisInput);
-        } catch (error) {
-            console.error("Error during damage analysis AI flow:", error);
-            // Don't block the main process if AI fails
-        }
-    }
-    // --- End Damage Analysis Logic ---
-
-    const finalRecord: Omit<ChecklistRecord, 'id'> = {
-        ...dataToSave,
-        damageAnalysis: damageAnalysisResult ? { ...damageAnalysisResult, acknowledged: false } : undefined,
-    };
-    
-    const recordToSaveInDb = { ...finalRecord };
+    const recordToSaveInDb = { ...dataToSave };
     // Remove base64 photos before saving to DB
     delete (recordToSaveInDb as any).frontDiagonalPhoto;
     delete (recordToSaveInDb as any).rearDiagonalPhoto;
     delete (recordToSaveInDb as any).leftSidePhoto;
     delete (recordToSaveInDb as any).rightSidePhoto;
-
     recordToSaveInDb.frontDiagonalPhoto = frontDiagonalPhotoUrl;
     recordToSaveInDb.rearDiagonalPhoto = rearDiagonalPhotoUrl;
     recordToSaveInDb.leftSidePhoto = leftSidePhotoUrl;
@@ -167,6 +173,17 @@ export async function addChecklistRecord(record: ChecklistRecordPayload): Promis
     
     const docRef = doc(db, 'checklistRecords', recordId);
     await setDoc(docRef, recordToSaveInDb);
+    
+    // --- Start Damage Analysis in Background ---
+    const previousChecklist = await getLastChecklistForCar(record.carId);
+    const hasAllCurrentPhotos = dataToSave.frontDiagonalPhoto && dataToSave.rearDiagonalPhoto && dataToSave.leftSidePhoto && dataToSave.rightSidePhoto;
+    const hasAllPreviousPhotos = previousChecklist?.frontDiagonalPhoto && previousChecklist?.rearDiagonalPhoto && previousChecklist?.leftSidePhoto && previousChecklist?.rightSidePhoto;
+
+    if (previousChecklist && hasAllCurrentPhotos && hasAllPreviousPhotos) {
+        // Don't await this call. Let it run in the background.
+        runDamageAnalysisInBackground(recordId, dataToSave as ChecklistRecord, previousChecklist);
+    }
+    // --- End Damage Analysis Logic ---
     
     const docSnap = await getDoc(docRef);
     return { id: docSnap.id, ...docSnap.data() } as ChecklistRecord;

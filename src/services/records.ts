@@ -3,7 +3,7 @@
 
 import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, getDocs, doc, updateDoc, query, where, getDoc, orderBy, limit, deleteDoc, setDoc } from 'firebase/firestore';
-import { ref, uploadString, getDownloadURL, deleteObject } from 'firebase/storage';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { v4 as uuidv4 } from 'uuid';
 
 
@@ -35,22 +35,13 @@ async function uploadPhoto(photoBase64: string | null, recordId: string, type: s
 
     const storageRef = ref(storage, `trip_photos/${recordId}-${type}-${uuidv4()}.jpg`);
     
-    // Extract MIME type and pure Base64 data
-    const match = photoBase64.match(/^data:(image\/[a-z]+);base64,(.*)$/);
-    if (!match) {
-        // Fallback for simple base64 strings if needed, though dataURL is expected
-        console.warn(`Invalid base64 format for photo type: ${type}. Upload might fail.`);
-        await uploadString(storageRef, photoBase64, 'base64');
-        return getDownloadURL(storageRef);
-    }
+    // Convert base64 data URI to a Blob, which is more robust for uploading.
+    const response = await fetch(photoBase64);
+    const blob = await response.blob();
     
-    const mimeType = match[1];
-    const base64Data = match[2];
-
     try {
-        const metadata = { contentType: mimeType };
-        // Use uploadString with 'base64' encoding and metadata
-        await uploadString(storageRef, base64Data, 'base64', metadata);
+        const metadata = { contentType: blob.type || 'image/jpeg' };
+        await uploadBytes(storageRef, blob, metadata);
         const downloadURL = await getDownloadURL(storageRef);
         return downloadURL;
     } catch (error) {
