@@ -1,46 +1,37 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Regra geral: Admins autenticados podem fazer tudo.
+    // Default rule for admins: allow full access if authenticated
     match /{document=**} {
       allow read, write: if request.auth != null;
     }
 
-    // Regra para a coleção 'tripRecords'
+    // Public access for tripRecords
+    // Allows creating new records, and allows getting/listing records
+    // for the end-of-trip functionality.
     match /tripRecords/{tripId} {
-      // Permite que qualquer pessoa crie um novo registro (iniciar viagem).
       allow create: if true;
-      // Permite que qualquer pessoa leia um *único* documento.
-      // Isso é necessário para a função "Finalizar Viagem", que busca um registro em andamento.
-      allow get: if true;
-      // Atualizar e deletar continua restrito a admins pela regra geral.
+      allow get, list: if true; // Allow public read and query
+      allow update, delete: if request.auth != null; // Admins only
     }
 
-    // Regra para a coleção 'checklistRecords'
+    // Public access for checklistRecords
+    // Only allows creating new records.
     match /checklistRecords/{checklistId} {
-      // Permite que qualquer pessoa crie um novo registro de vistoria.
       allow create: if true;
+      allow read, update, delete: if request.auth != null; // Admins only
     }
-    
-    // Regra para a coleção 'fuelingRecords'
+
+    // Public access for fuelingRecords
+    // Only allows creating new records.
     match /fuelingRecords/{fuelingId} {
-      // Permite que qualquer pessoa crie um novo registro de abastecimento.
       allow create: if true;
+      allow read, update, delete: if request.auth != null; // Admins only
     }
 
-    // Regra para outras coleções (configurações, etc.)
-    // Elas serão cobertas pela regra geral, exigindo autenticação.
-    match /dieselPrices/{priceId} {
-        allow read, write: if request.auth != null;
-    }
-    
-    match /vehicleParameters/{vehicleId} {
-        allow read, write: if request.auth != null;
-    }
-
-     match /maintenanceRecords/{maintId} {
-        allow read, write: if request.auth != null;
-    }
+    // Admins have full access to other collections like dieselPrices, etc.
+    // by the default rule above.
   }
 }
