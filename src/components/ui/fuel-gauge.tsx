@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -7,109 +6,101 @@ import { Fuel, Plus, Minus } from 'lucide-react';
 import { Button } from './button';
 
 interface FuelGaugeProps {
-  value: number; // 0 to 100
+  value: number; // Expects a value from 0 to 100
   onValueChange: (value: number) => void;
   className?: string;
   disabled?: boolean;
 }
 
-const TOTAL_SEGMENTS = 20;
-
 export const FuelGauge = ({ value, onValueChange, className, disabled = false }: FuelGaugeProps) => {
+  const STEP_VALUE = 5; // Adjust by 5%
+
+  // Ensure value is within the 0-100 range
   const percentage = Math.max(0, Math.min(100, value)) / 100;
-  const filledSegments = Math.round(percentage * TOTAL_SEGMENTS);
+  
+  // Map percentage to an angle from 0 to 180 degrees
+  const angle = percentage * 180;
+  
+  // Define the indicator color based on percentage
+  const indicatorColor = percentage <= 0.2 ? 'hsl(var(--destructive))' : percentage <= 0.5 ? '#f59e0b' : 'hsl(var(--primary))';
 
   const handleValueChange = (newValue: number) => {
     onValueChange(Math.max(0, Math.min(100, newValue)));
   };
 
-  const getSegmentColor = (index: number) => {
-    if (index >= filledSegments) return 'hsl(var(--muted))';
-    const segmentPercentage = (index + 1) / TOTAL_SEGMENTS;
-    if (segmentPercentage <= 0.2) return 'hsl(var(--destructive))';
-    if (segmentPercentage <= 0.5) return '#f59e0b'; // amber-500
-    return 'hsl(var(--primary))';
-  };
-
-  const segments = Array.from({ length: TOTAL_SEGMENTS }).map((_, i) => {
-    const startAngle = -90; // Start from the left (180 degrees)
-    const angleRange = 180; // Total arc is a semi-circle
-    const angle = startAngle + (i / TOTAL_SEGMENTS) * angleRange;
-    const nextAngle = startAngle + ((i + 0.9) / TOTAL_SEGMENTS) * angleRange; // Small gap
-    
-    // Center at (60, 60) in a 120x120 viewbox
-    const startX = 60 + 50 * Math.cos((angle * Math.PI) / 180);
-    const startY = 60 + 50 * Math.sin((angle * Math.PI) / 180);
-    const endX = 60 + 50 * Math.cos((nextAngle * Math.PI) / 180);
-    const endY = 60 + 50 * Math.sin((nextAngle * Math.PI) / 180);
-
-    return (
-      <path
-        key={i}
-        d={`M ${startX} ${startY} A 50 50 0 0 1 ${endX} ${endY}`}
-        fill="none"
-        stroke={getSegmentColor(i)}
-        strokeWidth="12"
-        strokeLinecap="butt"
-      />
-    );
-  });
-
   return (
-    <div className={cn("relative w-full max-w-xs mx-auto", className)}>
-        <div className="flex items-center justify-center gap-2">
-            <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                className="h-12 w-12 rounded-full"
-                onClick={() => handleValueChange(value - 5)}
-                disabled={disabled}
-            >
-                <Minus className="h-6 w-6" />
-            </Button>
-            <div className="relative aspect-square flex-grow">
-                <svg viewBox="0 0 120 120" className="w-full h-full">
-                    <g>
-                        {segments}
+    <div className={cn("relative w-full max-w-sm mx-auto text-center font-sans p-4 bg-card rounded-2xl text-card-foreground shadow-lg border", className)}>
+      <div className="relative w-full h-36 flex items-center justify-center">
+        {/* SVG do medidor */}
+        <svg className="absolute top-0 left-0 w-full h-full" viewBox="0 0 120 70">
+          {/* Fundo do arco (cinza) */}
+          <path
+            d="M 10 60 A 50 50 0 0 1 110 60"
+            fill="none"
+            stroke="hsl(var(--muted))"
+            strokeWidth="12"
+          />
+          {/* Arco colorido de acordo com o nível de combustível */}
+          <path
+            d="M 10 60 A 50 50 0 0 1 110 60"
+            fill="none"
+            stroke={indicatorColor}
+            strokeWidth="12"
+            strokeLinecap="round"
+            style={{
+              strokeDasharray: '157.08', // Perímetro do semicírculo (PI * r)
+              strokeDashoffset: `${157.08 * (1 - percentage)}`,
+            }}
+          />
 
-                        <g className="text-muted-foreground text-[14px] font-semibold fill-current">
-                          {/* "E" at the start of the arc */}
-                          <text x="5" y="65" textAnchor="start">E</text>
-                          {/* "F" at the end of the arc */}
-                          <text x="115" y="65" textAnchor="end">F</text>
-                        </g>
-                        
-                        <g className="text-foreground fill-current">
-                            <Fuel x="52" y="45" width="16" height="16" className="text-muted-foreground" />
-                             <text x="60" y="85" textAnchor="middle" className="text-4xl font-bold">
-                                {Math.round(value)}
-                                <tspan dy="-10" className="text-2xl">%</tspan>
-                            </text>
-                        </g>
-                    </g>
-                </svg>
-                <input
-                    type="range"
-                    min="0"
-                    max="100"
-                    value={value}
-                    onChange={(e) => handleValueChange(Number(e.target.value))}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    disabled={disabled}
-                />
-            </div>
-            <Button
-                 type="button"
-                 variant="outline"
-                 size="icon"
-                 className="h-12 w-12 rounded-full"
-                 onClick={() => handleValueChange(value + 5)}
-                 disabled={disabled}
-            >
-                <Plus className="h-6 w-6" />
-            </Button>
+          {/* Rótulos de "E" e "F" */}
+          <text x="8" y="65" fontSize="10" className="fill-current text-muted-foreground font-bold">E</text>
+          <text x="112" y="65" fontSize="10" textAnchor="end" className="fill-current text-muted-foreground font-bold">F</text>
+          
+          <g transform="translate(0, 5)">
+            <Fuel x="53" y="15" width="14" height="14" className="text-muted-foreground" />
+             <text x="60" y="55" textAnchor="middle" className="text-4xl font-bold">
+                {Math.round(value)}
+                <tspan dy="-10" fontSize="24px">%</tspan>
+            </text>
+          </g>
+        </svg>
+
+        {/* Ponteiro */}
+        <div className="absolute w-40 h-40" style={{bottom: '-58%'}}>
+          <div
+            className="absolute left-1/2 w-0.5 h-12 bg-foreground rounded-full transition-transform duration-300 ease-out origin-bottom"
+            style={{
+              transform: `translateX(-50%) rotate(${angle - 90}deg)`,
+            }}
+          />
+          <div className="absolute left-1/2 top-1/2 w-4 h-4 bg-background border-2 border-foreground rounded-full transform -translate-x-1/2 -translate-y-1/2" />
         </div>
+      </div>
+
+      {/* Botões de controle */}
+      <div className="flex justify-center mt-12 space-x-4">
+        <Button 
+          type="button"
+          variant="outline"
+          size="icon"
+          className="h-12 w-12 rounded-full"
+          onClick={() => handleValueChange(value - STEP_VALUE)}
+          disabled={disabled || value <= 0}
+        >
+          <Minus className="h-6 w-6" />
+        </Button>
+        <Button 
+          type="button"
+          variant="outline"
+          size="icon"
+          className="h-12 w-12 rounded-full"
+          onClick={() => handleValueChange(value + STEP_VALUE)}
+          disabled={disabled || value >= 100}
+        >
+          <Plus className="h-6 w-6" />
+        </Button>
+      </div>
     </div>
   );
 };
