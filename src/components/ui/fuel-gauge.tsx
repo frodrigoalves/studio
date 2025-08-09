@@ -3,39 +3,28 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { Fuel, Plus, Minus } from 'lucide-react';
 import { Button } from './button';
+import { Plus, Minus } from 'lucide-react';
 
 interface FuelGaugeProps {
-  value: number; // Expects a value from 0 to 100
+  value: number; 
   onValueChange: (value: number) => void;
   className?: string;
   disabled?: boolean;
 }
 
+const MAX_FUEL_VALUE = 300;
+const STEP_VALUE = 10;
+
 export const FuelGauge = ({ value, onValueChange, className, disabled = false }: FuelGaugeProps) => {
-  const percentage = Math.max(0, Math.min(100, value)) / 100;
-  const angle = -90 + (percentage * 180);
+
+  const percentage = Math.max(0, Math.min(MAX_FUEL_VALUE, value)) / MAX_FUEL_VALUE;
+  const angle = percentage * 180;
+  const indicatorColor = percentage <= 0.2 ? 'hsl(var(--destructive))' : percentage <= 0.5 ? '#f59e0b' : 'hsl(var(--primary))';
 
   const handleValueChange = (newValue: number) => {
-    onValueChange(Math.max(0, Math.min(100, newValue)));
+    onValueChange(Math.max(0, Math.min(MAX_FUEL_VALUE, newValue)));
   };
-
-  const tickMarks = Array.from({ length: 11 }).map((_, i) => {
-    const tickAngle = -90 + i * 18; // 180 degrees / 10 segments
-    return (
-      <line
-        key={i}
-        x1="60"
-        y1="10"
-        x2="60"
-        y2="15"
-        stroke="hsl(var(--muted-foreground))"
-        strokeWidth="1"
-        transform={`rotate(${tickAngle} 60 60)`}
-      />
-    );
-  });
 
   return (
     <div className={cn("relative w-full max-w-sm mx-auto text-center font-sans p-4 rounded-2xl text-card-foreground", className)}>
@@ -52,7 +41,7 @@ export const FuelGauge = ({ value, onValueChange, className, disabled = false }:
            <path
              d="M 10 60 A 50 50 0 0 1 110 60"
              fill="none"
-             stroke="hsl(var(--primary))"
+             stroke={indicatorColor}
              strokeWidth="8"
              strokeLinecap="round"
              style={{
@@ -62,24 +51,27 @@ export const FuelGauge = ({ value, onValueChange, className, disabled = false }:
              }}
            />
 
-           {/* Tick Marks */}
-           <g>{tickMarks}</g>
-           
            {/* E and F labels */}
            <text x="5" y="65" fontSize="10" className="fill-current text-muted-foreground font-bold">E</text>
            <text x="115" y="65" fontSize="10" textAnchor="end" className="fill-current text-muted-foreground font-bold">F</text>
-
-           {/* Fuel Icon in center */}
-            <g transform="translate(0, 5)">
-              <Fuel x="53" y="15" width="14" height="14" className="text-muted-foreground" />
-            </g>
          </svg>
+
+        {/* Pointer */}
+        <div
+          className="absolute w-1 h-14 bg-card-foreground rounded-full transition-transform duration-300 ease-in-out origin-bottom"
+          style={{
+            bottom: '28%',
+            transform: `rotate(${angle - 90}deg)`,
+          }}
+        />
+        {/* Pointer Hub */}
+        <div className="absolute w-4 h-4 bg-card-foreground rounded-full" style={{ bottom: '26%' }} />
        </div>
        
         {/* Digital Readout */}
         <div className="mt-[-2rem] mb-4 text-center">
              <span className="text-4xl font-bold font-mono text-primary">{Math.round(value)}</span>
-             <span className="text-xl font-mono text-primary/80">%</span>
+             <span className="text-xl font-mono text-primary/80"> L</span>
         </div>
 
        {/* Control Buttons */}
@@ -89,7 +81,7 @@ export const FuelGauge = ({ value, onValueChange, className, disabled = false }:
            variant="outline"
            size="icon"
            className="h-12 w-12 rounded-full"
-           onClick={() => handleValueChange(value - 5)}
+           onClick={() => handleValueChange(value - STEP_VALUE)}
            disabled={disabled || value <= 0}
          >
            <Minus className="h-6 w-6" />
@@ -99,8 +91,8 @@ export const FuelGauge = ({ value, onValueChange, className, disabled = false }:
            variant="outline"
            size="icon"
            className="h-12 w-12 rounded-full"
-           onClick={() => handleValueChange(value + 5)}
-           disabled={disabled || value >= 100}
+           onClick={() => handleValueChange(value + STEP_VALUE)}
+           disabled={disabled || value >= MAX_FUEL_VALUE}
          >
            <Plus className="h-6 w-6" />
          </Button>

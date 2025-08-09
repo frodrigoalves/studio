@@ -42,7 +42,7 @@ const startTripSchema = z.object({
     car: z.string().min(1, "Carro é obrigatório."),
     line: z.string().min(1, "Linha é obrigatória."),
     kmStart: z.coerce.number({ required_error: "Km Inicial é obrigatório."}).min(1, "Km Inicial é obrigatório."),
-    startFuelLevel: z.number().min(0).max(100),
+    startFuelLevel: z.number().min(0).max(300),
 });
 
 const endFormSchema = z.object({
@@ -51,7 +51,7 @@ const endFormSchema = z.object({
   car: z.string().min(1, "Carro é obrigatório.").optional(),
   line: z.string().min(1, "Linha é obrigatória.").optional(),
   kmEnd: z.coerce.number({ required_error: "Km Final é obrigatório."}).min(1, "Km Final é obrigatório."),
-  endFuelLevel: z.number().min(0).max(100),
+  endFuelLevel: z.number().min(0).max(300),
 });
 
 type StartTripFormValues = z.infer<typeof startTripSchema>;
@@ -63,7 +63,7 @@ const initialStartValues: StartTripFormValues = {
     car: "",
     line: "",
     kmStart: 0,
-    startFuelLevel: 50,
+    startFuelLevel: 150,
 };
 
 const initialEndValues: EndFormValues = { 
@@ -72,8 +72,10 @@ const initialEndValues: EndFormValues = {
     car: "", 
     line: "", 
     kmEnd: 0, 
-    endFuelLevel: 50,
+    endFuelLevel: 150,
 };
+
+const MAX_FUEL_IN_LITERS = 300;
 
 export function DriverForm() {
   const { toast } = useToast();
@@ -182,15 +184,15 @@ export function DriverForm() {
         const result = await extractFuelLevelFromImage({ fuelGaugePhotoDataUri: fuelB64 });
 
         if (result.fuelLevel !== null) {
-            const roundedLevel = Math.round(result.fuelLevel);
+            const levelInLiters = Math.round((result.fuelLevel / 100) * MAX_FUEL_IN_LITERS);
             if (formType === 'start') {
-                startForm.setValue('startFuelLevel', roundedLevel, { shouldValidate: true });
+                startForm.setValue('startFuelLevel', levelInLiters, { shouldValidate: true });
             } else {
-                endForm.setValue('endFuelLevel', roundedLevel, { shouldValidate: true });
+                endForm.setValue('endFuelLevel', levelInLiters, { shouldValidate: true });
             }
             toast({
                 title: "Nível de Combustível Detectado!",
-                description: `Nível preenchido: ${roundedLevel}%. Por favor, confirme ou ajuste o valor.`,
+                description: `Nível preenchido: ${levelInLiters} L. Por favor, confirme ou ajuste o valor.`,
             });
         } else {
              toast({

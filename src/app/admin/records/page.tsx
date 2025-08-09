@@ -84,8 +84,8 @@ export default function RecordsPage() {
         kmEnd: null,
         startOdometerPhotoFile: null,
         endOdometerPhotoFile: null,
-        startFuelLevel: 50,
-        endFuelLevel: 50,
+        startFuelLevel: 150,
+        endFuelLevel: 150,
         startFuelPhotoFile: null,
         endFuelPhotoFile: null,
     };
@@ -251,10 +251,10 @@ export default function RecordsPage() {
             'Chapa': r.plate,
             'KM Início': r.kmStart,
             'KM Fim': r.kmEnd,
-            'KM Total': (r.kmEnd && r.kmStart) ? r.kmEnd - r.kmStart : 0,
+            'KM Total': (r.kmEnd && r.kmStart) ? (r.kmEnd - r.kmStart).toFixed(1) : '0,0',
             'Status': r.status,
-            'Combustível Início (%)': r.startFuelLevel,
-            'Combustível Fim (%)': r.endFuelLevel,
+            'Combustível Início (L)': r.startFuelLevel,
+            'Combustível Fim (L)': r.endFuelLevel,
         }));
     };
     
@@ -339,7 +339,7 @@ export default function RecordsPage() {
     
     const PhotoDisplay = ({ label, url, fuelLevel }: { label: string; url: string | null | undefined, fuelLevel?: number | null }) => (
         <div className="space-y-2">
-            <h4 className="font-semibold text-center">{label} {fuelLevel && `(${fuelLevel}%)`}</h4>
+            <h4 className="font-semibold text-center">{label} {fuelLevel && `(${fuelLevel}L)`}</h4>
             {url ? (
                 <div className="relative w-full aspect-video rounded-md overflow-hidden border">
                     <Image src={url} alt={label} layout="fill" objectFit="contain" />
@@ -437,11 +437,11 @@ export default function RecordsPage() {
                             </div>
                            <div className="space-y-2">
                                 <Label htmlFor="kmStart">KM Início</Label>
-                                <Input id="kmStart" type="number" value={newRecord.kmStart ?? ''} onChange={(e) => setNewRecord({...newRecord, kmStart: e.target.value === '' ? null : Number(e.target.value)})} />
+                                <Input id="kmStart" type="number" step="0.1" value={newRecord.kmStart ?? ''} onChange={(e) => setNewRecord({...newRecord, kmStart: e.target.value === '' ? null : Number(e.target.value)})} />
                             </div>
                            <div className="space-y-2">
                                 <Label htmlFor="kmEnd">KM Fim</Label>
-                                <Input id="kmEnd" type="number" value={newRecord.kmEnd ?? ''} onChange={(e) => setNewRecord({...newRecord, kmEnd: e.target.value === '' ? null : Number(e.target.value)})} />
+                                <Input id="kmEnd" type="number" step="0.1" value={newRecord.kmEnd ?? ''} onChange={(e) => setNewRecord({...newRecord, kmEnd: e.target.value === '' ? null : Number(e.target.value)})} />
                             </div>
                             <div className="space-y-2 sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="space-y-2">
@@ -501,10 +501,10 @@ export default function RecordsPage() {
                   <Badge variant="secondary">{record.plate}</Badge>
                 </TableCell>
                 <TableCell className="text-right font-medium">
-                    {(record.kmEnd && record.kmStart) ? `${record.kmEnd - record.kmStart} km` : "—"}
+                    {(record.kmEnd && record.kmStart) ? `${(record.kmEnd - record.kmStart).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })} km` : "—"}
                 </TableCell>
-                 <TableCell className="text-center font-mono">{record.startFuelLevel?.toFixed(0) ?? '—'}%</TableCell>
-                 <TableCell className="text-center font-mono">{record.endFuelLevel?.toFixed(0) ?? '—'}%</TableCell>
+                 <TableCell className="text-center font-mono">{record.startFuelLevel?.toFixed(0) ?? '—'}L</TableCell>
+                 <TableCell className="text-center font-mono">{record.endFuelLevel?.toFixed(0) ?? '—'}L</TableCell>
                 <TableCell className="text-center">
                   <Badge variant={record.status === "Finalizado" ? "default" : "outline"} className={record.status === "Finalizado" ? "bg-green-100 text-green-800" : ""}>
                     {record.status}
@@ -647,11 +647,11 @@ export default function RecordsPage() {
                     </div>
                    <div className="space-y-2">
                         <Label htmlFor="edit-kmStart">KM Início</Label>
-                        <Input id="edit-kmStart" type="number" value={editRecordData.kmStart ?? ''} onChange={(e) => setEditRecordData({...editRecordData, kmStart: e.target.value === '' ? null : Number(e.target.value)})} />
+                        <Input id="edit-kmStart" type="number" step="0.1" value={editRecordData.kmStart ?? ''} onChange={(e) => setEditRecordData({...editRecordData, kmStart: e.target.value === '' ? null : Number(e.target.value)})} />
                     </div>
                     <div className="space-y-2 sm:col-span-2">
                         <Label htmlFor="edit-kmEnd">KM Fim</Label>
-                        <Input id="edit-kmEnd" type="number" value={editRecordData.kmEnd ?? ''} onChange={(e) => setEditRecordData({...editRecordData, kmEnd: e.target.value === '' ? null : Number(e.target.value)})} />
+                        <Input id="edit-kmEnd" type="number" step="0.1" value={editRecordData.kmEnd ?? ''} onChange={(e) => setEditRecordData({...editRecordData, kmEnd: e.target.value === '' ? null : Number(e.target.value)})} />
                     </div>
                 </div>
             )}
