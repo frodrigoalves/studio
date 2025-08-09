@@ -60,7 +60,7 @@ export default function LoginPage() {
     <main className="flex min-h-screen flex-col items-center justify-center p-4 bg-background">
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center justify-center mb-6 text-center">
-            <h1 className="text-3xl font-bold text-white">FleetTrack Go</h1>
+            <h1 className="text-3xl font-bold text-white">TopBus Transportes</h1>
             <p className="text-muted-foreground">Gestão Inteligente de Frotas</p>
         </div>
         <Card>

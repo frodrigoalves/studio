@@ -1,7 +1,7 @@
 
-# FleetTrack Go - Sistema de Gestão Inteligente de Frotas
+# TopBus Transportes - Sistema de Gestão Inteligente de Frotas
 
-FleetTrack Go é uma aplicação web completa, desenvolvida para a gestão e otimização de frotas de transporte público. O sistema integra a coleta de dados operacionais em tempo real com um poderoso painel de Business Intelligence (BI) e módulos de Inteligência Artificial para fornecer insights acionáveis, automação de vistorias e suporte estratégico à diretoria.
+TopBus Transportes é uma aplicação web completa, desenvolvida para a gestão e otimização de frotas de transporte público. O sistema integra a coleta de dados operacionais em tempo real com um poderoso painel de Business Intelligence (BI) e módulos de Inteligência Artificial para fornecer insights acionáveis, automação de vistorias e suporte estratégico à diretoria.
 
 ## Funcionalidades Principais
 

@@ -100,7 +100,7 @@ export default function AdminLayout({
         <SidebarHeader>
             <div className="p-4 flex items-center justify-center gap-2 group-data-[collapsible=icon]:justify-start group-data-[collapsible=icon]:pl-3.5">
                  <LayoutDashboard className="h-7 w-7 text-primary" />
-                 <h1 className="text-xl font-bold group-data-[collapsible=icon]:hidden">FleetTrack</h1>
+                 <h1 className="text-xl font-bold group-data-[collapsible=icon]:hidden">TopBus</h1>
             </div>
         </SidebarHeader>
         <SidebarContent>
