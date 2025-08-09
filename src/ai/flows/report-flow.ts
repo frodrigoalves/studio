@@ -30,7 +30,7 @@ export async function generateReport(input: ReportInput): Promise<ReportOutput> 
   const recordsString = JSON.stringify(input.records, null, 2);
   const dieselPricesString = JSON.stringify(input.dieselPrices, null, 2);
 
-  return reportFlow({ ...input, recordsString, dieselPricesString });
+  return reportFlow({ recordsString, dieselPricesString, period: input.period });
 }
 
 const prompt = ai.definePrompt({
