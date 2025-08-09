@@ -71,7 +71,7 @@ export default function LoginPage() {
     <main className="flex min-h-screen flex-col items-center justify-center p-4 bg-background">
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center justify-center mb-6 text-center">
-            <h1 className="text-3xl font-bold text-white mb-4">TopBus Transportes</h1>
+            <Image src="/logo.jpeg" alt="TopBus Logo" width={200} height={55} className="mb-4" />
         </div>
         <Card>
           <CardHeader className="text-center">
