@@ -3,7 +3,7 @@
 
 import { db, storage } from '@/lib/firebase';
 import { collection, addDoc, getDoc, getDocs, query, orderBy, doc, setDoc, limit, where, updateDoc } from 'firebase/firestore';
-import { ref, uploadString, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { v4 as uuidv4 } from 'uuid';
 import { analyzeVehicleDamage } from '@/ai/flows/damage-analysis-flow';
 
@@ -51,10 +51,14 @@ async function uploadPhoto(photoBase64: string | null, recordId: string, type: s
         return null;
     }
     const storageRef = ref(storage, `checklist_photos/${recordId}-${type}-${uuidv4()}.jpg`);
-    const base64String = photoBase64.split(',')[1];
+    
+    // Convert base64 to blob
+    const response = await fetch(photoBase64);
+    const blob = await response.blob();
     
     try {
-        await uploadString(storageRef, base64String, 'base64');
+        const metadata = { contentType: blob.type || 'image/jpeg' };
+        await uploadBytes(storageRef, blob, metadata);
         const downloadURL = await getDownloadURL(storageRef);
         return downloadURL;
     } catch (error) {
