@@ -172,6 +172,19 @@ export function DriverForm() {
       setIsOcrLoading(false);
     }
   };
+  
+    const handleFileChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+    setFileCallback: (file: File | null) => void,
+    ocrCallback?: (file: File | null) => void
+  ) => {
+    const file = event.target.files?.[0] || null;
+    setFileCallback(file);
+    if (ocrCallback) {
+      ocrCallback(file);
+    }
+  };
+
 
   const handleFuelLevelOcr = async (file: File | null, formType: "start" | "end") => {
     if (!file) return;
@@ -386,11 +399,7 @@ export function DriverForm() {
                         capture="camera"
                         className="sr-only"
                         ref={photoInputRef}
-                        onChange={(e) => {
-                            const file = e.target.files?.[0] || null;
-                            setPhotoFile(file);
-                            handleFuelLevelOcr(file, formType);
-                        }}
+                        onChange={(e) => handleFileChange(e, setPhotoFile, (file) => handleFuelLevelOcr(file, formType))}
                     />
                 </FormControl>
             </FormItem>
@@ -443,11 +452,7 @@ export function DriverForm() {
                                 capture="camera" 
                                 className="pr-12" 
                                 ref={startFileInputRef}
-                                onChange={(e) => {
-                                    const file = e.target.files?.[0] || null;
-                                    setStartOdometerPhotoFile(file);
-                                    handleOdometerOcr(file);
-                                }}
+                                onChange={(e) => handleFileChange(e, setStartOdometerPhotoFile, handleOdometerOcr)}
                             />
                             <Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
                         </div>
@@ -463,6 +468,7 @@ export function DriverForm() {
                             <div className="relative">
                                 <Input 
                                     type="number" 
+                                    step="0.1"
                                     placeholder="Aguardando foto..." 
                                     {...field}
                                 />
@@ -550,7 +556,7 @@ export function DriverForm() {
                     <FormItem>
                       <FormLabel>KM Final</FormLabel>
                       <FormControl>
-                        <Input type="number" placeholder="123567" {...field} />
+                        <Input type="number" step="0.1" placeholder="123567.8" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -560,7 +566,7 @@ export function DriverForm() {
                   <FormLabel>Foto do Odômetro (Fim)</FormLabel>
                   <FormControl>
                     <div className="relative">
-                      <Input type="file" accept="image/*" capture="camera" className="pr-12" ref={endFileInputRef} onChange={(e) => setEndOdometerPhotoFile(e.target.files?.[0] || null)} />
+                      <Input type="file" accept="image/*" capture="camera" className="pr-12" ref={endFileInputRef} onChange={(e) => handleFileChange(e, setEndOdometerPhotoFile)} />
                       <Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
                     </div>
                   </FormControl>
