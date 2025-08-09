@@ -47,8 +47,8 @@ export default function FuelingRecordsPage() {
             'Carro': r.carId,
             'Abastecedor': r.attendantName,
             'Bomba': r.pump,
-            'KM Registrado': r.odometer,
-            'Litros': r.liters,
+            'KM Registrado': r.odometer.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 }),
+            'Litros': r.liters.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
         }));
     };
 
@@ -183,8 +183,8 @@ export default function FuelingRecordsPage() {
                     <TableCell className="font-medium">{record.carId}</TableCell>
                     <TableCell className="hidden md:table-cell">{record.attendantName}</TableCell>
                     <TableCell className="text-center">{record.pump}</TableCell>
-                    <TableCell className="text-center font-mono">{record.odometer.toLocaleString('pt-BR')}</TableCell>
-                    <TableCell className="text-right font-medium">{record.liters.toLocaleString('pt-BR')} L</TableCell>
+                    <TableCell className="text-center font-mono">{record.odometer.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}</TableCell>
+                    <TableCell className="text-right font-medium">{record.liters.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} L</TableCell>
                   </TableRow>
             ))}
              {!isLoading && records.length === 0 && (

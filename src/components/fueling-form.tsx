@@ -124,7 +124,7 @@ export function FuelingForm() {
                 <FormItem>
                   <FormLabel>Hodômetro</FormLabel>
                   <FormControl>
-                    <Input type="number" placeholder="Digite o KM do veículo" {...field} />
+                    <Input type="number" step="0.1" placeholder="Digite o KM do veículo" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
