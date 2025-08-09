@@ -6,6 +6,16 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
+          "fieldPath": "date",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "tripRecords",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
           "fieldPath": "plate",
           "order": "ASCENDING"
         },
