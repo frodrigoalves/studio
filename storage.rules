@@ -1,15 +1,10 @@
-
 rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Permite a escrita (upload) de qualquer arquivo dentro das pastas de fotos de viagem e vistoria.
-    // Em um ambiente de produção, você pode querer restringir isso a usuários autenticados.
-    // Ex: match /trip_photos/{userId}/{allPaths=**} { allow write: if request.auth != null && request.auth.uid == userId; }
-    match /trip_photos/{allPaths=**} {
-      allow read, write: if true;
-    }
-    match /checklist_photos/{allPaths=**} {
+    match /{allPaths=**} {
+      // Allow read and write access to all paths
+      // This is insecure for production but useful for development
       allow read, write: if true;
     }
   }
