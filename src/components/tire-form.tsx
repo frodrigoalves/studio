@@ -3,7 +3,7 @@
 
 import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
 import { Loader2, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -19,9 +19,9 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { addTireRecord, TireRecordPayload } from "@/services/tire";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { Switch } from "./ui/switch";
 import { Textarea } from "./ui/textarea";
+import { cn } from "@/lib/utils";
 
 const tireFormSchema = z.object({
   carId: z.string().min(1, "Nº do carro é obrigatório."),
@@ -31,7 +31,7 @@ const tireFormSchema = z.object({
   treadDepth: z.coerce.number().min(0, "Sulco inválido."),
   rotationPerformed: z.boolean().default(false),
   isRetreaded: z.boolean().default(false),
-  tirePosition: z.string().min(1, "Posição é obrigatória."),
+  tirePosition: z.string().min(1, "Selecione um pneu no chassi."),
   observations: z.string().optional(),
 });
 
@@ -50,11 +50,31 @@ const initialValues: TireFormValues = {
 };
 
 const tirePositions = [
-    "Dianteiro Esquerdo", "Dianteiro Direito",
-    "Traseiro Interno Esquerdo", "Traseiro Externo Esquerdo",
-    "Traseiro Interno Direito", "Traseiro Externo Direito",
-    "Estepe"
+    { id: "dd", label: "Dianteiro Direito" },
+    { id: "de", label: "Dianteiro Esquerdo" },
+    { id: "tide", label: "Traseiro Interno Direito" },
+    { id: "tede", label: "Traseiro Externo Direito" },
+    { id: "tie", label: "Traseiro Interno Esquerdo" },
+    { id: "tee", label: "Traseiro Externo Esquerdo" },
+    { id: "estepe", label: "Estepe" },
 ];
+
+const TireButton = ({ position, label, selected, onClick, className }: { position: string, label: string, selected: boolean, onClick: (pos: string) => void, className?: string }) => (
+    <button
+        type="button"
+        onClick={() => onClick(position)}
+        className={cn(
+            "aspect-square w-12 h-16 rounded-lg bg-input border-2 border-border/50 flex items-center justify-center transition-all duration-200 hover:border-primary/80 hover:bg-accent",
+            selected && "bg-primary border-primary-foreground shadow-lg shadow-primary/30 ring-2 ring-primary-foreground",
+            className
+        )}
+        aria-label={label}
+        title={label}
+    >
+        <div className={cn("w-4/5 h-4/5 rounded-md border-2", selected ? 'border-primary-foreground/50' : 'border-border')}></div>
+    </button>
+);
+
 
 export function TireForm() {
   const { toast } = useToast();
@@ -64,6 +84,8 @@ export function TireForm() {
     resolver: zodResolver(tireFormSchema),
     defaultValues: initialValues,
   });
+
+  const selectedTire = form.watch("tirePosition");
 
   async function onSubmit(data: TireFormValues) {
     setIsSubmitting(true);
@@ -95,12 +117,55 @@ export function TireForm() {
         <CardHeader>
             <CardTitle>Formulário de Aferição</CardTitle>
             <CardDescription>
-                Preencha todos os campos para registrar a avaliação de um pneu.
+                Selecione um pneu no chassi e preencha os campos para registrar a avaliação.
             </CardDescription>
         </CardHeader>
       <CardContent className="p-4 sm:p-6">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            
+            <FormField
+                control={form.control}
+                name="tirePosition"
+                render={({ field }) => (
+                    <FormItem>
+                        <FormLabel className="text-lg font-semibold">Posição do Pneu</FormLabel>
+                         <FormDescription>
+                            Clique sobre o pneu no desenho do chassi abaixo para selecioná-lo.
+                         </FormDescription>
+                        <FormControl>
+                            <div className="flex justify-center items-center p-4 bg-muted/30 rounded-lg border border-dashed">
+                                <div className="space-y-4">
+                                    {/* Axle Front */}
+                                    <div className="flex justify-between items-center w-64 mx-auto relative">
+                                        <div className="absolute h-1.5 w-full bg-border/50 rounded-full" />
+                                        <TireButton position="de" label="Dianteiro Esquerdo" selected={field.value === 'de'} onClick={(pos) => field.onChange(pos)} />
+                                        <TireButton position="dd" label="Dianteiro Direito" selected={field.value === 'dd'} onClick={(pos) => field.onChange(pos)} />
+                                    </div>
+                                     {/* Axle Rear */}
+                                    <div className="flex justify-between items-center w-80 mx-auto relative">
+                                        <div className="absolute h-1.5 w-full bg-border/50 rounded-full" />
+                                        <div className="flex gap-1">
+                                             <TireButton position="tee" label="Traseiro Externo Esquerdo" selected={field.value === 'tee'} onClick={(pos) => field.onChange(pos)} />
+                                             <TireButton position="tie" label="Traseiro Interno Esquerdo" selected={field.value === 'tie'} onClick={(pos) => field.onChange(pos)} />
+                                        </div>
+                                        <div className="flex gap-1">
+                                            <TireButton position="tide" label="Traseiro Interno Direito" selected={field.value === 'tide'} onClick={(pos) => field.onChange(pos)} />
+                                            <TireButton position="tede" label="Traseiro Externo Direito" selected={field.value === 'tede'} onClick={(pos) => field.onChange(pos)} />
+                                        </div>
+                                    </div>
+                                     {/* Spare */}
+                                    <div className="flex justify-center pt-4">
+                                        <TireButton position="estepe" label="Estepe" selected={field.value === 'estepe'} onClick={(pos) => field.onChange(pos)} />
+                                    </div>
+                                </div>
+                            </div>
+                        </FormControl>
+                         <FormMessage />
+                    </FormItem>
+                )}
+            />
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField
                     control={form.control}
@@ -129,27 +194,6 @@ export function TireForm() {
                     )}
                 />
             </div>
-            
-            <FormField
-                control={form.control}
-                name="tirePosition"
-                render={({ field }) => (
-                    <FormItem>
-                    <FormLabel>Posição do Pneu</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Selecione a posição no veículo" />
-                        </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                        {tirePositions.map(pos => <SelectItem key={pos} value={pos}>{pos}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
-                    <FormMessage />
-                    </FormItem>
-                )}
-            />
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <FormField
@@ -157,9 +201,9 @@ export function TireForm() {
                     name="tireNumber"
                     render={({ field }) => (
                         <FormItem>
-                        <FormLabel>Numeração</FormLabel>
+                        <FormLabel>Numeração (Nº de fogo)</FormLabel>
                         <FormControl>
-                            <Input placeholder="Nº de fogo" {...field} />
+                            <Input placeholder="Nº de fogo do pneu" {...field} />
                         </FormControl>
                         <FormMessage />
                         </FormItem>
