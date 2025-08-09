@@ -2,7 +2,7 @@
 'use server';
 
 import { db } from '@/lib/firebase';
-import { collection, doc, writeBatch, getDocs, query, orderBy, limit, addDoc, getDoc } from 'firebase/firestore';
+import { collection, doc, writeBatch, getDocs, query, orderBy, limit, addDoc, getDoc, where } from 'firebase/firestore';
 
 export interface FuelingRecord {
   id: string;
@@ -72,6 +72,27 @@ export async function getMostRecentFuelingRecord(): Promise<FuelingRecord | null
     if (querySnapshot.empty) {
         return null;
     }
-    const doc = querySnapshot.docs[0];
-    return { id: doc.id, ...doc.data() } as FuelingRecord;
+    const docSnap = querySnapshot.docs[0];
+    return { id: docSnap.id, ...docSnap.data() } as FuelingRecord;
+}
+
+
+/**
+ * Busca o último registro de abastecimento para um carro específico.
+ * @param carId O ID do carro.
+ * @returns O último registro de abastecimento ou null se não houver.
+ */
+export async function getLastFuelingForCar(carId: string): Promise<FuelingRecord | null> {
+    const q = query(
+        collection(db, "fuelingRecords"),
+        where("carId", "==", carId),
+        orderBy("date", "desc"),
+        limit(1)
+    );
+    const querySnapshot = await getDocs(q);
+    if (querySnapshot.empty) {
+        return null;
+    }
+    const docSnap = querySnapshot.docs[0];
+    return { id: docSnap.id, ...docSnap.data() } as FuelingRecord;
 }

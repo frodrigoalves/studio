@@ -19,7 +19,9 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { addFuelingRecord } from "@/services/fueling";
+import { addFuelingRecord, FuelingRecordAddPayload } from "@/services/fueling";
+import { getLastTripRecordForCar } from "@/services/records";
+
 
 const fuelingFormSchema = z.object({
     attendantChapa: z.string().min(1, "Chapa é obrigatória."),
@@ -45,12 +47,43 @@ const initialValues: Omit<FuelingFormValues, 'odometer' | 'liters' | 'pump'> & {
 export function FuelingForm() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isFetchingOdometer, setIsFetchingOdometer] = useState(false);
   
   const form = useForm<FuelingFormValues>({
     resolver: zodResolver(fuelingFormSchema),
     defaultValues: initialValues,
     mode: "onBlur",
   });
+
+  const handleCarIdBlur = useCallback(async (carId: string) => {
+    if (!carId) return;
+    setIsFetchingOdometer(true);
+    try {
+        const lastRecord = await getLastTripRecordForCar(carId);
+        if (lastRecord?.kmEnd) {
+            form.setValue('odometer', lastRecord.kmEnd);
+             toast({
+                title: "Hodômetro preenchido",
+                description: `O último KM final registrado para o carro ${carId} foi ${lastRecord.kmEnd}.`,
+            });
+        } else {
+             toast({
+                title: "Hodômetro não encontrado",
+                description: `Não foi encontrado um KM final para o carro ${carId}. Por favor, insira manualmente.`,
+            });
+        }
+    } catch(e) {
+        console.error("Failed to fetch last odometer", e);
+        toast({
+            variant: "destructive",
+            title: "Erro ao buscar KM",
+            description: "Não foi possível buscar o último KM do veículo.",
+        });
+    } finally {
+        setIsFetchingOdometer(false);
+    }
+  }, [form, toast]);
+
 
   async function onSubmit(data: FuelingFormValues) {
     setIsSubmitting(true);
@@ -111,7 +144,11 @@ export function FuelingForm() {
                 <FormItem>
                   <FormLabel>Carro</FormLabel>
                   <FormControl>
-                     <Input placeholder="Número do veículo" {...field} />
+                     <Input 
+                        placeholder="Número do veículo" 
+                        {...field} 
+                        onBlur={(e) => handleCarIdBlur(e.target.value)}
+                     />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -124,7 +161,10 @@ export function FuelingForm() {
                 <FormItem>
                   <FormLabel>Hodômetro</FormLabel>
                   <FormControl>
-                    <Input type="number" step="0.1" placeholder="Digite o KM do veículo" {...field} />
+                    <div className="relative">
+                        <Input type="number" step="0.1" placeholder="Digite o KM do veículo" {...field} />
+                        {isFetchingOdometer && <Loader2 className="absolute right-3 top-2.5 h-5 w-5 animate-spin" />}
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
