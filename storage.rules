@@ -1,25 +1,16 @@
+
 rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // As fotos de vistoria e viagem são enviadas por motoristas não autenticados.
-    // Permitimos a criação (escrita) em pastas específicas, mas bloqueamos a leitura,
-    // atualização e exclusão para proteger os dados.
-    match /checklist_photos/{allPaths=**} {
-      allow read: if request.auth != null && (request.auth.token.role == 'diretor' || request.auth.token.role == 'analyst');
-      allow write: if true; // Permite o upload por qualquer pessoa (formulário público)
-      allow update, delete: if request.auth != null && (request.auth.token.role == 'diretor' || request.auth.token.role == 'analyst');
-    }
-
+    // Permite a escrita (upload) de qualquer arquivo dentro das pastas de fotos de viagem e vistoria.
+    // Em um ambiente de produção, você pode querer restringir isso a usuários autenticados.
+    // Ex: match /trip_photos/{userId}/{allPaths=**} { allow write: if request.auth != null && request.auth.uid == userId; }
     match /trip_photos/{allPaths=**} {
-       allow read: if request.auth != null && (request.auth.token.role == 'diretor' || request.auth.token.role == 'analyst');
-       allow write: if true; // Permite o upload por qualquer pessoa (formulário público)
-       allow update, delete: if request.auth != null && (request.auth.token.role == 'diretor' || request.auth.token.role == 'analyst');
+      allow read, write: if true;
     }
-
-    // Nega o acesso a todas as outras rotas por padrão.
-    match /{allPaths=**} {
-      allow read, write: if false;
+    match /checklist_photos/{allPaths=**} {
+      allow read, write: if true;
     }
   }
 }
