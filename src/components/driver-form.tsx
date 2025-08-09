@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
@@ -350,16 +351,7 @@ export function DriverForm() {
     return (
         <div className="space-y-4 pt-4">
             <Separator />
-            <Controller
-                control={form.control as any}
-                name={levelFieldName}
-                render={({ field }) => (
-                <FuelGauge 
-                    value={field.value} 
-                    onValueChange={field.onChange} 
-                />
-                )}
-            />
+             <p className="text-xs text-center text-muted-foreground px-4">Tire uma foto do medidor. Confirme ou ajuste usando os botões ou arraste o dedo sobre o medidor.</p>
             <FormItem className="w-full">
                 <FormLabel
                     htmlFor={`${formType}-fuel-photo-upload`}
@@ -398,7 +390,16 @@ export function DriverForm() {
                     />
                 </FormControl>
             </FormItem>
-            <p className="text-xs text-center text-muted-foreground px-4">Tire uma foto do medidor. A IA tentará ler o valor. Confirme ou ajuste usando os botões ou arrastando o dedo sobre o medidor.</p>
+            <Controller
+                control={form.control as any}
+                name={levelFieldName}
+                render={({ field }) => (
+                <FuelGauge 
+                    value={field.value} 
+                    onValueChange={field.onChange} 
+                />
+                )}
+            />
         </div>
     );
   };
