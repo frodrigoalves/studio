@@ -9,21 +9,21 @@ import { Plus, Minus } from 'lucide-react';
 interface FuelGaugeProps {
   value: number; 
   onValueChange: (value: number) => void;
+  maxValue?: number;
   className?: string;
   disabled?: boolean;
 }
 
-const MAX_FUEL_VALUE = 300;
 const STEP_VALUE = 10;
 
-export const FuelGauge = ({ value, onValueChange, className, disabled = false }: FuelGaugeProps) => {
+export const FuelGauge = ({ value, onValueChange, maxValue = 300, className, disabled = false }: FuelGaugeProps) => {
 
-  const percentage = Math.max(0, Math.min(MAX_FUEL_VALUE, value)) / MAX_FUEL_VALUE;
+  const percentage = Math.max(0, Math.min(maxValue, value)) / maxValue;
   const angle = percentage * 180;
   const indicatorColor = percentage <= 0.2 ? 'hsl(var(--destructive))' : percentage <= 0.5 ? '#f59e0b' : 'hsl(var(--primary))';
 
   const handleValueChange = (newValue: number) => {
-    onValueChange(Math.max(0, Math.min(MAX_FUEL_VALUE, newValue)));
+    onValueChange(Math.max(0, Math.min(maxValue, newValue)));
   };
 
   return (
@@ -92,7 +92,7 @@ export const FuelGauge = ({ value, onValueChange, className, disabled = false }:
            size="icon"
            className="h-12 w-12 rounded-full"
            onClick={() => handleValueChange(value + STEP_VALUE)}
-           disabled={disabled || value >= MAX_FUEL_VALUE}
+           disabled={disabled || value >= maxValue}
          >
            <Plus className="h-6 w-6" />
          </Button>

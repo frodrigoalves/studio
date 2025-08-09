@@ -14,6 +14,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -117,8 +118,10 @@ const ArticulatedChassis = ({ selected, onTireSelect }: { selected: string, onTi
                 <div className="absolute h-1.5 w-full bg-border/50 rounded-full" />
                 <div className="flex gap-1">
                      <TireButton position="tme" label="Traseiro Meio Esquerdo" selected={selected === 'tme'} onClick={onTireSelect} />
+                     <TireButton position="tmie" label="Traseiro Meio Interno Esquerdo" selected={selected === 'tmie'} onClick={onTireSelect} />
                 </div>
                 <div className="flex gap-1">
+                    <TireButton position="tmid" label="Traseiro Meio Interno Direito" selected={selected === 'tmid'} onClick={onTireSelect} />
                     <TireButton position="tmd" label="Traseiro Meio Direito" selected={selected === 'tmd'} onClick={onTireSelect} />
                 </div>
             </div>
@@ -265,7 +268,7 @@ export function TireForm() {
                            <div>
                              {vehicle?.chassisType === 'ARTICULADO' ? (
                                 <ArticulatedChassis selected={field.value} onTireSelect={field.onChange} />
-                             ) : vehicle?.chassisType ? (
+                             ) : vehicle?.chassisType === 'PADRON' || vehicle?.chassisType === 'CONVENCIONAL' ? (
                                 <ConventionalChassis selected={field.value} onTireSelect={field.onChange} />
                              ) : (
                                <div className="flex justify-center items-center p-4 h-48 bg-muted/30 rounded-lg border border-dashed">

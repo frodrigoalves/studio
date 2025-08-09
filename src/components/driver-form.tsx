@@ -25,6 +25,7 @@ import { extractFuelLevelFromImage } from "@/ai/flows/fuel-level-flow";
 import { cn } from "@/lib/utils";
 import { Separator } from "./ui/separator";
 import { FuelGauge } from "./ui/fuel-gauge";
+import { getVehicleById, VehicleParameters } from "@/services/vehicles";
 
 const fileToBase64 = (file: File | null): Promise<string | null> => {
     if (!file) return Promise.resolve(null);
@@ -42,7 +43,7 @@ const startTripSchema = z.object({
     car: z.string().min(1, "Carro é obrigatório."),
     line: z.string().min(1, "Linha é obrigatória."),
     kmStart: z.coerce.number({ required_error: "Km Inicial é obrigatório."}).min(1, "Km Inicial é obrigatório."),
-    startFuelLevel: z.number().min(0).max(300),
+    startFuelLevel: z.number().min(0).max(600),
 });
 
 const endFormSchema = z.object({
@@ -51,7 +52,7 @@ const endFormSchema = z.object({
   car: z.string().min(1, "Carro é obrigatório.").optional(),
   line: z.string().min(1, "Linha é obrigatória.").optional(),
   kmEnd: z.coerce.number({ required_error: "Km Final é obrigatório."}).min(1, "Km Final é obrigatório."),
-  endFuelLevel: z.number().min(0).max(300),
+  endFuelLevel: z.number().min(0).max(600),
 });
 
 type StartTripFormValues = z.infer<typeof startTripSchema>;
@@ -75,7 +76,7 @@ const initialEndValues: EndFormValues = {
     endFuelLevel: 150,
 };
 
-const MAX_FUEL_IN_LITERS = 300;
+const DEFAULT_FUEL_CAPACITY = 300;
 
 export function DriverForm() {
   const { toast } = useToast();
@@ -85,6 +86,7 @@ export function DriverForm() {
   const [isOcrLoading, setIsOcrLoading] = useState(false);
   const [isFuelLevelLoading, setIsFuelLevelLoading] = useState<"start" | "end" | null>(null);
   const [recordToEnd, setRecordToEnd] = useState<Record | null>(null);
+  const [vehicle, setVehicle] = useState<VehicleParameters | null>(null);
 
   const [startOdometerPhotoFile, setStartOdometerPhotoFile] = useState<File | null>(null);
   const [endOdometerPhotoFile, setEndOdometerPhotoFile] = useState<File | null>(null);
@@ -106,6 +108,31 @@ export function DriverForm() {
     defaultValues: initialEndValues,
   });
   
+  const handleCarIdBlurForStart = useCallback(async (carId: string) => {
+    if (!carId) {
+        setVehicle(null);
+        return;
+    }
+    setIsSearching(true);
+    try {
+        const foundVehicle = await getVehicleById(carId);
+        setVehicle(foundVehicle);
+        if (!foundVehicle) {
+             toast({
+                variant: "destructive",
+                title: "Veículo não parametrizado",
+                description: "Não foram encontrados parâmetros para este carro. O medidor de combustível usará o valor padrão.",
+            });
+        }
+    } catch (e) {
+        console.error("Failed to fetch vehicle", e);
+        setVehicle(null);
+    } finally {
+        setIsSearching(false);
+    }
+  }, [toast]);
+  
+  
   const handleChapaBlur = useCallback(async (plate: string) => {
     if(!plate || activeTab !== 'end') return;
 
@@ -117,8 +144,13 @@ export function DriverForm() {
             endForm.setValue('driver', record.driver);
             endForm.setValue('car', record.car);
             endForm.setValue('line', record.line);
+            
+            const foundVehicle = await getVehicleById(record.car);
+            setVehicle(foundVehicle);
+
         } else {
             setRecordToEnd(null);
+            setVehicle(null);
             endForm.reset({ ...initialEndValues, plate });
              toast({
                 variant: "destructive",
@@ -190,6 +222,8 @@ export function DriverForm() {
     if (!file) return;
     
     setIsFuelLevelLoading(formType);
+    const maxFuel = vehicle?.tankCapacity || DEFAULT_FUEL_CAPACITY;
+
     try {
         const fuelB64 = await fileToBase64(file);
         if (!fuelB64) throw new Error("Could not convert file to data URI");
@@ -197,7 +231,7 @@ export function DriverForm() {
         const result = await extractFuelLevelFromImage({ fuelGaugePhotoDataUri: fuelB64 });
 
         if (result.fuelLevel !== null) {
-            const levelInLiters = Math.round((result.fuelLevel / 100) * MAX_FUEL_IN_LITERS);
+            const levelInLiters = Math.round((result.fuelLevel / 100) * maxFuel);
             if (formType === 'start') {
                 startForm.setValue('startFuelLevel', levelInLiters, { shouldValidate: true });
             } else {
@@ -266,6 +300,7 @@ export function DriverForm() {
       startForm.reset(initialStartValues);
       setStartOdometerPhotoFile(null);
       setStartFuelPhotoFile(null);
+      setVehicle(null);
       if (startFileInputRef.current) startFileInputRef.current.value = "";
       if (startFuelPhotoInputRef.current) startFuelPhotoInputRef.current.value = "";
   
@@ -331,6 +366,7 @@ export function DriverForm() {
         });
         endForm.reset(initialEndValues);
         setRecordToEnd(null);
+        setVehicle(null);
         setEndOdometerPhotoFile(null);
         setEndFuelPhotoFile(null);
         if (endFileInputRef.current) endFileInputRef.current.value = "";
@@ -355,15 +391,18 @@ export function DriverForm() {
     } else {
         startForm.reset(initialStartValues);
     }
+    setVehicle(null);
   }, [activeTab, endForm, startForm]);
 
   const FuelSection = ({ formType }: { formType: "start" | "end" }) => {
     const form = formType === 'start' ? startForm : endForm;
     const levelFieldName = formType === 'start' ? 'startFuelLevel' : 'endFuelLevel';
-    const photoFile = formType === 'start' ? startFuelPhotoFile : endFuelPhotoFile;
+    const photoFile = formType === 'start' ? startFuelPhotoFile : setStartFuelPhotoFile;
     const setPhotoFile = formType === 'start' ? setStartFuelPhotoFile : setEndFuelPhotoFile;
     const photoInputRef = formType === 'start' ? startFuelPhotoInputRef : endFuelPhotoInputRef;
     const isLoading = isFuelLevelLoading === formType;
+
+    const maxFuel = vehicle?.tankCapacity || DEFAULT_FUEL_CAPACITY;
 
     return (
         <div className="space-y-4 pt-4">
@@ -410,6 +449,7 @@ export function DriverForm() {
                 <FuelGauge 
                     value={field.value} 
                     onValueChange={field.onChange} 
+                    maxValue={maxFuel}
                 />
                 )}
             />
@@ -437,7 +477,21 @@ export function DriverForm() {
               <form onSubmit={startForm.handleSubmit(onStartSubmit)} className="space-y-4 px-2">
                 <FormField control={startForm.control} name="plate" render={({ field }) => (<FormItem><FormLabel>Chapa do Motorista</FormLabel><FormControl><Input placeholder="Sua matrícula" {...field} /></FormControl><FormMessage /></FormItem>)}/>
                 <FormField control={startForm.control} name="driver" render={({ field }) => (<FormItem><FormLabel>Nome do Motorista</FormLabel><FormControl><Input placeholder="Seu nome completo" {...field} /></FormControl><FormMessage /></FormItem>)}/>
-                <FormField control={startForm.control} name="car" render={({ field }) => (<FormItem><FormLabel>Carro</FormLabel><FormControl><Input placeholder="Número do veículo" {...field} /></FormControl><FormMessage /></FormItem>)}/>
+                <FormField 
+                    control={startForm.control} 
+                    name="car" 
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Carro</FormLabel>
+                        <FormControl>
+                             <div className="relative">
+                                <Input placeholder="Número do veículo" {...field} onBlur={(e) => handleCarIdBlurForStart(e.target.value)} />
+                                {isSearching && <Loader2 className="absolute right-3 top-2.5 h-5 w-5 animate-spin" />}
+                             </div>
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )}/>
                 <FormField control={startForm.control} name="line" render={({ field }) => (<FormItem><FormLabel>Linha</FormLabel><FormControl><Input placeholder="Número da linha" {...field} /></FormControl><FormMessage /></FormItem>)}/>
                 
                 <Separator />
