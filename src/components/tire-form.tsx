@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
@@ -14,12 +14,12 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { addTireRecord, TireRecordPayload } from "@/services/tire";
+import { getVehicleById, VehicleParameters } from "@/services/vehicles";
 import { Switch } from "./ui/switch";
 import { Textarea } from "./ui/textarea";
 import { cn } from "@/lib/utils";
@@ -50,15 +50,6 @@ const initialValues: TireFormValues = {
   observations: "",
 };
 
-const tirePositions = [
-    { id: "dd", label: "Dianteiro Direito" },
-    { id: "de", label: "Dianteiro Esquerdo" },
-    { id: "tide", label: "Traseiro Interno Direito" },
-    { id: "tede", label: "Traseiro Externo Direito" },
-    { id: "tie", label: "Traseiro Interno Esquerdo" },
-    { id: "tee", label: "Traseiro Externo Esquerdo" },
-    { id: "estepe", label: "Estepe" },
-];
 
 const TireButton = ({ position, label, selected, onClick, className }: { position: string, label: string, selected: boolean, onClick: (pos: string) => void, className?: string }) => (
     <button
@@ -83,10 +74,76 @@ const TireButton = ({ position, label, selected, onClick, className }: { positio
     </button>
 );
 
+const ConventionalChassis = ({ selected, onTireSelect }: { selected: string, onTireSelect: (pos: string) => void }) => (
+    <div className="flex justify-center items-center p-4 bg-muted/30 rounded-lg border border-dashed">
+        <div className="space-y-4">
+            {/* Axle Front */}
+            <div className="flex justify-between items-center w-64 mx-auto relative">
+                <div className="absolute h-1.5 w-full bg-border/50 rounded-full" />
+                <TireButton position="de" label="Dianteiro Esquerdo" selected={selected === 'de'} onClick={onTireSelect} />
+                <TireButton position="dd" label="Dianteiro Direito" selected={selected === 'dd'} onClick={onTireSelect} />
+            </div>
+             {/* Axle Rear */}
+            <div className="flex justify-between items-center w-80 mx-auto relative">
+                <div className="absolute h-1.5 w-full bg-border/50 rounded-full" />
+                <div className="flex gap-1">
+                     <TireButton position="tee" label="Traseiro Externo Esquerdo" selected={selected === 'tee'} onClick={onTireSelect} />
+                     <TireButton position="tie" label="Traseiro Interno Esquerdo" selected={selected === 'tie'} onClick={onTireSelect} />
+                </div>
+                <div className="flex gap-1">
+                    <TireButton position="tide" label="Traseiro Interno Direito" selected={selected === 'tide'} onClick={onTireSelect} />
+                    <TireButton position="tede" label="Traseiro Externo Direito" selected={selected === 'tede'} onClick={onTireSelect} />
+                </div>
+            </div>
+             {/* Spare */}
+            <div className="flex justify-center pt-4">
+                <TireButton position="estepe" label="Estepe" selected={selected === 'estepe'} onClick={onTireSelect} />
+            </div>
+        </div>
+    </div>
+);
+
+const ArticulatedChassis = ({ selected, onTireSelect }: { selected: string, onTireSelect: (pos: string) => void }) => (
+     <div className="flex justify-center items-center p-4 bg-muted/30 rounded-lg border border-dashed">
+        <div className="space-y-4">
+            {/* Axle Front */}
+            <div className="flex justify-between items-center w-64 mx-auto relative">
+                <div className="absolute h-1.5 w-full bg-border/50 rounded-full" />
+                <TireButton position="de" label="Dianteiro Esquerdo" selected={selected === 'de'} onClick={onTireSelect} />
+                <TireButton position="dd" label="Dianteiro Direito" selected={selected === 'dd'} onClick={onTireSelect} />
+            </div>
+            {/* Axle Middle */}
+            <div className="flex justify-between items-center w-80 mx-auto relative">
+                <div className="absolute h-1.5 w-full bg-border/50 rounded-full" />
+                <div className="flex gap-1">
+                     <TireButton position="tme" label="Traseiro Meio Esquerdo" selected={selected === 'tme'} onClick={onTireSelect} />
+                </div>
+                <div className="flex gap-1">
+                    <TireButton position="tmd" label="Traseiro Meio Direito" selected={selected === 'tmd'} onClick={onTireSelect} />
+                </div>
+            </div>
+             {/* Axle Rear */}
+            <div className="flex justify-between items-center w-80 mx-auto relative">
+                <div className="absolute h-1.5 w-full bg-border/50 rounded-full" />
+                <div className="flex gap-1">
+                     <TireButton position="tee" label="Traseiro Externo Esquerdo" selected={selected === 'tee'} onClick={onTireSelect} />
+                     <TireButton position="tie" label="Traseiro Interno Esquerdo" selected={selected === 'tie'} onClick={onTireSelect} />
+                </div>
+                <div className="flex gap-1">
+                    <TireButton position="tide" label="Traseiro Interno Direito" selected={selected === 'tide'} onClick={onTireSelect} />
+                    <TireButton position="tede" label="Traseiro Externo Direito" selected={selected === 'tede'} onClick={onTireSelect} />
+                </div>
+            </div>
+        </div>
+    </div>
+);
+
 
 export function TireForm() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isFetchingVehicle, setIsFetchingVehicle] = useState(false);
+  const [vehicle, setVehicle] = useState<VehicleParameters | null>(null);
   
   const form = useForm<TireFormValues>({
     resolver: zodResolver(tireFormSchema),
@@ -94,6 +151,33 @@ export function TireForm() {
   });
 
   const selectedTire = form.watch("tirePosition");
+
+  const handleCarIdBlur = useCallback(async (carId: string) => {
+    if (!carId) {
+        setVehicle(null);
+        return;
+    };
+    setIsFetchingVehicle(true);
+    try {
+        const foundVehicle = await getVehicleById(carId);
+        if (foundVehicle) {
+            setVehicle(foundVehicle);
+        } else {
+            setVehicle(null);
+            toast({
+                variant: "destructive",
+                title: "Veículo não encontrado",
+                description: `Nenhum parâmetro encontrado para o carro ${carId}. Verifique o número ou a planilha de importação.`,
+            });
+        }
+    } catch (e) {
+        console.error("Failed to fetch vehicle", e);
+        setVehicle(null);
+    } finally {
+        setIsFetchingVehicle(false);
+    }
+  }, [toast]);
+
 
   async function onSubmit(data: TireFormValues) {
     setIsSubmitting(true);
@@ -108,6 +192,7 @@ export function TireForm() {
           description: "Os dados foram salvos com sucesso.",
         });
         form.reset(initialValues);
+        setVehicle(null);
     } catch(e) {
         console.error("Failed to save tire record", e);
         toast({
@@ -125,55 +210,13 @@ export function TireForm() {
         <CardHeader>
             <CardTitle>Formulário de Aferição</CardTitle>
             <CardDescription>
-                Selecione um pneu no chassi e preencha os campos para registrar a avaliação.
+                Digite o número do carro para ver o chassi, selecione um pneu e preencha os campos para registrar a avaliação.
             </CardDescription>
         </CardHeader>
       <CardContent className="p-4 sm:p-6">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             
-            <FormField
-                control={form.control}
-                name="tirePosition"
-                render={({ field }) => (
-                    <FormItem>
-                        <FormLabel className="text-lg font-semibold">Posição do Pneu</FormLabel>
-                         <FormDescription>
-                            Clique sobre o pneu no desenho do chassi abaixo para selecioná-lo.
-                         </FormDescription>
-                        <FormControl>
-                            <div className="flex justify-center items-center p-4 bg-muted/30 rounded-lg border border-dashed">
-                                <div className="space-y-4">
-                                    {/* Axle Front */}
-                                    <div className="flex justify-between items-center w-64 mx-auto relative">
-                                        <div className="absolute h-1.5 w-full bg-border/50 rounded-full" />
-                                        <TireButton position="de" label="Dianteiro Esquerdo" selected={field.value === 'de'} onClick={(pos) => field.onChange(pos)} />
-                                        <TireButton position="dd" label="Dianteiro Direito" selected={field.value === 'dd'} onClick={(pos) => field.onChange(pos)} />
-                                    </div>
-                                     {/* Axle Rear */}
-                                    <div className="flex justify-between items-center w-80 mx-auto relative">
-                                        <div className="absolute h-1.5 w-full bg-border/50 rounded-full" />
-                                        <div className="flex gap-1">
-                                             <TireButton position="tee" label="Traseiro Externo Esquerdo" selected={field.value === 'tee'} onClick={(pos) => field.onChange(pos)} />
-                                             <TireButton position="tie" label="Traseiro Interno Esquerdo" selected={field.value === 'tie'} onClick={(pos) => field.onChange(pos)} />
-                                        </div>
-                                        <div className="flex gap-1">
-                                            <TireButton position="tide" label="Traseiro Interno Direito" selected={field.value === 'tide'} onClick={(pos) => field.onChange(pos)} />
-                                            <TireButton position="tede" label="Traseiro Externo Direito" selected={field.value === 'tede'} onClick={(pos) => field.onChange(pos)} />
-                                        </div>
-                                    </div>
-                                     {/* Spare */}
-                                    <div className="flex justify-center pt-4">
-                                        <TireButton position="estepe" label="Estepe" selected={field.value === 'estepe'} onClick={(pos) => field.onChange(pos)} />
-                                    </div>
-                                </div>
-                            </div>
-                        </FormControl>
-                         <FormMessage />
-                    </FormItem>
-                )}
-            />
-
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField
                     control={form.control}
@@ -182,7 +225,14 @@ export function TireForm() {
                         <FormItem>
                         <FormLabel>Nº do Carro</FormLabel>
                         <FormControl>
-                            <Input placeholder="Ex: 21184" {...field} />
+                            <div className="relative">
+                                <Input 
+                                    placeholder="Ex: 21184" 
+                                    {...field}
+                                    onBlur={(e) => handleCarIdBlur(e.target.value)}
+                                />
+                                {isFetchingVehicle && <Loader2 className="absolute right-3 top-2.5 h-5 w-5 animate-spin" />}
+                            </div>
                         </FormControl>
                         <FormMessage />
                         </FormItem>
@@ -202,6 +252,32 @@ export function TireForm() {
                     )}
                 />
             </div>
+
+            <FormField
+                control={form.control}
+                name="tirePosition"
+                render={({ field }) => (
+                    <FormItem>
+                        <FormLabel className="text-lg font-semibold">
+                            Posição do Pneu - <span className="text-primary">{vehicle?.chassisType || 'Nenhum veículo selecionado'}</span>
+                        </FormLabel>
+                        <FormControl>
+                           <div>
+                             {vehicle?.chassisType === 'ARTICULADO' ? (
+                                <ArticulatedChassis selected={field.value} onTireSelect={field.onChange} />
+                             ) : vehicle?.chassisType ? (
+                                <ConventionalChassis selected={field.value} onTireSelect={field.onChange} />
+                             ) : (
+                               <div className="flex justify-center items-center p-4 h-48 bg-muted/30 rounded-lg border border-dashed">
+                                    <p className="text-muted-foreground text-center">Digite o número do carro para exibir o chassi.</p>
+                                </div>
+                             )}
+                           </div>
+                        </FormControl>
+                         <FormMessage />
+                    </FormItem>
+                )}
+            />
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <FormField

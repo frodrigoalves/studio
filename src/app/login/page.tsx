@@ -71,7 +71,7 @@ export default function LoginPage() {
     <main className="flex min-h-screen flex-col items-center justify-center p-4 bg-background">
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center justify-center mb-6 text-center">
-            <Image src="/logo.jpeg" alt="TopBus Logo" width={200} height={55} className="mb-4" />
+            <Image src="/logo.jpeg" alt="TopBus Logo" width={200} height={55} className="mb-4" style={{ height: 'auto' }} />
         </div>
         <Card>
           <CardHeader className="text-center">

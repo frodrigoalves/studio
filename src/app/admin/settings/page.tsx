@@ -154,19 +154,28 @@ export default function SettingsPage() {
                     const json: any[] = XLSX.utils.sheet_to_json(worksheet);
 
                     const vehicleParameters: Omit<VehicleParameters, 'status' | 'lastUpdated'>[] = json
-                        .map(row => ({
-                            carId: String(row['VEICULO'] ?? '').trim(),
-                            thresholds: {
-                                yellow: parseFloat(String(row['AMARELA'] ?? '0').replace(',', '.')) || 0,
-                                green: parseFloat(String(row['VERDE'] ?? '0').replace(',', '.')) || 0,
-                                gold: parseFloat(String(row['DOURADA'] ?? '0').replace(',', '.')) || 0,
-                            },
-                            tankCapacity: Number(row['CAPACIDADE TANQUE'] ?? 0) || undefined,
-                        }))
+                        .map(row => {
+                            const typeChassi = String(row['TIPO CHASSI'] || '').toUpperCase();
+                            let chassisType: VehicleParameters['chassisType'] = 'UNKNOWN';
+                            if(typeChassi.includes('ARTICULADO')) chassisType = 'ARTICULADO';
+                            else if(typeChassi.includes('CONVENCIONAL')) chassisType = 'CONVENCIONAL';
+                            else if(typeChassi.includes('PADRON')) chassisType = 'PADRON';
+
+                            return {
+                                carId: String(row['VEICULO'] ?? '').trim(),
+                                chassisType,
+                                thresholds: {
+                                    yellow: parseFloat(String(row['AMARELA'] ?? '0').replace(',', '.')) || 0,
+                                    green: parseFloat(String(row['VERDE'] ?? '0').replace(',', '.')) || 0,
+                                    gold: parseFloat(String(row['DOURADA'] ?? '0').replace(',', '.')) || 0,
+                                },
+                                tankCapacity: Number(row['CAPACIDADE TANQUE'] ?? 0) || undefined,
+                            }
+                        })
                         .filter(p => p.carId && p.thresholds.green > 0); 
 
                     if (vehicleParameters.length === 0) {
-                        toast({ variant: 'destructive', title: 'Nenhum dado válido encontrado', description: 'Verifique se a planilha possui as colunas corretas (VEICULO, VERDE, etc.) e se os dados estão preenchidos.'});
+                        toast({ variant: 'destructive', title: 'Nenhum dado válido encontrado', description: 'Verifique se a planilha possui as colunas corretas (VEICULO, TIPO CHASSI, VERDE, etc.) e se os dados estão preenchidos.'});
                         setIsParametersLoading(false);
                         return;
                     }
@@ -408,7 +417,7 @@ export default function SettingsPage() {
                                      <Car className="h-6 w-6" />
                                      <div>
                                          <h4 className="font-semibold text-base">Parâmetros de Veículos</h4>
-                                         <p className="text-xs text-muted-foreground text-left">Metas de consumo e capacidade do tanque.</p>
+                                         <p className="text-xs text-muted-foreground text-left">Metas de consumo, tipo de chassi e capacidade do tanque.</p>
                                      </div>
                                  </div>
                             </AccordionTrigger>
@@ -416,8 +425,9 @@ export default function SettingsPage() {
                                 <div className="text-sm text-muted-foreground p-4 border-l-4 border-accent bg-accent/10 rounded-r-lg space-y-2">
                                     <p className="font-semibold text-foreground">Instruções para a Planilha:</p>
                                     <ul className="list-disc list-inside">
-                                        <li>Colunas necessárias: <strong>VEICULO</strong>, <strong>AMARELA</strong>, <strong>VERDE</strong>, <strong>DOURADA</strong>, e <strong>CAPACIDADE TANQUE</strong>.</li>
+                                        <li>Colunas necessárias: <strong>VEICULO</strong>, <strong>TIPO CHASSI</strong>, <strong>AMARELA</strong>, <strong>VERDE</strong>, <strong>DOURADA</strong>, e <strong>CAPACIDADE TANQUE</strong>.</li>
                                         <li>A coluna "VEICULO" deve ter o número do carro, que servirá como identificador único.</li>
+                                        <li>O "TIPO CHASSI" deve conter as palavras "CONVENCIONAL", "ARTICULADO" ou "PADRON".</li>
                                     </ul>
                                </div>
                                <div className="flex flex-col sm:flex-row gap-4 items-end mt-4">

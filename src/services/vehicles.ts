@@ -7,6 +7,7 @@ import { collection, doc, writeBatch, getDocs, query, orderBy, limit, getDoc } f
 export interface VehicleParameters {
   carId: string;
   status: 'active' | 'inactive';
+  chassisType: 'CONVENCIONAL' | 'ARTICULADO' | 'PADRON' | 'UNKNOWN';
   thresholds: {
     yellow: number;
     green: number;
@@ -33,6 +34,7 @@ export async function saveVehicleParameters(parameters: Omit<VehicleParameters, 
 
       const dataToSave: Omit<VehicleParameters, 'carId'> = {
           status: 'active',
+          chassisType: param.chassisType,
           thresholds: param.thresholds,
           tankCapacity: param.tankCapacity,
           lastUpdated: now,
@@ -77,4 +79,19 @@ export async function getMostRecentVehicleParameter(): Promise<VehicleParameters
     }
     const docSnap = querySnapshot.docs[0];
     return { carId: docSnap.id, ...docSnap.data() } as VehicleParameters;
+}
+
+/**
+ * Busca um único parâmetro de veículo pelo seu ID.
+ * @param carId O ID do carro.
+ * @returns O parâmetro do veículo ou null se não for encontrado.
+ */
+export async function getVehicleById(carId: string): Promise<VehicleParameters | null> {
+    if (!carId) return null;
+    const docRef = doc(db, 'vehicleParameters', carId);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+        return { carId: docSnap.id, ...docSnap.data() } as VehicleParameters;
+    }
+    return null;
 }
