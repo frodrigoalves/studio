@@ -1,8 +1,8 @@
 
 import { initializeApp, getApp, getApps } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
-import { getStorage } from "firebase/storage";
+import { getAuth, connectAuthEmulator } from "firebase/auth";
+import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
+import { getStorage, connectStorageEmulator } from "firebase/storage";
 
 const firebaseConfig = {
     projectId: "fleettrack-go",
@@ -18,5 +18,17 @@ const db = getFirestore(app);
 const storage = getStorage(app);
 const auth = getAuth(app);
 
+// Connect to emulators in development
+if (typeof window !== 'undefined' && window.location.hostname === "localhost") {
+    console.log("Development mode: Connecting to Firebase Emulators");
+    try {
+        connectFirestoreEmulator(db, 'localhost', 8080);
+        connectAuthEmulator(auth, 'http://localhost:9099');
+        connectStorageEmulator(storage, 'localhost', 9199);
+        console.log("Successfully connected to emulators");
+    } catch (error) {
+        console.error("Error connecting to emulators:", error);
+    }
+}
 
 export { app, db, storage, auth };
