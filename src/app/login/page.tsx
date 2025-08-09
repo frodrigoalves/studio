@@ -25,6 +25,17 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
 
+    // Bypassing login for development
+    if (process.env.NODE_ENV === 'development') {
+        toast({
+            title: "Acesso de Desenvolvimento",
+            description: "Login automático ativado. Redirecionando...",
+        });
+        router.push('/admin');
+        return;
+    }
+
+
     try {
       await signInWithEmailAndPassword(auth, email, password);
       toast({
@@ -60,8 +71,7 @@ export default function LoginPage() {
     <main className="flex min-h-screen flex-col items-center justify-center p-4 bg-background">
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center justify-center mb-6 text-center">
-            <h1 className="text-3xl font-bold text-white">TopBus Transportes</h1>
-            <p className="text-muted-foreground">Gestão Inteligente de Frotas</p>
+            <Image src="/logo.png" alt="TopBus Logo" width={200} height={100} className="mb-4" />
         </div>
         <Card>
           <CardHeader className="text-center">

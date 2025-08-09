@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { auth } from "@/lib/firebase"; 
 import { onAuthStateChanged, signOut } from "firebase/auth"; 
@@ -42,13 +43,17 @@ export default function AdminLayout({
   const router = useRouter();
   const pathname = usePathname();
   const { toast } = useToast();
-  const [loading, setLoading] = useState(false); // Changed to false to bypass loading screen
+  const [loading, setLoading] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [pageTitle, setPageTitle] = useState('Painel de Gestão');
 
-  /*
-  // Temporarily disabled for development
+  
   useEffect(() => {
+    // In dev mode, bypass auth
+    if (process.env.NODE_ENV === 'development') {
+      setLoading(false);
+      return;
+    }
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         setLoading(false);
@@ -58,7 +63,7 @@ export default function AdminLayout({
     });
     return () => unsubscribe();
   }, [router]);
-  */
+  
   
   useEffect(() => {
     setPageTitle(pageTitles[pathname] || 'Painel de Gestão');
@@ -98,8 +103,8 @@ export default function AdminLayout({
     <SidebarProvider>
       <Sidebar>
         <SidebarHeader>
-            <div className="p-4 flex items-center justify-center gap-2 group-data-[collapsible=icon]:justify-start group-data-[collapsible=icon]:pl-3.5">
-                 <LayoutDashboard className="h-7 w-7 text-primary" />
+            <div className="p-4 flex items-center justify-center gap-2 group-data-[collapsible=icon]:justify-start group-data-[collapsible=icon]:pl-2">
+                 <Image src="/logo-icon.png" alt="TopBus Icon" width={40} height={40} />
                  <h1 className="text-xl font-bold group-data-[collapsible=icon]:hidden">TopBus</h1>
             </div>
         </SidebarHeader>
