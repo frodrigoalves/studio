@@ -26,10 +26,10 @@ if (process.env.NODE_ENV === 'development') {
     if (!auth.emulatorConfig) {
         console.log("Development mode: Connecting to Firebase Emulators");
         try {
-            connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
-            connectFirestoreEmulator(db, '127.0.0.1', 8080);
-            connectStorageEmulator(storage, '127.0.0.1', 9199);
-            console.log("Successfully connected to emulators using 127.0.0.1 for both client and server.");
+            connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
+            connectFirestoreEmulator(db, 'localhost', 8080);
+            connectStorageEmulator(storage, 'localhost', 9199);
+            console.log("Successfully connected to emulators using localhost for both client and server.");
         } catch (error) {
             console.error("Error connecting to emulators:", error);
         }

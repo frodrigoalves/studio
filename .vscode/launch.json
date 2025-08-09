@@ -5,6 +5,14 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "arg": [],
+            "name": "launch",
+            "program": "${workspaceFolder}/main.lua",
+            "request": "launch",
+            "stopOnEntry": true,
+            "type": "lua"
+        },
+        {
             "name": "Python Debugger: Current File with Arguments",
             "type": "debugpy",
             "request": "launch",
