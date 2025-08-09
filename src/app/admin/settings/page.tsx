@@ -153,13 +153,13 @@ export default function SettingsPage() {
                     const worksheet = workbook.Sheets[sheetName];
                     const json: any[] = XLSX.utils.sheet_to_json(worksheet);
 
-                    const vehicleParameters: Omit<VehicleParameters, 'status' | 'lastUpdated'>[] = json
+                    const vehicleParameters = json
                         .map(row => {
                             const typeChassi = String(row['TIPO CHASSI'] || '').toUpperCase();
                             let chassisType: VehicleParameters['chassisType'] = 'UNKNOWN';
                             if(typeChassi.includes('ARTICULADO')) chassisType = 'ARTICULADO';
                             else if(typeChassi.includes('CONVENCIONAL')) chassisType = 'CONVENCIONAL';
-                            else if(typeChassi.includes('PADRON')) chassisType = 'PADRON';
+                            else if (typeChassi.includes('PADRON')) chassisType = 'PADRON';
 
                             return {
                                 carId: String(row['VEICULO'] ?? '').trim(),
@@ -175,7 +175,12 @@ export default function SettingsPage() {
                         .filter(p => p.carId && p.thresholds.green > 0); 
 
                     if (vehicleParameters.length === 0) {
-                        toast({ variant: 'destructive', title: 'Nenhum dado válido encontrado', description: 'Verifique se a planilha possui as colunas corretas (VEICULO, TIPO CHASSI, VERDE, etc.) e se os dados estão preenchidos.'});
+                        toast({ 
+                            variant: 'destructive', 
+                            title: 'Nenhum dado válido encontrado', 
+                            description: 'A planilha foi lida, mas nenhuma linha com dados válidos foi encontrada. Verifique se as colunas (VEICULO, TIPO CHASSI, VERDE, etc.) estão corretas e se há veículos preenchidos.',
+                            duration: 9000,
+                        });
                         setIsParametersLoading(false);
                         return;
                     }
