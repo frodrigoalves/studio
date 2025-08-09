@@ -1,34 +1,36 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Regra geral para desenvolvimento: permite acesso total.
-    // Em produção, você deve restringir o acesso com base na autenticação do usuário (request.auth != null).
-    
-    match /tripRecords/{recordId} {
+    // Regras de desenvolvimento: permite acesso a todas as coleções.
+    // ATENÇÃO: Em produção, você deve proteger seus dados com regras mais restritivas.
+    // Exemplo: allow read, write: if request.auth != null;
+
+    match /checklistRecords/{docId} {
       allow read, write: if true;
     }
 
-    match /checklistRecords/{recordId} {
+    match /dieselPrices/{docId} {
       allow read, write: if true;
     }
 
-    match /fuelingRecords/{recordId} {
-      allow read, write: if true;
-    }
-    
-    match /maintenanceRecords/{recordId} {
+    match /fuelingRecords/{docId} {
       allow read, write: if true;
     }
 
-    match /tireRecords/{recordId} {
+    match /maintenanceRecords/{docId} {
       allow read, write: if true;
     }
 
-    match /vehicleParameters/{carId} {
+    match /tireRecords/{docId} {
       allow read, write: if true;
     }
 
-    match /dieselPrices/{priceId} {
+    match /tripRecords/{docId} {
+      allow read, write: if true;
+    }
+
+    match /vehicleParameters/{docId} {
       allow read, write: if true;
     }
   }
