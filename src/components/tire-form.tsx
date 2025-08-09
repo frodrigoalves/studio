@@ -65,14 +65,21 @@ const TireButton = ({ position, label, selected, onClick, className }: { positio
         type="button"
         onClick={() => onClick(position)}
         className={cn(
-            "aspect-square w-12 h-16 rounded-lg bg-input border-2 border-border/50 flex items-center justify-center transition-all duration-200 hover:border-primary/80 hover:bg-accent",
-            selected && "bg-primary border-primary-foreground shadow-lg shadow-primary/30 ring-2 ring-primary-foreground",
+            "relative aspect-[3/4] w-12 h-16 rounded-lg bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-gray-700 flex items-center justify-center transition-all duration-200 group overflow-hidden",
+            "hover:border-primary/70 hover:shadow-lg hover:shadow-primary/20",
+            selected && "border-primary shadow-xl shadow-primary/40 ring-2 ring-primary/80",
             className
         )}
         aria-label={label}
         title={label}
     >
-        <div className={cn("w-4/5 h-4/5 rounded-md border-2", selected ? 'border-primary-foreground/50' : 'border-border')}></div>
+        {/* Tire Tread Accent */}
+        <div className="absolute top-0 left-0 w-full h-full opacity-10 group-hover:opacity-20 transition-opacity" style={{backgroundImage: 'repeating-linear-gradient(45deg, transparent, transparent 10px, hsl(var(--border)) 10px, hsl(var(--border)) 12px)'}} />
+        {/* Inner Hub */}
+        <div className={cn(
+            "relative w-5 h-5 rounded-full bg-gray-600 border-2 border-gray-500 transition-all",
+            selected && "bg-primary/50 border-primary"
+        )} />
     </button>
 );
 
@@ -202,7 +209,7 @@ export function TireForm() {
                     name="tireNumber"
                     render={({ field }) => (
                         <FormItem>
-                        <FormLabel>Numeração (Nº de fogo)</FormLabel>
+                        <FormLabel>Nº de Fogo (Marcação)</FormLabel>
                         <FormControl>
                             <Input placeholder="Nº de fogo do pneu" {...field} />
                         </FormControl>
