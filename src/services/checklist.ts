@@ -58,8 +58,8 @@ async function uploadPhoto(photoBase64: string | null, recordId: string, type: s
         const downloadURL = await getDownloadURL(storageRef);
         return downloadURL;
     } catch (error) {
-        console.error(`Failed to upload photo for ${recordId}, type: ${type}`, error);
-        return null; // Return null on failure to prevent breaking the main function
+        console.error(`Detailed error payload for photo upload (${type}):`, error);
+        throw error;
     }
 }
 

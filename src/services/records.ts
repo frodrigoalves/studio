@@ -37,9 +37,14 @@ async function uploadPhoto(photoBase64: string | null, recordId: string, type: s
     
     const base64String = photoBase64.split(',')[1];
     
-    await uploadString(storageRef, base64String, 'base64');
-    const downloadURL = await getDownloadURL(storageRef);
-    return downloadURL;
+    try {
+        await uploadString(storageRef, base64String, 'base64');
+        const downloadURL = await getDownloadURL(storageRef);
+        return downloadURL;
+    } catch (error) {
+        console.error(`Detailed error payload for photo upload (${type}):`, error);
+        throw error;
+    }
 }
 
 async function deletePhoto(photoUrl: string | null) {
