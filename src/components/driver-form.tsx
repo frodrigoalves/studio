@@ -239,6 +239,8 @@ export function DriverForm() {
         endOdometerPhoto: null,
         startFuelLevel: data.startFuelLevel,
         startFuelPhoto: startFuelPhotoB64,
+        endFuelLevel: null,
+        endFuelPhoto: null,
       };
       await addRecord(recordPayload);
   

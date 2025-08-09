@@ -26,7 +26,7 @@ export interface Record {
 }
 
 export type RecordAddPayload = Omit<Record, 'id'>;
-export type RecordUpdatePayload = Partial<Omit<Record, 'id' | 'startOdometerPhoto' | 'endOdometerPhoto' | 'startFuelPhoto' | 'endFuelPhoto'>>;
+export type RecordUpdatePayload = Partial<Omit<Record, 'id'>>;
 
 async function uploadPhoto(photoBase64: string | null, recordId: string, type: string): Promise<string | null> {
     if (!photoBase64 || !photoBase64.startsWith('data:image')) {
