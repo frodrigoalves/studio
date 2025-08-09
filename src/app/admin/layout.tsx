@@ -3,10 +3,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { auth } from "@/lib/firebase"; // Import Firebase auth
-import { onAuthStateChanged, signOut } from "firebase/auth"; // Import auth functions
+import { auth } from "@/lib/firebase"; 
+import { onAuthStateChanged, signOut } from "firebase/auth"; 
 import {
   SidebarProvider,
   Sidebar,
@@ -15,19 +14,18 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarInset,
   SidebarTrigger,
   SidebarFooter,
   SidebarSeparator,
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Settings, FileText, LogOut, BrainCircuit, Loader2, Clock4, FileHeart, Wrench, Users, Fuel, ClipboardCheck, CircleDot, ShieldAlert, Clapperboard, Archive } from "lucide-react";
+import { Settings, FileText, LogOut, BrainCircuit, Loader2, Clock4, FileHeart, Wrench, Users, Fuel, ClipboardCheck, CircleDot, ShieldAlert, LayoutDashboard } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 
 const pageTitles: { [key: string]: string } = {
-    '/admin': 'Painel BI',
+    '/admin': 'Painel de Gestão',
     '/admin/records': 'Registros de KM',
     '/admin/fueling': 'Registros de Abastecimento',
     '/admin/checklist': 'Registros de Vistoria',
@@ -49,18 +47,13 @@ export default function AdminLayout({
   const [pageTitle, setPageTitle] = useState('Painel de Gestão');
 
   useEffect(() => {
-    // Use Firebase's auth state listener for reliable authentication status
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
-        // User is signed in.
         setLoading(false);
       } else {
-        // User is signed out. Redirect to login.
         router.push('/login');
       }
     });
-
-    // Cleanup subscription on unmount
     return () => unsubscribe();
   }, [router]);
   
@@ -72,8 +65,8 @@ export default function AdminLayout({
     setIsLoggingOut(true);
     try {
         await signOut(auth);
-        // The onAuthStateChanged listener will automatically redirect to /login
         toast({ title: 'Logout efetuado com sucesso.' });
+        router.push('/login');
     } catch (error) {
         console.error("Logout failed", error);
         toast({ title: 'Erro ao fazer logout', variant: 'destructive' });
@@ -102,9 +95,9 @@ export default function AdminLayout({
     <SidebarProvider>
       <Sidebar>
         <SidebarHeader>
-            <div className="p-4 flex justify-center">
-                 <Image src="/logo.jpeg" alt="TopBus Logo" width={140} height={35} className="group-data-[collapsible=icon]:hidden" />
-                 <Image src="/logo.jpeg" alt="TopBus Logo" width={32} height={32} className="hidden group-data-[collapsible=icon]:block" />
+            <div className="p-4 flex items-center justify-center gap-2 group-data-[collapsible=icon]:justify-start group-data-[collapsible=icon]:pl-3.5">
+                 <LayoutDashboard className="h-7 w-7 text-primary" />
+                 <h1 className="text-xl font-bold group-data-[collapsible=icon]:hidden">FleetTrack</h1>
             </div>
         </SidebarHeader>
         <SidebarContent>

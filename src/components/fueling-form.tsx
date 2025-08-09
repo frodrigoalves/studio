@@ -107,7 +107,7 @@ export function FuelingForm() {
   }
 
   return (
-    <Card className="shadow-2xl shadow-primary/10 border-2 border-primary/50">
+    <Card>
       <CardContent className="p-4 sm:p-6">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">

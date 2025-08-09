@@ -31,11 +31,9 @@ export default function LoginPage() {
         title: "Login bem-sucedido!",
         description: "Acesso de Gestor concedido. Redirecionando...",
       });
-      // The AdminLayout's onAuthStateChanged will handle the redirect.
       router.push('/admin');
     } catch (error: any) {
       let errorMessage = "Ocorreu um erro desconhecido.";
-      // Handle Firebase auth errors
       switch (error.code) {
           case 'auth/user-not-found':
           case 'auth/invalid-email':
@@ -61,12 +59,13 @@ export default function LoginPage() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-4 bg-background">
       <div className="w-full max-w-sm">
-        <div className="flex flex-col items-center justify-center mb-6 text-center h-[50px]">
-          <Image src="/logo.jpeg" alt="TopBus Logo" width={200} height={50} priority />
+        <div className="flex flex-col items-center justify-center mb-6 text-center">
+            <h1 className="text-3xl font-bold text-white">FleetTrack Go</h1>
+            <p className="text-muted-foreground">Gestão Inteligente de Frotas</p>
         </div>
         <Card>
-          <CardHeader>
-            <CardTitle>Painel de Gestão</CardTitle>
+          <CardHeader className="text-center">
+            <CardTitle>Acesso Restrito</CardTitle>
             <CardDescription>Insira suas credenciais para entrar no painel.</CardDescription>
           </CardHeader>
           <CardContent>
@@ -105,7 +104,7 @@ export default function LoginPage() {
             <Button variant="link" className="w-full text-muted-foreground" asChild>
               <Link href="/">
                 <ArrowLeft className="mr-2 h-4 w-4" />
-                Voltar para a tela de preenchimento
+                Voltar aos Módulos de Coleta
               </Link>
             </Button>
           </div>

@@ -3,7 +3,6 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { UserCog, Fuel, ClipboardCheck, FileText, CircleDot } from 'lucide-react';
-import Image from 'next/image';
 
 const menuOptions = [
   { href: '/registro-km', label: 'REGISTRO DE KM', icon: FileText, available: true, highlight: true },
@@ -18,18 +17,19 @@ export default function Home() {
       <div className="absolute top-4 right-4">
         <Button asChild variant="ghost" size="icon">
           <Link href="/login">
-            <UserCog className="h-6 w-6" />
+            <UserCog className="h-6 w-6 text-muted-foreground hover:text-primary" />
             <span className="sr-only">Acesso do Gestor</span>
           </Link>
         </Button>
       </div>
-      <div className="flex flex-col items-center justify-center mb-6 text-center">
-        <Image src="/logo.jpeg" alt="TopBus Logo" width={200} height={50} priority />
+      <div className="flex flex-col items-center justify-center mb-8 text-center">
+        <h1 className="text-4xl font-bold text-white">FleetTrack Go</h1>
+        <p className="text-lg text-muted-foreground mt-1">Módulos de Coleta Operacional</p>
       </div>
-      <div className="w-full max-w-md mx-auto">
-        <div className="grid grid-cols-2 gap-4">
+      <div className="w-full max-w-2xl mx-auto">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {menuOptions.map((item) => {
-            const cardClasses = `aspect-square flex items-center justify-center p-4 hover:bg-accent hover:border-primary transition-colors duration-200 ${item.highlight ? 'border-2 border-primary shadow-lg' : ''}`;
+            const cardClasses = `aspect-square flex items-center justify-center p-4 bg-card/50 hover:bg-accent hover:border-primary transition-colors duration-200 backdrop-blur-sm border-2 border-transparent ${item.highlight ? 'border-primary shadow-lg shadow-primary/20' : ''}`;
 
             const cardContent = (
               <Card className={cardClasses}>

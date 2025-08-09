@@ -12,7 +12,7 @@ interface SignaturePadProps {
   penColor?: string;
 }
 
-export const SignaturePad = ({ onSignatureEnd, className, penColor = 'black' }: SignaturePadProps) => {
+export const SignaturePad = ({ onSignatureEnd, className, penColor = '#FFFFFF' }: SignaturePadProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [hasSigned, setHasSigned] = useState(false);
@@ -85,8 +85,7 @@ export const SignaturePad = ({ onSignatureEnd, className, penColor = 'black' }: 
         if(parent) {
             canvas.width = parent.clientWidth;
             canvas.height = parent.clientHeight;
-            // Redraw signature if needed, or re-apply styles
-             if (context) {
+            if (context) {
                 context.strokeStyle = penColor;
                 context.lineWidth = 2;
                 context.lineCap = 'round';

@@ -7,13 +7,13 @@
     --background: 222 47% 11%; /* Dark Slate Blue */
     --foreground: 210 40% 98%; /* White */
 
-    --card: 222 47% 11%;
+    --card: 222 47% 13%;
     --card-foreground: 210 40% 98%;
 
     --popover: 222 47% 11%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 180 100% 50%; /* Cyan */
+    --primary: 204 100% 50%; /* Bright Blue */
     --primary-foreground: 222 47% 11%;
 
     --secondary: 217 33% 17%;
@@ -22,30 +22,30 @@
     --muted: 217 33% 17%;
     --muted-foreground: 215 20% 65%;
 
-    --accent: 180 100% 50%;
-    --accent-foreground: 222 47% 11%;
+    --accent: 217 33% 17%;
+    --accent-foreground: 210 40% 98%;
 
     --destructive: 0 63% 31%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 180 100% 50%;
+    --border: 217 33% 25%;
+    --input: 217 33% 20%;
+    --ring: 204 100% 50%;
 
-    --radius: 0.5rem;
+    --radius: 0.8rem;
   }
 
   .dark {
     --background: 222 47% 11%; /* Dark Slate Blue */
     --foreground: 210 40% 98%; /* White */
 
-    --card: 222 47% 11%;
+    --card: 222 47% 13%;
     --card-foreground: 210 40% 98%;
 
     --popover: 222 47% 11%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 180 100% 50%; /* Cyan */
+    --primary: 204 100% 50%; /* Bright Blue */
     --primary-foreground: 222 47% 11%;
 
     --secondary: 217 33% 17%;
@@ -54,15 +54,15 @@
     --muted: 217 33% 17%;
     --muted-foreground: 215 20% 65%;
 
-    --accent: 180 100% 50%;
-    --accent-foreground: 222 47% 11%;
+    --accent: 217 33% 17%;
+    --accent-foreground: 210 40% 98%;
 
     --destructive: 0 63% 31%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 180 100% 50%;
+    --border: 217 33% 25%;
+    --input: 217 33% 20%;
+    --ring: 204 100% 50%;
   }
 }
 
@@ -72,29 +72,5 @@
   }
   body {
     @apply bg-background text-foreground;
-  }
-
-  body::before {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 200%;
-    height: 100%;
-    z-index: -1;
-    background-image: url('https://storage.googleapis.com/aai-web-samples/protim/bg-image.png');
-    background-size: 50% auto;
-    background-repeat: repeat;
-    opacity: 0.05; 
-    animation: panoramic-background 60s linear infinite;
-  }
-
-  @keyframes panoramic-background {
-    0% {
-      transform: translateX(0);
-    }
-    100% {
-      transform: translateX(-50%);
-    }
   }
 }

@@ -164,7 +164,7 @@ export function ChecklistForm() {
   }
 
   return (
-    <Card className="shadow-2xl shadow-primary/10 border-2 border-primary/50">
+    <Card>
       <CardHeader>
         <CardTitle>Checklist de Vistoria</CardTitle>
         <CardDescription>
@@ -333,7 +333,7 @@ export function ChecklistForm() {
                   <FormControl>
                     <SignaturePad
                         onSignatureEnd={(signature) => field.onChange(signature ?? "")}
-                        className="w-full h-48 border rounded-lg bg-background"
+                        className="w-full h-48 border rounded-lg bg-input"
                     />
                   </FormControl>
                   <FormMessage />

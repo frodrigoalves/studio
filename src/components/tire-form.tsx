@@ -91,7 +91,7 @@ export function TireForm() {
   }
 
   return (
-    <Card className="shadow-2xl shadow-primary/10 border-2 border-primary/50">
+    <Card>
         <CardHeader>
             <CardTitle>Formulário de Aferição</CardTitle>
             <CardDescription>
@@ -198,7 +198,7 @@ export function TireForm() {
                     control={form.control}
                     name="rotationPerformed"
                     render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm bg-muted/30">
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm bg-input">
                             <div className="space-y-0.5">
                                 <FormLabel>Houve rodízio?</FormLabel>
                             </div>
@@ -215,7 +215,7 @@ export function TireForm() {
                     control={form.control}
                     name="isRetreaded"
                     render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm bg-muted/30">
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm bg-input">
                             <div className="space-y-0.5">
                                 <FormLabel>É recapado?</FormLabel>
                             </div>
