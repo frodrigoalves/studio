@@ -178,7 +178,7 @@ export default function SettingsPage() {
                         toast({ 
                             variant: 'destructive', 
                             title: 'Nenhum dado válido encontrado', 
-                            description: 'A planilha foi lida, mas nenhuma linha com dados válidos foi encontrada. Verifique se as colunas (VEICULO, TIPO CHASSI, VERDE, etc.) estão corretas e se há veículos preenchidos.',
+                            description: 'A planilha foi lida, mas nenhuma linha com dados válidos foi encontrada. Verifique se as colunas (VEICULO, TIPO CHASSI, VERDE, CAPACIDADE TANQUE etc.) estão corretas e se há veículos preenchidos.',
                             duration: 9000,
                         });
                         setIsParametersLoading(false);
