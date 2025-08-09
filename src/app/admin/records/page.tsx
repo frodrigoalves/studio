@@ -62,12 +62,8 @@ export default function RecordsPage() {
     const [isAddDialogOpen, setAddDialogOpen] = useState(false);
     const [isPhotosDialogOpen, setPhotosDialogOpen] = useState(false);
     const [isEditDialogOpen, setEditDialogOpen] = useState(false);
-    const [isAuthDialogOpen, setAuthDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [selectedRecord, setSelectedRecord] = useState<Record | null>(null);
-    const [authPassword, setAuthPassword] = useState('');
-    const [authAction, setAuthAction] = useState<'edit' | 'delete' | null>(null);
-    const [isAuthorizing, setIsAuthorizing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     
@@ -214,32 +210,14 @@ export default function RecordsPage() {
         setPhotosDialogOpen(true);
     };
     
-    const openAuthDialog = (record: Record, action: 'edit' | 'delete') => {
+    const handleOpenEditDialog = (record: Record) => {
+        setEditRecordData(record);
+        setEditDialogOpen(true);
+    };
+
+    const handleOpenDeleteDialog = (record: Record) => {
         setSelectedRecord(record);
-        setAuthAction(action);
-        setAuthDialogOpen(true);
-    }
-    
-    const handleAuthorization = async () => {
-        setIsAuthorizing(true);
-        // This should be a real check, but for now, it's a hardcoded password.
-        if (authPassword === "diretoria") {
-            setAuthDialogOpen(false);
-            setAuthPassword('');
-            if (authAction === 'edit' && selectedRecord) {
-                setEditRecordData(selectedRecord);
-                setEditDialogOpen(true);
-            } else if (authAction === 'delete' && selectedRecord) {
-                setDeleteDialogOpen(true);
-            }
-        } else {
-            toast({
-                variant: 'destructive',
-                title: 'Acesso Negado',
-                description: 'A senha da diretoria está incorreta.',
-            });
-        }
-         setIsAuthorizing(false);
+        setDeleteDialogOpen(true);
     };
     
     const getExportData = () => {
@@ -520,10 +498,10 @@ export default function RecordsPage() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                      <DropdownMenuItem onClick={() => openAuthDialog(record, 'edit')}>Editar</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleOpenEditDialog(record)}>Editar</DropdownMenuItem>
                       <DropdownMenuItem onClick={() => openPhotosDialog(record)}>Ver Fotos</DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem className="text-destructive" onClick={() => openAuthDialog(record, 'delete')}>
+                      <DropdownMenuItem className="text-destructive" onClick={() => handleOpenDeleteDialog(record)}>
                         <Trash2 className="mr-2 h-4 w-4" />
                         Apagar
                       </DropdownMenuItem>
@@ -562,34 +540,6 @@ export default function RecordsPage() {
             </div>
             <DialogFooter>
                 <Button variant="outline" onClick={() => setPhotosDialogOpen(false)}>Fechar</Button>
-            </DialogFooter>
-        </DialogContent>
-    </Dialog>
-    
-    <Dialog open={isAuthDialogOpen} onOpenChange={setAuthDialogOpen}>
-        <DialogContent className="sm:max-w-sm">
-            <DialogHeader>
-                <DialogTitle>
-                    <div className="flex items-center gap-2">
-                        <KeyRound /> Autorização Necessária
-                    </div>
-                </DialogTitle>
-                <DialogDescription>
-                   Para {authAction === 'edit' ? 'editar' : 'apagar'} este registro, por favor, insira a senha da diretoria.
-                </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                    <Label htmlFor="auth-password">Senha da Diretoria</Label>
-                    <Input id="auth-password" type="password" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleAuthorization()} />
-                </div>
-            </div>
-            <DialogFooter>
-                <Button variant="outline" onClick={() => { setAuthDialogOpen(false); setAuthPassword('')}}>Cancelar</Button>
-                <Button onClick={handleAuthorization} disabled={isAuthorizing}>
-                    {isAuthorizing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Autorizar
-                </Button>
             </DialogFooter>
         </DialogContent>
     </Dialog>

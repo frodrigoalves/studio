@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
+import { auth } from "@/lib/firebase"; // Import Firebase auth
+import { onAuthStateChanged, signOut } from "firebase/auth"; // Import auth functions
 import {
   SidebarProvider,
   Sidebar,
@@ -45,16 +47,21 @@ export default function AdminLayout({
   const [loading, setLoading] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [pageTitle, setPageTitle] = useState('Painel de Gestão');
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    const isAdmin = sessionStorage.getItem('isAdminAuthenticated') === 'true';
-    if (!isAdmin) {
-      router.push('/login');
-    } else {
-      setIsAuthenticated(true);
-    }
-    setLoading(false);
+    // Use Firebase's auth state listener for reliable authentication status
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // User is signed in.
+        setLoading(false);
+      } else {
+        // User is signed out. Redirect to login.
+        router.push('/login');
+      }
+    });
+
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
   }, [router]);
   
   useEffect(() => {
@@ -63,9 +70,15 @@ export default function AdminLayout({
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
-    sessionStorage.removeItem('isAdminAuthenticated');
-    router.push('/login');
-    toast({ title: 'Logout efetuado com sucesso.' });
+    try {
+        await signOut(auth);
+        // The onAuthStateChanged listener will automatically redirect to /login
+        toast({ title: 'Logout efetuado com sucesso.' });
+    } catch (error) {
+        console.error("Logout failed", error);
+        toast({ title: 'Erro ao fazer logout', variant: 'destructive' });
+        setIsLoggingOut(false);
+    }
   };
   
   const handleDevelopmentClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
@@ -76,7 +89,7 @@ export default function AdminLayout({
     });
   }
 
-  if (loading || !isAuthenticated) {
+  if (loading) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
         <Loader2 className="h-16 w-16 animate-spin text-primary" />
