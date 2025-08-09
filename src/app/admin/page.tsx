@@ -11,9 +11,9 @@ import { Loader2, Wand2, FileText, Upload, Lightbulb, ListChecks, BarChart, Arch
 import { useToast } from "@/hooks/use-toast";
 import { getRecords, type Record } from "@/services/records";
 import { getDieselPrices, type DieselPrice } from "@/services/settings";
-import { getVehicleParameters, type VehicleParameters, getMostRecentVehicleParameter } from "@/services/vehicles";
-import { getFuelingRecords, getMostRecentFuelingRecord, type FuelingRecord } from "@/services/fueling";
-import { getMaintenanceRecords, getMostRecentMaintenanceRecord } from "@/services/maintenance";
+import { getVehicleParameters, type VehicleParameters } from "@/services/vehicles";
+import { getFuelingRecords, type FuelingRecord } from "@/services/fueling";
+import { getMaintenanceRecords } from "@/services/maintenance";
 import { generateReport, type ReportOutput } from "@/ai/flows/report-flow";
 import { analyseSheet, type SheetAnalysisInput, type SheetAnalysisOutput } from "@/ai/flows/sheet-analysis-flow";
 import { generatePresentationSummary, type PresentationInput, type PresentationOutput } from "@/ai/flows/presentation-flow";
@@ -81,13 +81,12 @@ export default function AdminDashboard() {
     const [dieselPrices, setDieselPrices] = useState<DieselPrice[]>([]);
     const [vehicleParameters, setVehicleParameters] = useState<VehicleParameters[]>([]);
      const [dbStats, setDbStats] = useState({
-        vehicles: { count: 0, lastImport: '' },
-        fueling: { count: 0, lastImport: '' },
-        maintenance: { count: 0, lastImport: '' },
-        diesel: { count: 0, lastImport: '' },
+        vehicles: 0,
+        fueling: 0,
+        maintenance: 0,
+        diesel: 0,
         tripRecords: 0,
         tripAlerts: 0,
-        fuelingDiscrepancies: 0,
     });
 
 
@@ -111,18 +110,12 @@ export default function AdminDashboard() {
                 allParameters,
                 allFuelingRecords,
                 maintenanceData,
-                lastVehicle,
-                lastFueling,
-                lastMaintenance
              ] = await Promise.all([
                 getRecords(),
                 getDieselPrices(),
                 getVehicleParameters(),
                 getFuelingRecords(),
                 getMaintenanceRecords(),
-                getMostRecentVehicleParameter(),
-                getMostRecentFuelingRecord(),
-                getMostRecentMaintenanceRecord()
             ]);
             setRecords(tripData);
             setDieselPrices(allPrices);
@@ -135,25 +128,12 @@ export default function AdminDashboard() {
             ).length;
 
             setDbStats({
-                vehicles: {
-                    count: allParameters.length,
-                    lastImport: lastVehicle?.lastUpdated || ''
-                },
-                fueling: {
-                    count: allFuelingRecords.length,
-                    lastImport: lastFueling?.date || ''
-                },
-                maintenance: {
-                    count: maintenanceData.length,
-                    lastImport: lastMaintenance?.startDate || ''
-                },
-                diesel: {
-                    count: allPrices.length,
-                    lastImport: allPrices[0]?.date || ''
-                },
+                vehicles: allParameters.length,
+                fueling: allFuelingRecords.length,
+                maintenance: maintenanceData.length,
+                diesel: allPrices.length,
                 tripRecords: tripData.length,
-                tripAlerts: tripAlerts,
-                fuelingDiscrepancies: 0, // Logic disabled
+                tripAlerts,
             });
 
         } catch (error) {
@@ -437,7 +417,7 @@ export default function AdminDashboard() {
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="text-2xl font-bold">{dbStats.vehicles.count.toLocaleString('pt-BR')}</div>
+                                    <div className="text-2xl font-bold">{dbStats.vehicles.toLocaleString('pt-BR')}</div>
                                     <p className="text-xs text-muted-foreground">Veículos com parâmetros</p>
                                 </CardContent>
                             </Card>
@@ -449,7 +429,7 @@ export default function AdminDashboard() {
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="text-2xl font-bold">{dbStats.fueling.count.toLocaleString('pt-BR')}</div>
+                                    <div className="text-2xl font-bold">{dbStats.fueling.toLocaleString('pt-BR')}</div>
                                     <p className="text-xs text-muted-foreground">Registros importados</p>
                                 </CardContent>
                             </Card>
@@ -461,7 +441,7 @@ export default function AdminDashboard() {
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="text-2xl font-bold">{dbStats.maintenance.count.toLocaleString('pt-BR')}</div>
+                                    <div className="text-2xl font-bold">{dbStats.maintenance.toLocaleString('pt-BR')}</div>
                                     <p className="text-xs text-muted-foreground">Registros importados</p>
                                 </CardContent>
                             </Card>
@@ -473,7 +453,7 @@ export default function AdminDashboard() {
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="text-2xl font-bold">{dbStats.diesel.count.toLocaleString('pt-BR')}</div>
+                                    <div className="text-2xl font-bold">{dbStats.diesel.toLocaleString('pt-BR')}</div>
                                     <p className="text-xs text-muted-foreground">Preços salvos</p>
                                 </CardContent>
                             </Card>

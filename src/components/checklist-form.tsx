@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, Controller } from "react-hook-form";
 import { z } from "zod";
@@ -25,6 +25,7 @@ import { Textarea } from "./ui/textarea";
 import { cn } from "@/lib/utils";
 import { SignaturePad } from "./ui/signature-pad";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion";
+import { VehicleParameters, getVehicleById } from "@/services/vehicles";
 
 const fileToBase64 = (file: File | null): Promise<string | null> => {
     if (!file) return Promise.resolve(null);
@@ -87,6 +88,8 @@ const initialValues: ChecklistFormValues = {
 export function ChecklistForm() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isFetchingVehicle, setIsFetchingVehicle] = useState(false);
+  const [vehicle, setVehicle] = useState<VehicleParameters | null>(null);
   const [frontDiagonalPhotoFile, setFrontDiagonalPhotoFile] = useState<File | null>(null);
   const [rearDiagonalPhotoFile, setRearDiagonalPhotoFile] = useState<File | null>(null);
   const [leftSidePhotoFile, setLeftSidePhotoFile] = useState<File | null>(null);
@@ -103,6 +106,32 @@ export function ChecklistForm() {
   });
 
   const watchItems = form.watch('items');
+
+  const handleCarIdBlur = useCallback(async (carId: string) => {
+    if (!carId) {
+        setVehicle(null);
+        return;
+    };
+    setIsFetchingVehicle(true);
+    try {
+        const foundVehicle = await getVehicleById(carId);
+        if (foundVehicle) {
+            setVehicle(foundVehicle);
+        } else {
+            setVehicle(null);
+            toast({
+                variant: "destructive",
+                title: "Veículo não encontrado",
+                description: `Nenhum parâmetro encontrado para o carro ${carId}.`,
+            });
+        }
+    } catch (e) {
+        console.error("Failed to fetch vehicle", e);
+        setVehicle(null);
+    } finally {
+        setIsFetchingVehicle(false);
+    }
+  }, [toast]);
 
   async function onSubmit(data: ChecklistFormValues) {
     setIsSubmitting(true);
@@ -210,9 +239,19 @@ export function ChecklistForm() {
                 render={({ field }) => (
                     <FormItem>
                     <FormLabel>Carro</FormLabel>
-                    <FormControl>
-                        <Input placeholder="Número do veículo" {...field} />
+                     <FormControl>
+                        <div className="relative">
+                            <Input 
+                                placeholder="Número do veículo" 
+                                {...field} 
+                                onBlur={(e) => handleCarIdBlur(e.target.value)}
+                            />
+                            {isFetchingVehicle && <Loader2 className="absolute right-3 top-2.5 h-5 w-5 animate-spin" />}
+                        </div>
                     </FormControl>
+                    <FormDescription>
+                        Modelo detectado: <span className="font-semibold text-primary">{vehicle?.chassisType || "Nenhum"}</span>
+                    </FormDescription>
                     <FormMessage />
                     </FormItem>
                 )}

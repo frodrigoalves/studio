@@ -19,7 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { addRecord, getRecordByPlateAndStatus, updateRecord, Record, RecordAddPayload, RecordUpdatePayload } from "@/services/records";
+import { addRecord, getRecordByPlateAndStatus, updateRecord, Record, RecordAddPayload, RecordUpdatePayload, getLastTripRecordForCar } from "@/services/records";
 import { extractOdometerFromImage } from "@/ai/flows/ocr-flow";
 import { extractFuelLevelFromImage } from "@/ai/flows/fuel-level-flow";
 import { cn } from "@/lib/utils";
@@ -108,7 +108,7 @@ export function DriverForm() {
     defaultValues: initialEndValues,
   });
   
-  const handleCarIdBlurForStart = useCallback(async (carId: string) => {
+  const handleCarIdBlur = useCallback(async (carId: string) => {
     if (!carId) {
         setVehicle(null);
         return;
@@ -144,6 +144,12 @@ export function DriverForm() {
             endForm.setValue('driver', record.driver);
             endForm.setValue('car', record.car);
             endForm.setValue('line', record.line);
+
+            // Fetch last known KM for the car
+            const lastTripRecord = await getLastTripRecordForCar(record.car);
+            if(lastTripRecord?.kmEnd) {
+                endForm.setValue('kmEnd', lastTripRecord.kmEnd);
+            }
             
             const foundVehicle = await getVehicleById(record.car);
             setVehicle(foundVehicle);
@@ -485,7 +491,7 @@ export function DriverForm() {
                         <FormLabel>Carro</FormLabel>
                         <FormControl>
                              <div className="relative">
-                                <Input placeholder="Número do veículo" {...field} onBlur={(e) => handleCarIdBlurForStart(e.target.value)} />
+                                <Input placeholder="Número do veículo" {...field} onBlur={(e) => handleCarIdBlur(e.target.value)} />
                                 {isSearching && <Loader2 className="absolute right-3 top-2.5 h-5 w-5 animate-spin" />}
                              </div>
                         </FormControl>
