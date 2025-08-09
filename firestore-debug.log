@@ -476,3 +476,9 @@ Multiple projectIds are not recommended in single project mode. Requested projec
 Aug 09, 2025 4:46:22 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
 INFO: Detected HTTP/2 connection.
 Multiple projectIds are not recommended in single project mode. Requested project ID fleettrack-go, but the emulator is configured for demo-app. To opt-out of single project mode add/set the '"singleProjectMode": false' property in the firebase.json emulators config.
+Aug 09, 2025 5:08:04 AM com.google.cloud.datastore.emulator.firestore.websocket.WebSocketChannelHandler channelClosed
+INFO: Websocket client disconnected
+Aug 09, 2025 5:15:02 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
+INFO: Detected non-HTTP/2 connection.
+Aug 09, 2025 5:15:02 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
+INFO: Detected HTTP/2 connection.

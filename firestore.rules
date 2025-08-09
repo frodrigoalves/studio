@@ -1,24 +1,45 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Function to check if a user is authenticated (logged in)
-    function isAuthenticated() {
+    // Helper Functions
+    function isAdmin() {
       return request.auth != null;
     }
 
-    // By default, require authentication for all read and write operations
-    // to all collections. This is a secure default.
+    // Default deny all
     match /{document=**} {
-      allow read, write: if isAuthenticated();
+      allow read, write: if false;
     }
 
-    // If you need specific collections to be publicly readable in the future,
-    // you can add rules for them here. For example:
-    // match /publicContent/{docId} {
-    //   allow get: if true; // Allow anyone to get a single document
-    //   allow list, write: if isAuthenticated(); // But only logged-in users can list or write
-    // }
+    // Admin Access
+    match /tripRecords/{docId} {
+      allow read, write: if isAdmin();
+      allow create, get, list: if true;
+    }
+     match /checklistRecords/{docId} {
+      allow read, write: if isAdmin();
+      allow create: if true;
+    }
+     match /fuelingRecords/{docId} {
+      allow read, write: if isAdmin();
+      allow create: if true;
+    }
+     match /dieselPrices/{docId} {
+      allow read, write: if isAdmin();
+    }
+    match /vehicleParameters/{docId} {
+        allow read, write: if isAdmin();
+        allow get: if true;
+    }
+    match /maintenanceRecords/{docId} {
+        allow read, write: if isAdmin();
+    }
+    match /tireRecords/{docId} {
+        allow read, write: if isAdmin();
+        allow create: if true;
+    }
   }
 }
