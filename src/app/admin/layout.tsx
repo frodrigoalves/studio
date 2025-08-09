@@ -104,7 +104,6 @@ export default function AdminLayout({
       <Sidebar>
         <SidebarHeader>
             <div className="p-4 flex items-center justify-center gap-2 group-data-[collapsible=icon]:justify-start group-data-[collapsible=icon]:pl-2">
-                 <Image src="/logo-icon.png" alt="TopBus Icon" width={40} height={40} />
                  <h1 className="text-xl font-bold group-data-[collapsible=icon]:hidden">TopBus</h1>
             </div>
         </SidebarHeader>

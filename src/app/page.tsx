@@ -24,7 +24,7 @@ export default function Home() {
         </Button>
       </div>
       <div className="flex flex-col items-center justify-center mb-8 text-center">
-        <Image src="/logo.png" alt="TopBus Logo" width={240} height={120} />
+        <h1 className="text-4xl font-bold text-white">TopBus Transportes</h1>
         <p className="text-lg text-muted-foreground mt-2">Módulos de Coleta Operacional</p>
       </div>
       <div className="w-full max-w-2xl mx-auto">
