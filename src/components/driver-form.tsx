@@ -37,6 +37,8 @@ const fileToBase64 = (file: File | null): Promise<string | null> => {
     });
 };
 
+const fileSchema = z.any().refine(file => file, "Foto é obrigatória.");
+
 const startTripSchema = z.object({
     plate: z.string().min(1, "Chapa é obrigatória."),
     driver: z.string().min(1, "Nome é obrigatório."),
@@ -44,6 +46,8 @@ const startTripSchema = z.object({
     line: z.string().min(1, "Linha é obrigatória."),
     kmStart: z.coerce.number({ required_error: "Km Inicial é obrigatório."}).min(1, "Km Inicial é obrigatório."),
     startFuelLevel: z.number().min(0).max(600),
+    startOdometerPhoto: fileSchema,
+    startFuelPhoto: fileSchema,
 });
 
 const endFormSchema = z.object({
@@ -53,27 +57,33 @@ const endFormSchema = z.object({
   line: z.string().min(1, "Linha é obrigatória.").optional(),
   kmEnd: z.coerce.number({ required_error: "Km Final é obrigatório."}).min(1, "Km Final é obrigatório."),
   endFuelLevel: z.number().min(0).max(600),
+  endOdometerPhoto: fileSchema,
+  endFuelPhoto: fileSchema,
 });
 
 type StartTripFormValues = z.infer<typeof startTripSchema>;
 type EndFormValues = z.infer<typeof endFormSchema>;
 
-const initialStartValues: StartTripFormValues = {
+const initialStartValues = {
     plate: "",
     driver: "",
     car: "",
     line: "",
     kmStart: 0,
     startFuelLevel: 150,
+    startOdometerPhoto: null,
+    startFuelPhoto: null,
 };
 
-const initialEndValues: EndFormValues = { 
+const initialEndValues = { 
     plate: "", 
     driver: "", 
     car: "", 
     line: "", 
     kmEnd: 0, 
     endFuelLevel: 150,
+    endOdometerPhoto: null,
+    endFuelPhoto: null,
 };
 
 const DEFAULT_FUEL_CAPACITY = 300;
@@ -87,16 +97,6 @@ export function DriverForm() {
   const [isFuelLevelLoading, setIsFuelLevelLoading] = useState<"start" | "end" | null>(null);
   const [recordToEnd, setRecordToEnd] = useState<Record | null>(null);
   const [vehicle, setVehicle] = useState<VehicleParameters | null>(null);
-
-  const [startOdometerPhotoFile, setStartOdometerPhotoFile] = useState<File | null>(null);
-  const [endOdometerPhotoFile, setEndOdometerPhotoFile] = useState<File | null>(null);
-  const [startFuelPhotoFile, setStartFuelPhotoFile] = useState<File | null>(null);
-  const [endFuelPhotoFile, setEndFuelPhotoFile] = useState<File | null>(null);
-
-  const startFileInputRef = useRef<HTMLInputElement>(null);
-  const endFileInputRef = useRef<HTMLInputElement>(null);
-  const startFuelPhotoInputRef = useRef<HTMLInputElement>(null);
-  const endFuelPhotoInputRef = useRef<HTMLInputElement>(null);
   
   const startForm = useForm<StartTripFormValues>({
     resolver: zodResolver(startTripSchema),
@@ -210,18 +210,6 @@ export function DriverForm() {
       setIsOcrLoading(false);
     }
   };
-  
-    const handleFileChange = (
-    event: React.ChangeEvent<HTMLInputElement>,
-    setFileCallback: (file: File | null) => void,
-    ocrCallback?: (file: File | null) => void
-  ) => {
-    const file = event.target.files?.[0] || null;
-    setFileCallback(file);
-    if (ocrCallback) {
-      ocrCallback(file);
-    }
-  };
 
 
   const handleFuelLevelOcr = async (file: File | null, formType: "start" | "end") => {
@@ -270,15 +258,9 @@ export function DriverForm() {
     setIsSubmitting(true);
     
     try {
-      if (!startOdometerPhotoFile || !startFuelPhotoFile) {
-        toast({ variant: 'destructive', title: 'Fotos Obrigatórias', description: 'É necessário enviar a foto do hodômetro e do medidor de combustível.'});
-        setIsSubmitting(false);
-        return;
-      }
-  
       const [startOdometerPhotoB64, startFuelPhotoB64] = await Promise.all([
-          fileToBase64(startOdometerPhotoFile),
-          fileToBase64(startFuelPhotoFile),
+          fileToBase64(data.startOdometerPhoto),
+          fileToBase64(data.startFuelPhoto),
       ]);
   
       const recordPayload: RecordAddPayload = {
@@ -304,11 +286,7 @@ export function DriverForm() {
         description: "Seus dados foram salvos. Boa viagem!",
       });
       startForm.reset(initialStartValues);
-      setStartOdometerPhotoFile(null);
-      setStartFuelPhotoFile(null);
       setVehicle(null);
-      if (startFileInputRef.current) startFileInputRef.current.value = "";
-      if (startFuelPhotoInputRef.current) startFuelPhotoInputRef.current.value = "";
   
     } catch (e) {
       console.error("Failed to start trip", e);
@@ -325,12 +303,6 @@ export function DriverForm() {
   async function onEndSubmit(data: EndFormValues) {
      setIsSubmitting(true);
      try {
-        if (!endOdometerPhotoFile || !endFuelPhotoFile) {
-             toast({ variant: "destructive", title: "Fotos Obrigatórias", description: "Por favor, envie as fotos do odômetro e do medidor de combustível." });
-             setIsSubmitting(false);
-             return;
-        }
-
         if (!recordToEnd) {
             toast({
                 variant: "destructive",
@@ -352,8 +324,8 @@ export function DriverForm() {
         }
 
         const [endOdometerPhotoB64, endFuelPhotoB64] = await Promise.all([
-            fileToBase64(endOdometerPhotoFile),
-            fileToBase64(endFuelPhotoFile),
+            fileToBase64(data.endOdometerPhoto),
+            fileToBase64(data.endFuelPhoto),
         ]);
         
         const dataToUpdate: Partial<Record> = {
@@ -373,10 +345,6 @@ export function DriverForm() {
         endForm.reset(initialEndValues);
         setRecordToEnd(null);
         setVehicle(null);
-        setEndOdometerPhotoFile(null);
-        setEndFuelPhotoFile(null);
-        if (endFileInputRef.current) endFileInputRef.current.value = "";
-        if (endFuelPhotoInputRef.current) endFuelPhotoInputRef.current.value = "";
 
      } catch (e) {
         console.error("Failed to end trip", e);
@@ -403,9 +371,7 @@ export function DriverForm() {
   const FuelSection = ({ formType }: { formType: "start" | "end" }) => {
     const form = formType === 'start' ? startForm : endForm;
     const levelFieldName = formType === 'start' ? 'startFuelLevel' : 'endFuelLevel';
-    const photoFile = formType === 'start' ? startFuelPhotoFile : setStartFuelPhotoFile;
-    const setPhotoFile = formType === 'start' ? setStartFuelPhotoFile : setEndFuelPhotoFile;
-    const photoInputRef = formType === 'start' ? startFuelPhotoInputRef : endFuelPhotoInputRef;
+    const photoFieldName = formType === 'start' ? 'startFuelPhoto' : 'endFuelPhoto';
     const isLoading = isFuelLevelLoading === formType;
 
     const maxFuel = vehicle?.tankCapacity || DEFAULT_FUEL_CAPACITY;
@@ -414,40 +380,50 @@ export function DriverForm() {
         <div className="space-y-4 pt-4">
             <Separator />
              <p className="text-xs text-center text-muted-foreground px-4">Tire uma foto do medidor. Confirme ou ajuste usando os botões ou arraste o dedo sobre o medidor.</p>
-            <FormItem className="w-full">
-                <FormLabel
-                    htmlFor={`${formType}-fuel-photo-upload`}
-                    className={cn(
-                        "w-full flex items-center justify-center gap-2 border-2 border-dashed rounded-lg p-3 cursor-pointer transition-colors",
-                        photoFile ? "border-primary/50 text-primary" : "border-border text-muted-foreground",
-                        isLoading && "animate-pulse"
-                    )}
-                >
-                    {isLoading ? (
-                        <Loader2 className="h-5 w-5 animate-spin" />
-                    ) : (
-                        <Camera className="h-5 w-5" />
-                    )}
-                    <span className="text-sm font-medium">
-                        {isLoading
-                            ? "Analisando..."
-                            : photoFile
-                            ? "Foto Carregada"
-                            : "Foto do Combustível"}
-                    </span>
-                </FormLabel>
-                <FormControl>
-                    <Input
-                        id={`${formType}-fuel-photo-upload`}
-                        type="file"
-                        accept="image/*"
-                        capture="camera"
-                        className="sr-only"
-                        ref={photoInputRef}
-                        onChange={(e) => handleFileChange(e, setPhotoFile, (file) => handleFuelLevelOcr(file, formType))}
-                    />
-                </FormControl>
-            </FormItem>
+             <FormField
+                control={form.control as any}
+                name={photoFieldName}
+                render={({ field: { onChange, value, ...rest }}) => (
+                <FormItem className="w-full">
+                    <FormLabel
+                        htmlFor={`${formType}-fuel-photo-upload`}
+                        className={cn(
+                            "w-full flex items-center justify-center gap-2 border-2 border-dashed rounded-lg p-3 cursor-pointer transition-colors",
+                            value ? "border-primary/50 text-primary" : "border-border text-muted-foreground",
+                            isLoading && "animate-pulse"
+                        )}
+                    >
+                        {isLoading ? (
+                            <Loader2 className="h-5 w-5 animate-spin" />
+                        ) : (
+                            <Camera className="h-5 w-5" />
+                        )}
+                        <span className="text-sm font-medium">
+                            {isLoading
+                                ? "Analisando..."
+                                : value
+                                ? "Foto Carregada"
+                                : "Foto do Combustível"}
+                        </span>
+                    </FormLabel>
+                    <FormControl>
+                        <Input
+                            id={`${formType}-fuel-photo-upload`}
+                            type="file"
+                            accept="image/*"
+                            capture="camera"
+                            className="sr-only"
+                            onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                onChange(file);
+                                handleFuelLevelOcr(file || null, formType);
+                            }}
+                            {...rest}
+                        />
+                    </FormControl>
+                    <FormMessage />
+                </FormItem>
+            )}/>
             <Controller
                 control={form.control as any}
                 name={levelFieldName}
@@ -502,22 +478,34 @@ export function DriverForm() {
                 
                 <Separator />
                 
-                <FormItem>
-                    <FormLabel>Foto do Hodômetro (Início)</FormLabel>
-                    <FormControl>
-                        <div className="relative">
-                            <Input 
-                                type="file" 
-                                accept="image/*" 
-                                capture="camera" 
-                                className="pr-12" 
-                                ref={startFileInputRef}
-                                onChange={(e) => handleFileChange(e, setStartOdometerPhotoFile, handleOdometerOcr)}
-                            />
-                            <Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
-                        </div>
-                    </FormControl>
-                </FormItem>
+                <FormField
+                    control={startForm.control}
+                    name="startOdometerPhoto"
+                    render={({ field: { onChange, value, ...rest } }) => (
+                        <FormItem>
+                            <FormLabel>Foto do Hodômetro (Início)</FormLabel>
+                            <FormControl>
+                                <div className="relative">
+                                    <Input 
+                                        type="file" 
+                                        accept="image/*" 
+                                        capture="camera" 
+                                        className="pr-12" 
+                                        onChange={(e) => {
+                                            const file = e.target.files?.[0];
+                                            onChange(file);
+                                            handleOdometerOcr(file || null);
+                                        }}
+                                        {...rest}
+                                    />
+                                    <Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                                </div>
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+
                 <FormField 
                     control={startForm.control} 
                     name="kmStart" 
@@ -622,16 +610,29 @@ export function DriverForm() {
                     </FormItem>
                   )}
                 />
-                <FormItem>
-                  <FormLabel>Foto do Odômetro (Fim)</FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <Input type="file" accept="image/*" capture="camera" className="pr-12" ref={endFileInputRef} onChange={(e) => handleFileChange(e, setEndOdometerPhotoFile)} />
-                      <Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+                 <FormField
+                    control={endForm.control}
+                    name="endOdometerPhoto"
+                    render={({ field: { onChange, value, ...rest } }) => (
+                        <FormItem>
+                            <FormLabel>Foto do Hodômetro (Fim)</FormLabel>
+                            <FormControl>
+                                <div className="relative">
+                                    <Input
+                                        type="file"
+                                        accept="image/*"
+                                        capture="camera"
+                                        className="pr-12"
+                                        onChange={(e) => onChange(e.target.files?.[0])}
+                                        {...rest}
+                                    />
+                                    <Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                                </div>
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
                 
                 <FuelSection formType="end" />
 

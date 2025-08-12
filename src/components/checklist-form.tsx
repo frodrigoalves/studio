@@ -55,6 +55,8 @@ const itemsShape = allChecklistItems.reduce((acc, item) => {
   return acc;
 }, {} as Record<ItemId, typeof itemSchema>);
 
+const fileSchema = z.any().refine(file => file, "Foto é obrigatória.");
+
 const checklistFormSchema = z.object({
   driverChapa: z.string().min(1, "Chapa é obrigatória."),
   driverName: z.string().min(1, "Nome é obrigatório."),
@@ -62,6 +64,10 @@ const checklistFormSchema = z.object({
   items: z.object(itemsShape),
   observations: z.string().optional(),
   signature: z.string().refine(sig => sig && sig.length > 0, { message: "A assinatura é obrigatória." }),
+  frontDiagonalPhoto: fileSchema,
+  rearDiagonalPhoto: fileSchema,
+  leftSidePhoto: fileSchema,
+  rightSidePhoto: fileSchema,
 }).refine(data => {
     const hasAvaria = Object.values(data.items).some(status => status === 'avaria');
     if (hasAvaria) {
@@ -76,13 +82,17 @@ const checklistFormSchema = z.object({
 
 type ChecklistFormValues = z.infer<typeof checklistFormSchema>;
 
-const initialValues: ChecklistFormValues = {
+const initialValues = {
   driverChapa: "",
   driverName: "",
   carId: "",
   items: allChecklistItems.reduce((acc, item) => ({...acc, [item]: "ok" }), {} as Record<ItemId, ChecklistItemStatus>),
   observations: "",
   signature: "",
+  frontDiagonalPhoto: null,
+  rearDiagonalPhoto: null,
+  leftSidePhoto: null,
+  rightSidePhoto: null,
 };
 
 export function ChecklistForm() {
@@ -90,15 +100,6 @@ export function ChecklistForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFetchingVehicle, setIsFetchingVehicle] = useState(false);
   const [vehicle, setVehicle] = useState<VehicleParameters | null>(null);
-  const [frontDiagonalPhotoFile, setFrontDiagonalPhotoFile] = useState<File | null>(null);
-  const [rearDiagonalPhotoFile, setRearDiagonalPhotoFile] = useState<File | null>(null);
-  const [leftSidePhotoFile, setLeftSidePhotoFile] = useState<File | null>(null);
-  const [rightSidePhotoFile, setRightSidePhotoFile] = useState<File | null>(null);
-
-  const frontDiagonalPhotoRef = useRef<HTMLInputElement>(null);
-  const rearDiagonalPhotoRef = useRef<HTMLInputElement>(null);
-  const leftSidePhotoRef = useRef<HTMLInputElement>(null);
-  const rightSidePhotoRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<ChecklistFormValues>({
     resolver: zodResolver(checklistFormSchema),
@@ -142,10 +143,10 @@ export function ChecklistForm() {
         frontDiagonalPhotoB64, rearDiagonalPhotoB64, 
         leftSidePhotoB64, rightSidePhotoB64
       ] = await Promise.all([
-        fileToBase64(frontDiagonalPhotoFile),
-        fileToBase64(rearDiagonalPhotoFile),
-        fileToBase64(leftSidePhotoFile),
-        fileToBase64(rightSidePhotoFile),
+        fileToBase64(data.frontDiagonalPhoto),
+        fileToBase64(data.rearDiagonalPhoto),
+        fileToBase64(data.leftSidePhoto),
+        fileToBase64(data.rightSidePhoto),
       ]);
 
       const payload: ChecklistRecordPayload = {
@@ -169,16 +170,6 @@ export function ChecklistForm() {
         description: "Checklist enviado com sucesso.",
       });
       form.reset(initialValues);
-      
-      setFrontDiagonalPhotoFile(null);
-      setRearDiagonalPhotoFile(null);
-      setLeftSidePhotoFile(null);
-      setRightSidePhotoFile(null);
-
-      if (frontDiagonalPhotoRef.current) frontDiagonalPhotoRef.current.value = "";
-      if (rearDiagonalPhotoRef.current) rearDiagonalPhotoRef.current.value = "";
-      if (leftSidePhotoRef.current) leftSidePhotoRef.current.value = "";
-      if (rightSidePhotoRef.current) rightSidePhotoRef.current.value = "";
 
     } catch (e) {
       console.error("Failed to save checklist record", e);
@@ -261,10 +252,10 @@ export function ChecklistForm() {
              <div className="space-y-6">
                 <CardTitle className="text-lg">Fotos Externas (Obrigatório)</CardTitle>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <FormItem><FormLabel>Diagonal Frontal</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" ref={frontDiagonalPhotoRef} onChange={(e) => setFrontDiagonalPhotoFile(e.target.files?.[0] || null)} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl></FormItem>
-                    <FormItem><FormLabel>Diagonal Traseira</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" ref={rearDiagonalPhotoRef} onChange={(e) => setRearDiagonalPhotoFile(e.target.files?.[0] || null)} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl></FormItem>
-                    <FormItem><FormLabel>Lateral Esquerda</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" ref={leftSidePhotoRef} onChange={(e) => setLeftSidePhotoFile(e.target.files?.[0] || null)} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl></FormItem>
-                    <FormItem><FormLabel>Lateral Direita</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" ref={rightSidePhotoRef} onChange={(e) => setRightSidePhotoFile(e.target.files?.[0] || null)} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl></FormItem>
+                    <FormField control={form.control} name="frontDiagonalPhoto" render={({ field: { onChange, value, ...rest } }) => (<FormItem><FormLabel>Diagonal Frontal</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" onChange={(e) => onChange(e.target.files?.[0])} {...rest} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="rearDiagonalPhoto" render={({ field: { onChange, value, ...rest } }) => (<FormItem><FormLabel>Diagonal Traseira</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" onChange={(e) => onChange(e.target.files?.[0])} {...rest} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="leftSidePhoto" render={({ field: { onChange, value, ...rest } }) => (<FormItem><FormLabel>Lateral Esquerda</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" onChange={(e) => onChange(e.target.files?.[0])} {...rest} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl><FormMessage /></FormItem>)} />
+                    <FormField control={form.control} name="rightSidePhoto" render={({ field: { onChange, value, ...rest } }) => (<FormItem><FormLabel>Lateral Direita</FormLabel><FormControl><div className="relative"><Input type="file" accept="image/*" capture="camera" className="pr-12" onChange={(e) => onChange(e.target.files?.[0])} {...rest} /><Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" /></div></FormControl><FormMessage /></FormItem>)} />
                 </div>
              </div>
 

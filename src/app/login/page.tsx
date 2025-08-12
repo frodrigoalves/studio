@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
@@ -20,13 +20,6 @@ export default function LoginPage() {
   const { toast } = useToast();
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(() => {
-    // If user is already "logged in", redirect them
-    if (sessionStorage.getItem(AUTH_KEY) === 'true') {
-        router.replace('/admin');
-    }
-  }, [router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,6 +50,7 @@ export default function LoginPage() {
         title: "Senha Incorreta",
         description: "A senha de acesso está incorreta. Tente novamente.",
       });
+      setPassword('');
       setIsLoading(false);
     }
   };
@@ -65,7 +59,7 @@ export default function LoginPage() {
     <main className="flex min-h-screen flex-col items-center justify-center p-4 bg-background">
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center justify-center mb-6 text-center">
-            <Image src="/logo.jpeg" alt="TopBus Logo" width={200} height={55} className="mb-4" />
+            <Image src="/logo.jpeg" alt="TopBus Logo" width={250} height={70} className="w-48 h-auto mb-4" priority />
         </div>
         <Card>
           <CardHeader className="text-center">
