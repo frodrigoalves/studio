@@ -31,7 +31,7 @@ import * as XLSX from 'xlsx';
 import Papa from 'papaparse';
 
 
-const AVERAGE_KM_PER_LITER = 2.5;
+const DEFAULT_KM_PER_LITER = 2.5;
 
 const fileToDataURI = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -193,7 +193,7 @@ export default function AdminDashboard() {
             .reduce((sum, r) => {
                 const km = r.kmEnd! - r.kmStart!;
                 const vehicleParam = vehicleParameters.find(p => p.carId === r.car);
-                const consumption = vehicleParam?.thresholds.green || AVERAGE_KM_PER_LITER;
+                const consumption = vehicleParam?.thresholds.green || DEFAULT_KM_PER_LITER;
                 const cost = (km / consumption) * latestPrice;
                 return sum + cost;
             }, 0);
@@ -302,6 +302,7 @@ export default function AdminDashboard() {
             const generatedReport = await generateReport({
                 records: filteredRecords,
                 dieselPrices,
+                vehicleParameters,
                 period: "weekly",
             });
             setFleetReport(generatedReport);
@@ -823,3 +824,5 @@ export default function AdminDashboard() {
     </div>
   );
 }
+
+    
