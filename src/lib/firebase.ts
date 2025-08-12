@@ -25,12 +25,12 @@ if (process.env.NEXT_PUBLIC_USE_EMULATORS === 'true') {
         console.log("Development mode: Connecting to Firebase Emulators");
         // Check if emulators are already connected to prevent errors on hot-reloads
         // @ts-ignore - _settings is a private property but a reliable way to check
-        if (!db._settings.host.includes('localhost')) {
-            connectFirestoreEmulator(db, 'localhost', 8080);
+        if (!db._settings.host.includes('0.0.0.0')) {
+            connectFirestoreEmulator(db, '0.0.0.0', 8080);
         }
         // @ts-ignore - _config is a private property
         if (!storage._config.emulator) {
-            connectStorageEmulator(storage, 'localhost', 9199);
+            connectStorageEmulator(storage, '0.0.0.0', 9199);
         }
         console.log("Successfully connected to emulators.");
     } catch (error) {
