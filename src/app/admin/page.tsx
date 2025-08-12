@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Wand2, FileText, Upload, Lightbulb, ListChecks, BarChart, Archive, BrainCircuit, GaugeCircle, AlertTriangle, Fuel, DollarSign, LineChart as LineChartIcon, BarChart2, Calendar as CalendarIcon, FileUp, Info, MapPin as MapIcon, Database, Car, Droplets, Wrench, Clock, Activity, ClipboardCheck } from "lucide-react";
+import { Loader2, Wand2, FileText, Upload, Lightbulb, ListChecks, BarChart, Archive, BrainCircuit, GaugeCircle, AlertTriangle, Fuel, DollarSign, LineChart as LineChartIcon, BarChart2, Calendar as CalendarIcon, FileUp, Info, MapPin as MapIcon, Database, Car, Droplets, Wrench, Clock, Activity, ClipboardCheck, Presentation } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getRecords, type Record } from "@/services/records";
 import { getDieselPrices, type DieselPrice } from "@/services/settings";
@@ -96,9 +96,15 @@ export default function AdminDashboard() {
 
     // Sheet Analysis state
     const [analysisType, setAnalysisType] = useState<string>('Análise de Atestados Médicos');
-    const [file, setFile] = useState<File | null>(null);
+    const [sheetFile, setSheetFile] = useState<File | null>(null);
     const [isSheetLoading, setIsSheetLoading] = useState(false);
     const [sheetAnalysisResult, setSheetAnalysisResult] = useState<SheetAnalysisOutput | null>(null);
+
+    // Presentation Assistant State
+    const [presentationContent, setPresentationContent] = useState('');
+    const [presentationFile, setPresentationFile] = useState<File | null>(null);
+    const [isPresentationLoading, setIsPresentationLoading] = useState(false);
+    const [presentationResult, setPresentationResult] = useState<PresentationOutput | null>(null);
 
 
     const fetchAndSetData = useCallback(async () => {
@@ -327,7 +333,7 @@ export default function AdminDashboard() {
 
 
     const handleGenerateSheetAnalysis = async () => {
-        if (!file) {
+        if (!sheetFile) {
           toast({
             variant: 'destructive',
             title: 'Nenhum arquivo selecionado',
@@ -341,14 +347,14 @@ export default function AdminDashboard() {
     
         try {
             let fileDataUri: string;
-            const fileType = file.type;
+            const fileType = sheetFile.type;
 
-            const isSheet = fileType.includes('spreadsheet') || fileType.includes('csv') || file.name.endsWith('.xlsx') || file.name.endsWith('.xls') || file.name.endsWith('.csv');
+            const isSheet = fileType.includes('spreadsheet') || fileType.includes('csv') || sheetFile.name.endsWith('.xlsx') || sheetFile.name.endsWith('.xls') || sheetFile.name.endsWith('.csv');
 
             if (isSheet) {
-                 fileDataUri = await processSheetFile(file);
+                 fileDataUri = await processSheetFile(sheetFile);
             } else {
-                 fileDataUri = await fileToDataURI(file);
+                 fileDataUri = await fileToDataURI(sheetFile);
             }
             
             const analysisInput: SheetAnalysisInput = {
@@ -368,6 +374,42 @@ export default function AdminDashboard() {
           });
         } finally {
           setIsSheetLoading(false);
+        }
+    };
+
+    const handleGeneratePresentation = async () => {
+        if (!presentationContent && !presentationFile) {
+            toast({
+                variant: 'destructive',
+                title: 'Nenhum conteúdo fornecido',
+                description: 'Por favor, insira texto ou faça o upload de um arquivo para gerar o resumo.',
+            });
+            return;
+        }
+
+        setIsPresentationLoading(true);
+        setPresentationResult(null);
+
+        try {
+            const fileDataUri = presentationFile ? await fileToDataURI(presentationFile) : undefined;
+            
+            const input: PresentationInput = {
+                repositoryContent: presentationContent || undefined,
+                fileDataUri,
+            };
+
+            const result = await generatePresentationSummary(input);
+            setPresentationResult(result);
+
+        } catch (error) {
+            console.error('Failed to generate presentation summary', error);
+            toast({
+                variant: 'destructive',
+                title: 'Erro na Geração',
+                description: `A IA não conseguiu criar o resumo. Detalhes: ${error instanceof Error ? error.message : String(error)}`,
+            });
+        } finally {
+            setIsPresentationLoading(false);
         }
     };
 
@@ -764,7 +806,7 @@ export default function AdminDashboard() {
                                         id="sheet-upload"
                                         type="file"
                                         accept=".xlsx, .xls, .csv, image/*, application/pdf"
-                                        onChange={(e) => handleFileChange(e, setFile)}
+                                        onChange={(e) => handleFileChange(e, setSheetFile)}
                                         disabled={isSheetLoading}
                                         className="pr-12"
                                     />
@@ -774,7 +816,7 @@ export default function AdminDashboard() {
                             </div>
                             <Button
                                 onClick={handleGenerateSheetAnalysis}
-                                disabled={isSheetLoading || !file}
+                                disabled={isSheetLoading || !sheetFile}
                                 className="w-full"
                             >
                                 {isSheetLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
@@ -819,10 +861,93 @@ export default function AdminDashboard() {
                     </Card>
                 </AccordionContent>
             </AccordionItem>
+
+             <AccordionItem value="item-4">
+                <AccordionTrigger className="text-xl font-semibold">
+                    <div className="flex items-center gap-2">
+                        <Presentation /> Assistente de Apresentação
+                    </div>
+                </AccordionTrigger>
+                <AccordionContent>
+                    <Card className="shadow-lg mt-2 border-0">
+                        <CardHeader>
+                            <CardTitle>Gerador de Resumo para Reuniões</CardTitle>
+                            <CardDescription>
+                                Cole abaixo o conteúdo (texto, links, anotações) e/ou anexe um arquivo de apoio. A IA criará um resumo executivo estruturado para a sua apresentação.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="grid gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="presentation-content">Repositório de Contexto</Label>
+                                    <Textarea
+                                        id="presentation-content"
+                                        placeholder="Cole aqui todas as suas anotações, links, rascunhos de e-mail, ou qualquer texto que sirva de base para a reunião..."
+                                        rows={8}
+                                        value={presentationContent}
+                                        onChange={(e) => setPresentationContent(e.target.value)}
+                                        disabled={isPresentationLoading}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="presentation-upload">Arquivo de Apoio (Opcional)</Label>
+                                     <div className="relative">
+                                        <Input
+                                            id="presentation-upload"
+                                            type="file"
+                                            onChange={(e) => handleFileChange(e, setPresentationFile)}
+                                            disabled={isPresentationLoading}
+                                            className="pr-12"
+                                        />
+                                        <Upload className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
+                                    </div>
+                                </div>
+                            </div>
+                            <Button
+                                onClick={handleGeneratePresentation}
+                                disabled={isPresentationLoading || (!presentationContent && !presentationFile)}
+                                className="w-full"
+                            >
+                                {isPresentationLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
+                                {isPresentationLoading ? 'Gerando Resumo...' : 'Gerar Resumo com IA'}
+                            </Button>
+
+                            {presentationResult && (
+                                <Card className="mt-6 bg-muted/20">
+                                    <CardHeader>
+                                        <CardTitle>{presentationResult.title}</CardTitle>
+                                        <CardDescription>Abaixo está o resumo gerado pela IA, pronto para ser usado.</CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="space-y-6">
+                                        <div className="space-y-2">
+                                            <h3 className="font-semibold text-lg"><ListChecks /> Resumo Executivo</h3>
+                                            <Textarea readOnly value={presentationResult.summary} className="h-28 bg-background" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <h3 className="font-semibold text-lg"><BarChart2 /> Pontos de Discussão</h3>
+                                             <ul className="list-disc list-inside space-y-1 bg-background p-4 rounded-md">
+                                                {presentationResult.talkingPoints.map((point, index) => (
+                                                    <li key={index}>{point}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <h3 className="font-semibold text-lg"><Lightbulb /> Próximos Passos</h3>
+                                             <ul className="list-disc list-inside space-y-1 bg-background p-4 rounded-md">
+                                                {presentationResult.nextSteps.map((step, index) => (
+                                                    <li key={index}>{step}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            )}
+                        </CardContent>
+                    </Card>
+                </AccordionContent>
+            </AccordionItem>
             
         </Accordion>
     </div>
   );
 }
-
-    
