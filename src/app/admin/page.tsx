@@ -862,7 +862,7 @@ export default function AdminDashboard() {
                 </AccordionContent>
             </AccordionItem>
 
-             <AccordionItem value="item-4">
+            <AccordionItem value="item-4">
                 <AccordionTrigger className="text-xl font-semibold">
                     <div className="flex items-center gap-2">
                         <Presentation /> Assistente de Apresentação
@@ -951,3 +951,5 @@ export default function AdminDashboard() {
     </div>
   );
 }
+
+    
