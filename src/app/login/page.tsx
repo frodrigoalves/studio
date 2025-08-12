@@ -18,25 +18,16 @@ export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [email, setEmail] = useState('admin@topbus.com');
-  const [password, setPassword] = useState('');
+  const [password, setPassword] = useState('topbus2024'); // Default password for dev
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Bypassing login for development
-    if (process.env.NODE_ENV === 'development') {
-        toast({
-            title: "Acesso de Desenvolvimento",
-            description: "Login automático ativado. Redirecionando...",
-        });
-        router.push('/admin');
-        return;
-    }
-
-
     try {
+      // For development, you might need to create this user in the Firebase Auth emulator
+      // or in your actual Firebase project.
       await signInWithEmailAndPassword(auth, email, password);
       toast({
         title: "Login bem-sucedido!",
@@ -55,6 +46,7 @@ export default function LoginPage() {
               errorMessage = "A senha está incorreta. Tente novamente.";
               break;
           default:
+              console.error("Firebase Auth Error:", error);
               errorMessage = "Não foi possível fazer login. Verifique suas credenciais.";
               break;
       }

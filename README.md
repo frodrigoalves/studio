@@ -98,15 +98,12 @@ O coração analítico do sistema. Acessível apenas por usuários autorizados, 
 
 ### 3. Níveis de Acesso e Credenciais
 
-O sistema possui uma hierarquia de acesso para garantir a segurança e a relevância das informações para cada perfil.
+O sistema utiliza o Firebase Authentication. Para acesso em ambiente de desenvolvimento, utilize as seguintes credenciais:
 
-- **Perfil:** `Diretor`
-  - **Acesso:** Total. Visualiza todos os painéis, incluindo o **Vigia Digital** e o **Assistente de Apresentação**.
-  - **Senha:** `diretoria`
+- **Email:** `admin@topbus.com`
+- **Senha:** `topbus2024`
 
-- **Perfil:** `Analista`
-  - **Acesso:** Painel BI, gerenciamento de registros e configurações. Não possui acesso ao Vigia Digital.
-  - **Senha:** `analise2024`
+**Nota:** Para produção, será necessário criar usuários e gerenciar permissões diretamente no painel do Firebase Authentication.
 
 ---
 
