@@ -222,18 +222,46 @@ export default function SettingsPage() {
                     const workbook = XLSX.read(data, { type: 'binary' });
                     const sheetName = workbook.SheetNames[0];
                     const worksheet = workbook.Sheets[sheetName];
-                    const json: any[] = XLSX.utils.sheet_to_json(worksheet);
+                    const json: any[] = XLSX.utils.sheet_to_json(worksheet, {
+                        // Raw: false to get formatted text for dates
+                        raw: false
+                    });
 
-                    const fuelingRecords: FuelingRecordPayload[] = json.map(row => ({
-                        date: row['Data'] ? new Date((row['Data'] - (25567 + 1)) * 86400 * 1000).toISOString() : new Date().toISOString(),
-                        carId: String(row['Carro'] ?? ''),
-                        liters: Number(row['Litros'] ?? 0),
-                        pricePerLiter: Number(row['Preço/Litro'] ?? 0),
-                        attendantChapa: '', // Dados não disponíveis na planilha
-                        attendantName: 'Importado', // Dados não disponíveis na planilha
-                        odometer: 0, // Dados não disponíveis na planilha
-                        pump: 0, // Dados não disponíveis na planilha
-                    })).filter(r => r.carId && r.liters > 0);
+                    // Normalize headers
+                    const normalizedJson = json.map(row => {
+                        const newRow: {[key: string]: any} = {};
+                        for (const key in row) {
+                            newRow[key.trim().toLowerCase()] = row[key];
+                        }
+                        return newRow;
+                    });
+                    
+                    const fuelingRecords: FuelingRecordPayload[] = normalizedJson.map(row => {
+                        let date;
+                        // Handle Excel date serial number or date string
+                        const dateValue = row['data'];
+                        if (typeof dateValue === 'number' && dateValue > 0) {
+                             // Excel stores dates as serial numbers. 25569 is the offset for unix epoch.
+                            date = new Date((dateValue - 25569) * 86400 * 1000).toISOString();
+                        } else if (typeof dateValue === 'string') {
+                            // Try parsing different date formats
+                            const parsedDate = new Date(dateValue);
+                            if (!isNaN(parsedDate.getTime())) {
+                                date = parsedDate.toISOString();
+                            }
+                        }
+                        
+                        return {
+                            date: date || new Date().toISOString(),
+                            carId: String(row['carro'] ?? ''),
+                            liters: Number(String(row['litros'] ?? '0').replace(',', '.')),
+                            pricePerLiter: Number(String(row['preço/litro'] ?? '0').replace(',', '.')),
+                            attendantChapa: '', // Data not available
+                            attendantName: 'Importado',
+                            odometer: 0, // Data not available
+                            pump: 0, // Data not available
+                        };
+                    }).filter(r => r.carId && r.liters > 0);
 
                     if (fuelingRecords.length === 0) {
                          toast({ variant: 'destructive', title: 'Nenhum dado válido encontrado', description: 'Verifique se a planilha possui as colunas "Data", "Carro", "Litros" e "Preço/Litro" e se os dados estão corretos.'});
