@@ -18,18 +18,17 @@ const db = getFirestore(app);
 const storage = getStorage(app);
 const auth = getAuth(app);
 
-// Connect to emulators in development.
-// This check works for both client-side and server-side rendering in Next.js.
-if (process.env.NODE_ENV === 'development') {
+// Connect to emulators if the environment variable is set.
+// This is useful for development environments.
+if (process.env.NEXT_PUBLIC_USE_EMULATORS === 'true') {
     // Check if emulators are already connected to prevent errors on hot-reloads
-    // in the development environment.
     if (!auth.emulatorConfig) {
         console.log("Development mode: Connecting to Firebase Emulators");
         try {
             connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
             connectFirestoreEmulator(db, 'localhost', 8080);
             connectStorageEmulator(storage, 'localhost', 9199);
-            console.log("Successfully connected to emulators using localhost for both client and server.");
+            console.log("Successfully connected to emulators.");
         } catch (error) {
             console.error("Error connecting to emulators:", error);
         }
