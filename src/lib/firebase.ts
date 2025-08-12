@@ -1,6 +1,5 @@
 
 import { initializeApp, getApp, getApps } from "firebase/app";
-import { getAuth, connectAuthEmulator } from "firebase/auth";
 import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
 import { getStorage, connectStorageEmulator } from "firebase/storage";
 
@@ -16,23 +15,27 @@ const firebaseConfig = {
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(app);
 const storage = getStorage(app);
-const auth = getAuth(app);
+
+// Note: `auth` has been removed as it's no longer used for admin login.
 
 // Connect to emulators if the environment variable is set.
 // This is useful for development environments.
 if (process.env.NEXT_PUBLIC_USE_EMULATORS === 'true') {
-    // Check if emulators are already connected to prevent errors on hot-reloads
-    if (!auth.emulatorConfig) {
+    try {
         console.log("Development mode: Connecting to Firebase Emulators");
-        try {
-            connectAuthEmulator(auth, 'http://localhost:9099', { disableWarnings: true });
+        // Check if emulators are already connected to prevent errors on hot-reloads
+        // @ts-ignore - _settings is a private property but a reliable way to check
+        if (!db._settings.host.includes('localhost')) {
             connectFirestoreEmulator(db, 'localhost', 8080);
-            connectStorageEmulator(storage, 'localhost', 9199);
-            console.log("Successfully connected to emulators.");
-        } catch (error) {
-            console.error("Error connecting to emulators:", error);
         }
+        // @ts-ignore - _config is a private property
+        if (!storage._config.emulator) {
+            connectStorageEmulator(storage, 'localhost', 9199);
+        }
+        console.log("Successfully connected to emulators.");
+    } catch (error) {
+        console.error("Error connecting to emulators:", error);
     }
 }
 
-export { app, db, storage, auth };
+export { app, db, storage };

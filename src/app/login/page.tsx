@@ -1,12 +1,10 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { auth } from '@/lib/firebase'; // Import Firebase auth
-import { signInWithEmailAndPassword } from 'firebase/auth'; // Import auth function
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from '@/components/ui/input';
@@ -14,46 +12,50 @@ import { Label } from '@/components/ui/label';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
+const ADMIN_PASSWORD = "topbus2025";
+const AUTH_KEY = 'topbus_admin_auth';
+
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const [email, setEmail] = useState('admin@topbus.com');
-  const [password, setPassword] = useState('topbus2024'); // Default password for dev
+  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    // If user is already "logged in", redirect them
+    if (sessionStorage.getItem(AUTH_KEY) === 'true') {
+        router.replace('/admin');
+    }
+  }, [router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    try {
-      // For development, you might need to create this user in the Firebase Auth emulator
-      // or in your actual Firebase project.
-      await signInWithEmailAndPassword(auth, email, password);
-      toast({
-        title: "Login bem-sucedido!",
-        description: "Acesso de Gestor concedido. Redirecionando...",
-      });
-      router.push('/admin');
-    } catch (error: any) {
-      let errorMessage = "Ocorreu um erro desconhecido.";
-      switch (error.code) {
-          case 'auth/user-not-found':
-          case 'auth/invalid-email':
-              errorMessage = "O e-mail fornecido não foi encontrado.";
-              break;
-          case 'auth/wrong-password':
-          case 'auth/invalid-credential':
-              errorMessage = "A senha está incorreta. Tente novamente.";
-              break;
-          default:
-              console.error("Firebase Auth Error:", error);
-              errorMessage = "Não foi possível fazer login. Verifique suas credenciais.";
-              break;
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    if (password === ADMIN_PASSWORD) {
+      try {
+        sessionStorage.setItem(AUTH_KEY, 'true');
+        toast({
+          title: "Acesso autorizado!",
+          description: "Bem-vindo ao Painel de Gestão.",
+        });
+        router.push('/admin');
+      } catch (error) {
+         toast({
+            variant: "destructive",
+            title: "Erro de Sessão",
+            description: "Não foi possível iniciar a sessão. Verifique as permissões do seu navegador.",
+        });
+         setIsLoading(false);
       }
+    } else {
       toast({
         variant: "destructive",
-        title: "Falha no Login",
-        description: errorMessage,
+        title: "Senha Incorreta",
+        description: "A senha de acesso está incorreta. Tente novamente.",
       });
       setIsLoading(false);
     }
@@ -68,22 +70,10 @@ export default function LoginPage() {
         <Card>
           <CardHeader className="text-center">
             <CardTitle>Acesso Restrito</CardTitle>
-            <CardDescription>Insira suas credenciais para entrar no painel.</CardDescription>
+            <CardDescription>Insira a senha de acesso para entrar no painel.</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  disabled={isLoading}
-                  placeholder="admin@topbus.com"
-                />
-              </div>
               <div className="space-y-2">
                 <Label htmlFor="password">Senha de Acesso</Label>
                 <Input

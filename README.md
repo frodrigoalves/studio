@@ -96,14 +96,11 @@ O coração analítico do sistema. Acessível apenas por usuários autorizados, 
 
 ---
 
-### 3. Níveis de Acesso e Credenciais
+### 3. Acesso ao Painel de Gestão
 
-O sistema utiliza o Firebase Authentication. Para acesso em ambiente de desenvolvimento, utilize as seguintes credenciais:
+O acesso ao painel de gestão é protegido por uma senha única.
 
-- **Email:** `admin@topbus.com`
-- **Senha:** `topbus2024`
-
-**Nota:** Para produção, será necessário criar usuários e gerenciar permissões diretamente no painel do Firebase Authentication.
+- **Senha:** `topbus2025`
 
 ---
 
@@ -112,5 +109,5 @@ O sistema utiliza o Firebase Authentication. Para acesso em ambiente de desenvol
 - **Frontend:** Next.js, React, TypeScript
 - **Estilização:** Tailwind CSS, ShadCN UI
 - **Inteligência Artificial:** Google Gemini Pro via Genkit
-- **Backend e Banco de Dados:** Firebase (Firestore, Authentication, Storage)
+- **Backend e Banco de Dados:** Firebase (Firestore, Storage)
 - **Hospedagem:** Firebase App Hosting

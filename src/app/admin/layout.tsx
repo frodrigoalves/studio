@@ -5,8 +5,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { auth } from "@/lib/firebase"; 
-import { onAuthStateChanged, signOut } from "firebase/auth"; 
 import {
   SidebarProvider,
   Sidebar,
@@ -24,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Settings, FileText, LogOut, BrainCircuit, Loader2, Clock4, FileHeart, Wrench, Users, Fuel, ClipboardCheck, CircleDot, ShieldAlert, LayoutDashboard } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+const AUTH_KEY = 'topbus_admin_auth';
 
 const pageTitles: { [key: string]: string } = {
     '/admin': 'Painel de Gestão',
@@ -43,19 +42,32 @@ export default function AdminLayout({
   const router = useRouter();
   const pathname = usePathname();
   const { toast } = useToast();
-  const [loading, setLoading] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [pageTitle, setPageTitle] = useState('Painel de Gestão');
+  const [isVerifying, setIsVerifying] = useState(true);
 
   
+  useEffect(() => {
+    try {
+        const isAuthenticated = sessionStorage.getItem(AUTH_KEY) === 'true';
+        if (!isAuthenticated) {
+            router.replace('/login');
+        } else {
+            setIsVerifying(false);
+        }
+    } catch (error) {
+        router.replace('/login');
+    }
+  }, [router]);
+
   useEffect(() => {
     setPageTitle(pageTitles[pathname] || 'Painel de Gestão');
   }, [pathname]);
 
-  const handleLogout = async () => {
+  const handleLogout = () => {
     setIsLoggingOut(true);
     try {
-        await signOut(auth);
+        sessionStorage.removeItem(AUTH_KEY);
         toast({ title: 'Logout efetuado com sucesso.' });
         router.push('/login');
     } catch (error) {
@@ -73,7 +85,7 @@ export default function AdminLayout({
     });
   }
 
-  if (loading) {
+  if (isVerifying) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
         <Loader2 className="h-16 w-16 animate-spin text-primary" />
@@ -197,7 +209,6 @@ export default function AdminLayout({
             </Avatar>
              <div className="group-data-[collapsible=icon]:hidden">
               <p className="font-semibold truncate capitalize">Gestor</p>
-              <p className="text-xs text-muted-foreground truncate">admin@topbus.com</p>
             </div>
             <Button variant="ghost" size="icon" className="ml-auto group-data-[collapsible=icon]:hidden" onClick={handleLogout} disabled={isLoggingOut}>
               {isLoggingOut ? <Loader2 className="animate-spin" /> : <LogOut />}

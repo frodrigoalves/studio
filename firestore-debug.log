@@ -72,3 +72,7 @@ io.netty.handler.codec.http2.Http2Exception: HTTP/2 client preface string missin
 
 Aug 12, 2025 2:08:48 AM com.google.cloud.datastore.emulator.firestore.websocket.WebSocketChannelHandler initChannel
 INFO: Connected to new websocket client
+Aug 12, 2025 2:15:09 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
+INFO: Detected non-HTTP/2 connection.
+Aug 12, 2025 2:15:10 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
+INFO: Detected HTTP/2 connection.
