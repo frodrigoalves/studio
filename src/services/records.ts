@@ -98,7 +98,6 @@ export async function addRecord(record: RecordAddPayload): Promise<Record> {
 }
 
 export async function updateRecord(id: string, data: RecordUpdatePayload): Promise<void> {
-    
     const recordRef = doc(db, "tripRecords", id);
     const originalDocSnap = await getDoc(recordRef);
     if (!originalDocSnap.exists()) {
@@ -107,6 +106,33 @@ export async function updateRecord(id: string, data: RecordUpdatePayload): Promi
     const originalData = originalDocSnap.data() as Record;
 
     const dataToUpdate: { [key: string]: any } = { ...data };
+    
+    // Prepare photo URLs by uploading new photos first
+    let endOdometerPhotoUrl = originalData.endOdometerPhoto;
+    if (data.endOdometerPhoto && typeof data.endOdometerPhoto === 'string' && data.endOdometerPhoto.startsWith('data:image')) {
+        endOdometerPhotoUrl = await uploadPhoto(data.endOdometerPhoto, id, 'end-odometer');
+    }
+
+    let endFuelPhotoUrl = originalData.endFuelPhoto;
+    if (data.endFuelPhoto && typeof data.endFuelPhoto === 'string' && data.endFuelPhoto.startsWith('data:image')) {
+        endFuelPhotoUrl = await uploadPhoto(data.endFuelPhoto, id, 'end-fuel');
+    }
+
+    // Assign URLs to the update payload
+    dataToUpdate.endOdometerPhoto = endOdometerPhotoUrl;
+    dataToUpdate.endFuelPhoto = endFuelPhotoUrl;
+    
+    // Clean up old photos only after new ones are successfully uploaded and URLs are ready
+    if (endOdometerPhotoUrl !== originalData.endOdometerPhoto) {
+        await deletePhoto(originalData.endOdometerPhoto);
+    }
+    if (endFuelPhotoUrl !== originalData.endFuelPhoto) {
+        await deletePhoto(originalData.endFuelPhoto);
+    }
+
+    // Remove any base64 strings from the final payload to avoid saving them
+    delete dataToUpdate.startOdometerPhoto;
+    delete dataToUpdate.startFuelPhoto;
 
     if (data.kmStart !== undefined) {
         const kmStartNumber = Number(data.kmStart);
@@ -122,32 +148,9 @@ export async function updateRecord(id: string, data: RecordUpdatePayload): Promi
         dataToUpdate.date = new Date(data.date).toISOString();
     }
     
-    // Handle photo updates only if a new base64 string is provided
-    if (data.endOdometerPhoto && typeof data.endOdometerPhoto === 'string' && data.endOdometerPhoto.startsWith('data:image')) {
-        if (originalData.endOdometerPhoto) {
-            await deletePhoto(originalData.endOdometerPhoto);
-        }
-        dataToUpdate.endOdometerPhoto = await uploadPhoto(data.endOdometerPhoto, id, 'end-odometer');
-    }
-
-    if (data.endFuelPhoto && typeof data.endFuelPhoto === 'string' && data.endFuelPhoto.startsWith('data:image')) {
-        if (originalData.endFuelPhoto) {
-            await deletePhoto(originalData.endFuelPhoto);
-        }
-        dataToUpdate.endFuelPhoto = await uploadPhoto(data.endFuelPhoto, id, 'end-fuel');
-    }
-
-    // Remove base64 strings from the payload to avoid saving them in Firestore
-    if (dataToUpdate.startOdometerPhoto && typeof dataToUpdate.startOdometerPhoto === 'string' && dataToUpdate.startOdometerPhoto.startsWith('data:image')) {
-       delete dataToUpdate.startOdometerPhoto;
-    }
-     if (dataToUpdate.startFuelPhoto && typeof dataToUpdate.startFuelPhoto === 'string' && dataToUpdate.startFuelPhoto.startsWith('data:image')) {
-       delete dataToUpdate.startFuelPhoto;
-    }
-
-
     await updateDoc(recordRef, dataToUpdate);
 }
+
 
 export async function deleteRecord(id: string): Promise<void> {
     const recordRef = doc(db, "tripRecords", id);

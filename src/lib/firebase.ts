@@ -4,12 +4,12 @@ import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
 import { getStorage, connectStorageEmulator } from "firebase/storage";
 
 const firebaseConfig = {
-    projectId: "fleettrack-go",
-    appId: "1:791461246838:web:72da931c986d29066b2c57",
-    storageBucket: "fleettrack-go.firebasestorage.app",
-    apiKey: "AIzaSyDdsVOyr7K__oSQif1hpPCll3G11cX0vGk",
-    authDomain: "fleettrack-go.firebaseapp.com",
-    messagingSenderId: "791461246838",
+    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
 };
 
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
