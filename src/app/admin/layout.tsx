@@ -56,6 +56,7 @@ export default function AdminLayout({
             setIsVerifying(false);
         }
     } catch (error) {
+        // In case of any error (e.g., sessionStorage not available), redirect to login
         router.replace('/login');
     }
   }, [router]);
