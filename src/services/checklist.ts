@@ -7,8 +7,20 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { v4 as uuidv4 } from 'uuid';
 import { analyzeVehicleDamage } from '@/ai/flows/damage-analysis-flow';
 
-type DamageAnalysisInput = any;
-type DamageAnalysisOutput = any;
+// This is a simplified type for the AI flow input. The actual type is in the flow file.
+type DamageAnalysisInput = {
+    previousPhotos: { front: string; rear: string; left: string; right: string; };
+    currentPhotos: { front: string; rear: string; left: string; right: string; };
+};
+
+// This is a simplified type for the AI flow output. The actual type is in the flow file.
+type DamageAnalysisOutput = {
+    hasNewDamage: boolean;
+    damageDescription: string;
+    severity: "low" | "medium" | "high" | "none";
+    confidenceScore: number;
+};
+
 
 export type ChecklistItemStatus = "ok" | "avaria" | "na";
 
@@ -16,7 +28,6 @@ interface PreviousChecklistPhotos {
     front: string;
     rear: string;
     left: string;
-
     right: string;
 }
 
@@ -32,11 +43,11 @@ export interface ChecklistRecord {
   signature: string | null;
   damageAnalysis?: DamageAnalysisOutput & { acknowledged?: boolean };
   // Photo fields
-  odometerPhoto?: string | null;
-  frontDiagonalPhoto?: string | null;
-  rearDiagonalPhoto?: string | null;
-  leftSidePhoto?: string | null;
-  rightSidePhoto?: string | null;
+  odometerPhoto?: string | null; // This field seems to be unused here, but keeping for type consistency if needed elsewhere.
+  frontDiagonalPhoto: string | null;
+  rearDiagonalPhoto: string | null;
+  leftSidePhoto: string | null;
+  rightSidePhoto: string | null;
 }
 
 // Type for the view on the Vigia Digital page
@@ -45,7 +56,14 @@ export interface ChecklistRecordWithDamage extends ChecklistRecord {
     previousChecklistPhotos?: PreviousChecklistPhotos;
 }
 
-export type ChecklistRecordPayload = Omit<ChecklistRecord, 'id' | 'date' | 'damageAnalysis' | 'odometerPhoto'>;
+// Type used when adding a new checklist record from the form
+export type ChecklistRecordPayload = Omit<ChecklistRecord, 'id' | 'date' | 'damageAnalysis' | 'odometerPhoto'> & {
+    frontDiagonalPhoto: string | null; // Base64 string from form
+    rearDiagonalPhoto: string | null;  // Base64 string from form
+    leftSidePhoto: string | null;    // Base64 string from form
+    rightSidePhoto: string | null;   // Base64 string from form
+};
+
 
 async function uploadPhoto(photoBase64: string | null, recordId: string, type: string): Promise<string | null> {
     if (!photoBase64 || !photoBase64.startsWith('data:image')) {
@@ -143,36 +161,34 @@ export async function addChecklistRecord(record: ChecklistRecordPayload): Promis
 
     const [
         frontDiagonalPhotoUrl,
-        rearDiagonalPhotoUrl, leftSidePhotoUrl, rightSidePhotoUrl
+        rearDiagonalPhotoUrl, 
+        leftSidePhotoUrl, 
+        rightSidePhotoUrl
     ] = await Promise.all([
-        uploadPhoto(record.frontDiagonalPhoto || null, recordId, 'front-diagonal'),
-        uploadPhoto(record.rearDiagonalPhoto || null, recordId, 'rear-diagonal'),
-        uploadPhoto(record.leftSidePhoto || null, recordId, 'left-side'),
-        uploadPhoto(record.rightSidePhoto || null, recordId, 'right-side'),
+        uploadPhoto(record.frontDiagonalPhoto, recordId, 'front-diagonal'),
+        uploadPhoto(record.rearDiagonalPhoto, recordId, 'rear-diagonal'),
+        uploadPhoto(record.leftSidePhoto, recordId, 'left-side'),
+        uploadPhoto(record.rightSidePhoto, recordId, 'right-side'),
     ]);
 
+    // Create a clean object to save to Firestore, without the base64 photo data
     const dataToSave: Omit<ChecklistRecord, 'id'> = {
-        ...record,
         date: new Date().toISOString(),
+        driverChapa: record.driverChapa,
+        driverName: record.driverName,
+        carId: record.carId,
+        items: record.items,
+        observations: record.observations,
+        hasIssue: record.hasIssue,
+        signature: record.signature,
         frontDiagonalPhoto: frontDiagonalPhotoUrl,
         rearDiagonalPhoto: rearDiagonalPhotoUrl,
         leftSidePhoto: leftSidePhotoUrl,
         rightSidePhoto: rightSidePhotoUrl,
     };
     
-    const recordToSaveInDb = { ...dataToSave };
-    // Remove base64 photos before saving to DB
-    delete (recordToSaveInDb as any).frontDiagonalPhoto;
-    delete (recordToSaveInDb as any).rearDiagonalPhoto;
-    delete (recordToSaveInDb as any).leftSidePhoto;
-    delete (recordToSaveInDb as any).rightSidePhoto;
-    recordToSaveInDb.frontDiagonalPhoto = frontDiagonalPhotoUrl;
-    recordToSaveInDb.rearDiagonalPhoto = rearDiagonalPhotoUrl;
-    recordToSaveInDb.leftSidePhoto = leftSidePhotoUrl;
-    recordToSaveInDb.rightSidePhoto = rightSidePhotoUrl;
-    
     const docRef = doc(db, 'checklistRecords', recordId);
-    await setDoc(docRef, recordToSaveInDb);
+    await setDoc(docRef, dataToSave);
     
     // --- Start Damage Analysis in Background ---
     const previousChecklist = await getLastChecklistForCar(record.carId);
@@ -181,7 +197,8 @@ export async function addChecklistRecord(record: ChecklistRecordPayload): Promis
 
     if (previousChecklist && hasAllCurrentPhotos && hasAllPreviousPhotos) {
         // Don't await this call. Let it run in the background.
-        runDamageAnalysisInBackground(recordId, dataToSave as ChecklistRecord, previousChecklist);
+        const currentRecordForAnalysis = { ...dataToSave, id: recordId };
+        runDamageAnalysisInBackground(recordId, currentRecordForAnalysis, previousChecklist);
     }
     // --- End Damage Analysis Logic ---
     
