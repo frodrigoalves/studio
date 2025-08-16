@@ -69,7 +69,7 @@ const initialStartValues = {
     driver: "",
     car: "",
     line: "",
-    kmStart: 0,
+    kmStart: undefined,
     startFuelLevel: 150,
     startOdometerPhoto: null,
     startFuelPhoto: null,
@@ -80,7 +80,7 @@ const initialEndValues = {
     driver: "", 
     car: "", 
     line: "", 
-    kmEnd: 0, 
+    kmEnd: undefined, 
     endFuelLevel: 150,
     endOdometerPhoto: null,
     endFuelPhoto: null,
@@ -100,12 +100,12 @@ export function DriverForm() {
   
   const startForm = useForm<StartTripFormValues>({
     resolver: zodResolver(startTripSchema),
-    defaultValues: initialStartValues,
+    defaultValues: initialStartValues as any,
   });
   
   const endForm = useForm<EndFormValues>({
     resolver: zodResolver(endFormSchema),
-    defaultValues: initialEndValues,
+    defaultValues: initialEndValues as any,
   });
   
   const handleCarIdBlur = useCallback(async (carId: string) => {
@@ -157,7 +157,7 @@ export function DriverForm() {
         } else {
             setRecordToEnd(null);
             setVehicle(null);
-            endForm.reset({ ...initialEndValues, plate });
+            endForm.reset({ ...initialEndValues, plate } as any);
              toast({
                 variant: "destructive",
                 title: "Nenhuma viagem em andamento",
@@ -176,7 +176,7 @@ export function DriverForm() {
     }
   }, [activeTab, endForm, toast]);
   
-  const handleOdometerOcr = async (file: File | null) => {
+  const handleOdometerOcr = async (file: File | null, formType: "start" | "end") => {
     if (!file) return;
 
     setIsOcrLoading(true);
@@ -187,7 +187,9 @@ export function DriverForm() {
       const result = await extractOdometerFromImage({ odometerPhotoDataUri: odomB64 });
 
       if (result.odometer) {
-        startForm.setValue('kmStart', result.odometer, { shouldValidate: true });
+        const form = formType === 'start' ? startForm : endForm;
+        const field = formType === 'start' ? 'kmStart' : 'kmEnd';
+        form.setValue(field as any, result.odometer, { shouldValidate: true });
         toast({
           title: "KM Extraído!",
           description: `Valor preenchido: ${result.odometer}. Por favor, confirme se está correto.`,
@@ -285,7 +287,7 @@ export function DriverForm() {
         title: "Início de viagem registrado com sucesso!",
         description: "Seus dados foram salvos. Boa viagem!",
       });
-      startForm.reset(initialStartValues);
+      startForm.reset(initialStartValues as any);
       setVehicle(null);
   
     } catch (e) {
@@ -342,7 +344,7 @@ export function DriverForm() {
           title: "Viagem finalizada com sucesso!",
           description: "Seus dados foram atualizados.",
         });
-        endForm.reset(initialEndValues);
+        endForm.reset(initialEndValues as any);
         setRecordToEnd(null);
         setVehicle(null);
 
@@ -361,9 +363,9 @@ export function DriverForm() {
   useEffect(() => {
     if (activeTab === 'start') {
         setRecordToEnd(null);
-        endForm.reset(initialEndValues);
+        endForm.reset(initialEndValues as any);
     } else {
-        startForm.reset(initialStartValues);
+        startForm.reset(initialStartValues as any);
     }
     setVehicle(null);
   }, [activeTab, endForm, startForm]);
@@ -494,7 +496,7 @@ export function DriverForm() {
                                         onChange={(e) => {
                                             const file = e.target.files?.[0];
                                             onChange(file);
-                                            handleOdometerOcr(file || null);
+                                            handleOdometerOcr(file || null, 'start');
                                         }}
                                         {...rest}
                                     />
@@ -597,19 +599,7 @@ export function DriverForm() {
                     )}
                   />
                 <Separator />
-                <FormField
-                  control={endForm.control}
-                  name="kmEnd"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>KM Final</FormLabel>
-                      <FormControl>
-                        <Input type="number" step="0.1" placeholder="123567.8" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                
                  <FormField
                     control={endForm.control}
                     name="endOdometerPhoto"
@@ -623,7 +613,11 @@ export function DriverForm() {
                                         accept="image/*"
                                         capture="camera"
                                         className="pr-12"
-                                        onChange={(e) => onChange(e.target.files?.[0])}
+                                        onChange={(e) => {
+                                            const file = e.target.files?.[0];
+                                            onChange(file);
+                                            handleOdometerOcr(file || null, 'end');
+                                        }}
                                         {...rest}
                                     />
                                     <Camera className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
@@ -632,6 +626,22 @@ export function DriverForm() {
                             <FormMessage />
                         </FormItem>
                     )}
+                />
+                <FormField
+                  control={endForm.control}
+                  name="kmEnd"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Confirmar KM Final</FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                            <Input type="number" step="0.1" placeholder="Aguardando foto..." {...field} />
+                             {isOcrLoading && <Loader2 className="absolute right-3 top-2.5 h-5 w-5 animate-spin" />}
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
                 
                 <FuelSection formType="end" />
@@ -648,3 +658,5 @@ export function DriverForm() {
     </Card>
   );
 }
+
+    
