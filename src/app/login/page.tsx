@@ -60,7 +60,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center justify-center mb-6 text-center">
             <div className="relative w-48 h-14 mb-4">
-              <Image src="/logo.jpeg" alt="TopBus Logo" fill priority className="object-contain"/>
+              <Image src="/logo.jpeg" alt="TopBus Logo" fill priority className="object-contain" sizes="(max-width: 768px) 100vw, 50vw"/>
             </div>
         </div>
         <Card>

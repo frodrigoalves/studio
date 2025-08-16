@@ -8,6 +8,7 @@
  * - SheetAnalysisOutput: O tipo de retorno para a função analyseSheet.
  */
 
+import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 
 const SheetAnalysisInputSchema = z.object({
