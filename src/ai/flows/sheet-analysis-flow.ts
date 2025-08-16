@@ -8,7 +8,6 @@
  * - SheetAnalysisOutput: O tipo de retorno para a função analyseSheet.
  */
 
-import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 
 const SheetAnalysisInputSchema = z.object({
@@ -62,19 +61,18 @@ const analysisPrompt = ai.definePrompt({
     `,
 });
 
-export async function analyseSheet(input: SheetAnalysisInput): Promise<SheetAnalysisOutput> {
-  return sheetAnalysisFlow(input);
-}
-
 
 const sheetAnalysisFlow = ai.defineFlow(
   {
     name: 'sheetAnalysisFlow',
     inputSchema: SheetAnalysisInputSchema,
     outputSchema: SheetAnalysisOutputSchema,
+    description: 'Analyzes spreadsheet data and provides a structured report with findings and recommendations.',
   },
   async (input) => {
     const { output } = await analysisPrompt(input);
     return output!;
   }
 );
+
+export const analyseSheet = sheetAnalysisFlow;

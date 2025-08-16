@@ -225,3 +225,12 @@ Aug 16, 2025 6:56:52 AM com.google.cloud.datastore.emulator.firestore.websocket.
 INFO: Connected to new websocket client
 Aug 16, 2025 6:57:11 AM com.google.cloud.datastore.emulator.firestore.websocket.WebSocketChannelHandler initChannel
 INFO: Connected to new websocket client
+Aug 16, 2025 7:00:44 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
+INFO: Detected HTTP/2 connection.
+Multiple projectIds are not recommended in single project mode. Requested project ID fleettrack-go, but the emulator is configured for demo-app. To opt-out of single project mode add/set the '"singleProjectMode": false' property in the firebase.json emulators config.
+Aug 16, 2025 7:07:05 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
+INFO: Detected HTTP/2 connection.
+Multiple projectIds are not recommended in single project mode. Requested project ID fleettrack-go, but the emulator is configured for demo-app. To opt-out of single project mode add/set the '"singleProjectMode": false' property in the firebase.json emulators config.
+Aug 16, 2025 7:08:07 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
+INFO: Detected HTTP/2 connection.
+Multiple projectIds are not recommended in single project mode. Requested project ID fleettrack-go, but the emulator is configured for demo-app. To opt-out of single project mode add/set the '"singleProjectMode": false' property in the firebase.json emulators config.
