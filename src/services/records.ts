@@ -26,7 +26,7 @@ export interface Record {
 }
 
 export type RecordAddPayload = Omit<Record, 'id'>;
-export type RecordUpdatePayload = Partial<Omit<Record, 'id' | 'startOdometerPhoto' | 'startFuelPhoto'>>;
+export type RecordUpdatePayload = Partial<Omit<Record, 'id'>>;
 
 
 async function uploadPhoto(photoBase64: string | null, recordId: string, type: string): Promise<string | null> {
@@ -100,49 +100,36 @@ export async function addRecord(record: RecordAddPayload): Promise<Record> {
 
 export async function updateRecord(id: string, data: RecordUpdatePayload): Promise<void> {
     const recordRef = doc(db, "tripRecords", id);
-    const originalDocSnap = await getDoc(recordRef);
-    if (!originalDocSnap.exists()) {
-        throw new Error(`Record with id ${id} not found.`);
-    }
-    const originalData = originalDocSnap.data() as Record;
 
-    // Create a strictly typed payload for Firestore
-    const payload: RecordUpdatePayload = {};
+    // If there are photos to update, handle them separately.
+    const originalDoc = (await getDoc(recordRef)).data() as Record | undefined;
 
-    // Handle photo uploads and URL assignments
     if (data.endOdometerPhoto && typeof data.endOdometerPhoto === 'string' && data.endOdometerPhoto.startsWith('data:image')) {
         const newUrl = await uploadPhoto(data.endOdometerPhoto, id, 'end-odometer');
-        payload.endOdometerPhoto = newUrl;
-        await deletePhoto(originalData.endOdometerPhoto); 
+        data.endOdometerPhoto = newUrl; // replace base64 with URL for saving
+        if(originalDoc?.endOdometerPhoto) {
+            await deletePhoto(originalDoc.endOdometerPhoto);
+        }
     }
     
     if (data.endFuelPhoto && typeof data.endFuelPhoto === 'string' && data.endFuelPhoto.startsWith('data:image')) {
         const newUrl = await uploadPhoto(data.endFuelPhoto, id, 'end-fuel');
-        payload.endFuelPhoto = newUrl;
-        await deletePhoto(originalData.endFuelPhoto);
+        data.endFuelPhoto = newUrl; // replace base64 with URL for saving
+         if(originalDoc?.endFuelPhoto) {
+            await deletePhoto(originalDoc.endFuelPhoto);
+        }
     }
-    
-    // Copy other fields from data to payload, ensuring type correctness
-    if (data.driver !== undefined) payload.driver = data.driver;
-    if (data.car !== undefined) payload.car = data.car;
-    if (data.plate !== undefined) payload.plate = data.plate;
-    if (data.line !== undefined) payload.line = data.line;
-    if (data.status !== undefined) payload.status = data.status;
-    
-    if (data.kmStart !== undefined) {
-        payload.kmStart = data.kmStart === null ? null : Number(data.kmStart);
+
+    // Ensure numeric types are correct before updating
+    const payload = { ...data };
+    if (payload.kmStart !== undefined) {
+        payload.kmStart = payload.kmStart === null ? null : Number(payload.kmStart);
     }
-    if (data.kmEnd !== undefined) {
-        payload.kmEnd = data.kmEnd === null ? null : Number(data.kmEnd);
+    if (payload.kmEnd !== undefined) {
+        payload.kmEnd = payload.kmEnd === null ? null : Number(payload.kmEnd);
     }
-     if (data.startFuelLevel !== undefined) {
-        payload.startFuelLevel = data.startFuelLevel;
-    }
-    if (data.endFuelLevel !== undefined) {
-        payload.endFuelLevel = data.endFuelLevel;
-    }
-    if (data.date !== undefined) {
-        payload.date = new Date(data.date).toISOString();
+    if(payload.date){
+        payload.date = new Date(payload.date).toISOString();
     }
     
     if (Object.keys(payload).length > 0) {
