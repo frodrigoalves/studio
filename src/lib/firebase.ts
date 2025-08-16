@@ -22,9 +22,8 @@ const storage = getStorage(app);
 
 // Note: `auth` has been removed as it's no longer used for admin login.
 
-// Connect to emulators if the environment variable is set.
-// This is useful for development environments.
-if (process.env.NEXT_PUBLIC_USE_EMULATORS === 'true') {
+// Connect to emulators if in development and the environment variable is set.
+if (process.env.NODE_ENV === 'development' && process.env.NEXT_PUBLIC_USE_EMULATORS === 'true') {
     try {
         console.log("Development mode: Connecting to Firebase Emulators");
         // Check if emulators are already connected to prevent errors on hot-reloads
