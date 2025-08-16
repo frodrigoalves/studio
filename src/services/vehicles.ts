@@ -60,10 +60,14 @@ export async function getVehicleParameters(): Promise<VehicleParameters[]> {
     if (querySnapshot.empty) {
         return [];
     }
-    return querySnapshot.docs.map(doc => ({
-        carId: doc.id,
-        ...doc.data()
-    } as VehicleParameters));
+    // Safely map documents, ensuring doc.data() is not undefined before spreading
+    return querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+            carId: doc.id,
+            ...data
+        } as VehicleParameters;
+    });
 }
 
 
@@ -95,5 +99,3 @@ export async function getVehicleById(carId: string): Promise<VehicleParameters |
     }
     return null;
 }
-
-    
