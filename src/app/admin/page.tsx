@@ -161,7 +161,7 @@ export default function AdminDashboard() {
     const dashboardData = useMemo(() => {
         const latestPrice = dieselPrices.length > 0 ? parseFloat(dieselPrices[0].price) : 0;
         
-        if(records.length === 0) return {
+        const emptyData = {
             totalKm: 0,
             alerts: 0,
             performanceData: [],
@@ -171,10 +171,13 @@ export default function AdminDashboard() {
             averageConsumption: 0,
         };
 
-        const { from: startDate, to: endDate } = dateRange || { from: new Date(), to: new Date()};
+        if (records.length === 0 || !dateRange?.from || !dateRange?.to) {
+            return emptyData;
+        }
+
+        const { from: startDate, to: endDate } = dateRange;
 
         const filteredRecords = records.filter(r => {
-            if (!startDate || !endDate) return true;
             try {
                 const recordDate = parseISO(r.date);
                 const start = new Date(startDate);
@@ -206,7 +209,6 @@ export default function AdminDashboard() {
 
 
         const performanceData = (() => {
-            if (!startDate || !endDate) return [];
             const diffDays = Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24));
 
             const groupedData = new Map<string, { date: Date, total: number }>();
@@ -251,7 +253,6 @@ export default function AdminDashboard() {
             .slice(0, 10);
             
         const filteredFuelingRecords = fuelingRecords.filter(f => {
-             if (!startDate || !endDate) return true;
              try {
                 const recordDate = parseISO(f.date);
                 const start = new Date(startDate);
@@ -951,5 +952,3 @@ export default function AdminDashboard() {
     </div>
   );
 }
-
-    
