@@ -1,3 +1,4 @@
+
 rules_version = '2';
 
 service cloud.firestore {
@@ -10,8 +11,8 @@ service cloud.firestore {
 
     // Allow public read/write access for trip records form
     match /tripRecords/{recordId} {
-      allow read, create, update: if true;
-      allow delete: if request.auth != null;
+      allow read, create: if true;
+      allow update, delete: if request.auth != null;
     }
 
     // Allow public read/write access for checklist records form

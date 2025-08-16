@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, GaugeCircle, AlertTriangle, Fuel, DollarSign, Activity, Calendar as CalendarIcon, Info, Database, Car, Droplets, Wrench, BarChart } from "lucide-react";
+import { Loader2, GaugeCircle, AlertTriangle, Fuel, DollarSign, Activity, Calendar as CalendarIcon, Info, Database, Car, Droplets, Wrench, BarChart, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getRecords, type Record } from "@/services/records";
 import { getDieselPrices, type DieselPrice } from "@/services/settings";

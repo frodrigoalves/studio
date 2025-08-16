@@ -28,8 +28,10 @@ export async function saveVehicleParameters(parameters: Omit<VehicleParameters, 
   const now = new Date().toISOString();
 
   for (const param of parameters) {
-     if (!param.carId) continue;
-      const docRef = doc(parametersCollection, param.carId);
+     const carId = (param.carId || '').trim().toUpperCase();
+     if (!carId) continue;
+      
+      const docRef = doc(parametersCollection, carId);
       const docSnap = await getDoc(docRef);
 
       const dataToSave: Omit<VehicleParameters, 'carId'> = {
@@ -60,7 +62,6 @@ export async function getVehicleParameters(): Promise<VehicleParameters[]> {
     if (querySnapshot.empty) {
         return [];
     }
-    // Safely map documents, ensuring doc.data() is not undefined before spreading
     return querySnapshot.docs.map(doc => {
         const data = doc.data();
         return {
@@ -92,7 +93,8 @@ export async function getMostRecentVehicleParameter(): Promise<VehicleParameters
  */
 export async function getVehicleById(carId: string): Promise<VehicleParameters | null> {
     if (!carId) return null;
-    const docRef = doc(db, 'vehicleParameters', carId);
+    const normalizedCarId = carId.trim().toUpperCase();
+    const docRef = doc(db, 'vehicleParameters', normalizedCarId);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
         return { carId: docSnap.id, ...docSnap.data() } as VehicleParameters;

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useCallback } from "react";
@@ -34,13 +35,13 @@ const fuelingFormSchema = z.object({
 
 type FuelingFormValues = z.infer<typeof fuelingFormSchema>;
 
-const initialValues: Omit<FuelingFormValues, 'odometer' | 'liters' | 'pump'> & { odometer: string | number, liters: string | number, pump: string | number } = {
+const initialValues: Omit<FuelingFormValues, 'odometer' | 'liters' | 'pump'> & { odometer: string | undefined, liters: string | undefined, pump: string | undefined } = {
     attendantChapa: "",
     attendantName: "",
     carId: "",
-    odometer: "",
-    pump: "",
-    liters: "",
+    odometer: undefined,
+    pump: undefined,
+    liters: undefined,
 };
 
 
@@ -52,7 +53,7 @@ export function FuelingForm() {
   
   const form = useForm<FuelingFormValues>({
     resolver: zodResolver(fuelingFormSchema),
-    defaultValues: initialValues,
+    defaultValues: initialValues as any,
     mode: "onBlur",
   });
 
@@ -100,7 +101,7 @@ export function FuelingForm() {
           title: "Abastecimento registrado!",
           description: "Os dados foram salvos com sucesso.",
         });
-        form.reset(initialValues);
+        form.reset(initialValues as any);
         setVehicle(null);
     } catch(e) {
         console.error("Failed to save fueling record", e);
