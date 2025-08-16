@@ -218,7 +218,7 @@ export default function AdminDashboard() {
 
   if (isLoading) {
     return (
-        <div className="flex h-screen items-center justify-center bg-background">
+        <div className="flex h-full w-full items-center justify-center bg-background">
             <Loader2 className="h-16 w-16 animate-spin text-primary" />
         </div>
     );
@@ -508,3 +508,5 @@ export default function AdminDashboard() {
     </div>
   );
 }
+
+    
