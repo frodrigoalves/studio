@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useCallback } from "react";
@@ -21,6 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { addFuelingRecord, FuelingRecordAddPayload } from "@/services/fueling";
 import { getLastTripRecordForCar } from "@/services/records";
+import { getVehicleById, VehicleParameters } from "@/services/vehicles";
 
 
 const fuelingFormSchema = z.object({
@@ -47,7 +47,8 @@ const initialValues: Omit<FuelingFormValues, 'odometer' | 'liters' | 'pump'> & {
 export function FuelingForm() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isFetchingOdometer, setIsFetchingOdometer] = useState(false);
+  const [isFetchingVehicle, setIsFetchingVehicle] = useState(false);
+  const [vehicle, setVehicle] = useState<VehicleParameters | null>(null);
   
   const form = useForm<FuelingFormValues>({
     resolver: zodResolver(fuelingFormSchema),
@@ -57,9 +58,15 @@ export function FuelingForm() {
 
   const handleCarIdBlur = useCallback(async (carId: string) => {
     if (!carId) return;
-    setIsFetchingOdometer(true);
+    setIsFetchingVehicle(true);
     try {
-        const lastRecord = await getLastTripRecordForCar(carId);
+        const [lastRecord, foundVehicle] = await Promise.all([
+            getLastTripRecordForCar(carId),
+            getVehicleById(carId),
+        ]);
+        
+        setVehicle(foundVehicle);
+
         if (lastRecord?.kmEnd) {
             form.setValue('odometer', lastRecord.kmEnd);
              toast({
@@ -73,14 +80,14 @@ export function FuelingForm() {
             });
         }
     } catch(e) {
-        console.error("Failed to fetch last odometer", e);
+        console.error("Failed to fetch car data", e);
         toast({
             variant: "destructive",
-            title: "Erro ao buscar KM",
-            description: "Não foi possível buscar o último KM do veículo.",
+            title: "Erro ao buscar dados",
+            description: "Não foi possível buscar os dados do veículo.",
         });
     } finally {
-        setIsFetchingOdometer(false);
+        setIsFetchingVehicle(false);
     }
   }, [form, toast]);
 
@@ -94,6 +101,7 @@ export function FuelingForm() {
           description: "Os dados foram salvos com sucesso.",
         });
         form.reset(initialValues);
+        setVehicle(null);
     } catch(e) {
         console.error("Failed to save fueling record", e);
         toast({
@@ -143,12 +151,15 @@ export function FuelingForm() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Carro</FormLabel>
-                  <FormControl>
-                     <Input 
-                        placeholder="Número do veículo" 
-                        {...field} 
-                        onBlur={(e) => handleCarIdBlur(e.target.value)}
-                     />
+                   <FormControl>
+                     <div className="relative">
+                        <Input 
+                            placeholder="Número do veículo" 
+                            {...field} 
+                            onBlur={(e) => handleCarIdBlur(e.target.value)}
+                        />
+                        {isFetchingVehicle && <Loader2 className="absolute right-3 top-2.5 h-5 w-5 animate-spin" />}
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -163,7 +174,7 @@ export function FuelingForm() {
                   <FormControl>
                     <div className="relative">
                         <Input type="number" step="0.1" placeholder="Digite o KM do veículo" {...field} />
-                        {isFetchingOdometer && <Loader2 className="absolute right-3 top-2.5 h-5 w-5 animate-spin" />}
+                        {isFetchingVehicle && <Loader2 className="absolute right-3 top-2.5 h-5 w-5 animate-spin" />}
                     </div>
                   </FormControl>
                   <FormMessage />
