@@ -6,64 +6,25 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Wand2, FileText, Upload, Lightbulb, ListChecks, BarChart, Archive, BrainCircuit, GaugeCircle, AlertTriangle, Fuel, DollarSign, LineChart as LineChartIcon, BarChart2, Calendar as CalendarIcon, FileUp, Info, MapPin as MapIcon, Database, Car, Droplets, Wrench, Clock, Activity, ClipboardCheck, Presentation } from "lucide-react";
+import { Loader2, GaugeCircle, AlertTriangle, Fuel, DollarSign, Activity, Calendar as CalendarIcon, Info, Database, Car, Droplets, Wrench, BarChart } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getRecords, type Record } from "@/services/records";
 import { getDieselPrices, type DieselPrice } from "@/services/settings";
 import { getVehicleParameters, type VehicleParameters } from "@/services/vehicles";
 import { getFuelingRecords, type FuelingRecord } from "@/services/fueling";
 import { getMaintenanceRecords } from "@/services/maintenance";
-import { generateReport, type ReportOutput } from "@/ai/flows/report-flow";
-import { analyseSheet, type SheetAnalysisInput, type SheetAnalysisOutput } from "@/ai/flows/sheet-analysis-flow";
-import { generatePresentationSummary, type PresentationInput, type PresentationOutput } from "@/ai/flows/presentation-flow";
-import { Input } from "@/components/ui/input";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Bar, BarChart as BarChartComponent, Line, LineChart, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { ChartContainer, ChartTooltipContent } from "@/components/ui/chart";
-import { addDays, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, format, parseISO, compareAsc, differenceInDays, isBefore, isAfter } from 'date-fns';
+import { subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, format, parseISO, compareAsc } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { DateRange } from "react-day-picker";
 import { cn } from "@/lib/utils";
-import * as XLSX from 'xlsx';
-import Papa from 'papaparse';
 
 
 const DEFAULT_KM_PER_LITER = 2.5;
-
-const fileToDataURI = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (e) => resolve(e.target?.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-    });
-};
-
-const processSheetFile = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            try {
-                const data = new Uint8Array(e.target?.result as ArrayBuffer);
-                const workbook = XLSX.read(data, { type: 'array' });
-                const sheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[sheetName];
-                const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-                const csvData = Papa.unparse(jsonData as Papa.ParseResult<any>['data']);
-                // Pass the raw CSV text to a text/plain data URI. The AI can parse this.
-                const dataUri = `data:text/plain;charset=utf-8,${encodeURIComponent(csvData)}`;
-                resolve(dataUri);
-            } catch (error) {
-                reject(error);
-            }
-        };
-        reader.onerror = reject;
-        reader.readAsArrayBuffer(file);
-    });
-};
 
 export default function AdminDashboard() {
     const { toast } = useToast();
@@ -88,24 +49,6 @@ export default function AdminDashboard() {
         tripRecords: 0,
         tripAlerts: 0,
     });
-
-
-    // Fleet Report state
-    const [isFleetLoading, setIsFleetLoading] = useState(false);
-    const [fleetReport, setFleetReport] = useState<ReportOutput | null>(null);
-
-    // Sheet Analysis state
-    const [analysisType, setAnalysisType] = useState<string>('Análise de Atestados Médicos');
-    const [sheetFile, setSheetFile] = useState<File | null>(null);
-    const [isSheetLoading, setIsSheetLoading] = useState(false);
-    const [sheetAnalysisResult, setSheetAnalysisResult] = useState<SheetAnalysisOutput | null>(null);
-
-    // Presentation Assistant State
-    const [presentationContent, setPresentationContent] = useState('');
-    const [presentationFile, setPresentationFile] = useState<File | null>(null);
-    const [isPresentationLoading, setIsPresentationLoading] = useState(false);
-    const [presentationResult, setPresentationResult] = useState<PresentationOutput | null>(null);
-
 
     const fetchAndSetData = useCallback(async () => {
         setIsLoading(true);
@@ -272,147 +215,6 @@ export default function AdminDashboard() {
 
     }, [records, fuelingRecords, dateRange, dieselPrices, vehicleParameters]);
 
-    const handleGenerateFleetReport = async () => {
-        setIsFleetLoading(true);
-        setFleetReport(null);
-        try {
-            if (records.length === 0 || dieselPrices.length === 0) {
-                 toast({
-                    variant: 'destructive',
-                    title: 'Dados insuficientes',
-                    description: 'Não há registros ou preços de diesel para gerar o relatório.'
-                });
-                return;
-            }
-            
-            const { from: startDate, to: endDate } = dateRange || {};
-            const filteredRecords = records.filter(r => {
-                if (!startDate || !endDate) return true;
-                const recordDate = parseISO(r.date);
-                const start = new Date(startDate);
-                start.setHours(0,0,0,0);
-                const end = new Date(endDate);
-                end.setHours(23,59,59,999);
-                return recordDate >= start && recordDate <= end;
-            });
-
-            if (filteredRecords.length === 0) {
-                 toast({
-                    variant: 'destructive',
-                    title: 'Sem dados no período',
-                    description: 'Não há registros no período selecionado para gerar o relatório.'
-                });
-                setIsFleetLoading(false);
-                return;
-            }
-
-            const generatedReport = await generateReport({
-                records: filteredRecords,
-                dieselPrices,
-                vehicleParameters,
-                period: "weekly",
-            });
-            setFleetReport(generatedReport);
-
-        } catch (error) {
-            console.error("Failed to generate report", error);
-            toast({
-                variant: 'destructive',
-                title: 'Erro ao gerar relatório',
-                description: 'A IA não conseguiu processar os dados. Tente novamente.'
-            });
-        } finally {
-            setIsFleetLoading(false);
-        }
-    };
-
-    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>, setFileCallback: (file: File | null) => void) => {
-        if (event.target.files) {
-            setFileCallback(event.target.files[0]);
-        }
-    };
-
-
-    const handleGenerateSheetAnalysis = async () => {
-        if (!sheetFile) {
-          toast({
-            variant: 'destructive',
-            title: 'Nenhum arquivo selecionado',
-            description: 'Por favor, faça o upload de um arquivo para análise.',
-          });
-          return;
-        }
-    
-        setIsSheetLoading(true);
-        setSheetAnalysisResult(null);
-    
-        try {
-            let fileDataUri: string;
-            const fileType = sheetFile.type;
-
-            const isSheet = fileType.includes('spreadsheet') || fileType.includes('csv') || sheetFile.name.endsWith('.xlsx') || sheetFile.name.endsWith('.xls') || sheetFile.name.endsWith('.csv');
-
-            if (isSheet) {
-                 fileDataUri = await processSheetFile(sheetFile);
-            } else {
-                 fileDataUri = await fileToDataURI(sheetFile);
-            }
-            
-            const analysisInput: SheetAnalysisInput = {
-              fileDataUri: fileDataUri,
-              analysisType,
-            };
-            
-            const result = await analyseSheet(analysisInput);
-            setSheetAnalysisResult(result);
-    
-        } catch (error) {
-          console.error('Failed to analyze sheet', error);
-          toast({
-            variant: 'destructive',
-            title: 'Erro na Análise',
-            description: 'A IA não conseguiu processar o arquivo. Verifique se o formato é suportado (planilha, PDF, imagem) e se o conteúdo é legível. Tente novamente.',
-          });
-        } finally {
-          setIsSheetLoading(false);
-        }
-    };
-
-    const handleGeneratePresentation = async () => {
-        if (!presentationContent && !presentationFile) {
-            toast({
-                variant: 'destructive',
-                title: 'Nenhum conteúdo fornecido',
-                description: 'Por favor, insira texto ou faça o upload de um arquivo para gerar o resumo.',
-            });
-            return;
-        }
-
-        setIsPresentationLoading(true);
-        setPresentationResult(null);
-
-        try {
-            const fileDataUri = presentationFile ? await fileToDataURI(presentationFile) : undefined;
-            
-            const input: PresentationInput = {
-                repositoryContent: presentationContent || undefined,
-                fileDataUri,
-            };
-
-            const result = await generatePresentationSummary(input);
-            setPresentationResult(result);
-
-        } catch (error) {
-            console.error('Failed to generate presentation summary', error);
-            toast({
-                variant: 'destructive',
-                title: 'Erro na Geração',
-                description: `A IA não conseguiu criar o resumo. Detalhes: ${error instanceof Error ? error.message : String(error)}`,
-            });
-        } finally {
-            setIsPresentationLoading(false);
-        }
-    };
 
   if (isLoading) {
     return (
@@ -506,7 +308,7 @@ export default function AdminDashboard() {
                 </CardContent>
             </Card>
 
-        <Accordion type="multiple" className="w-full" defaultValue={['item-1']}>
+        <Accordion type="single" collapsible className="w-full" defaultValue={'item-1'}>
              <AccordionItem value="item-1">
                 <AccordionTrigger className="text-xl font-semibold">
                     <div className="flex items-center gap-2">
@@ -702,252 +504,6 @@ export default function AdminDashboard() {
                     </div>
                 </AccordionContent>
             </AccordionItem>
-             
-            <AccordionItem value="item-2">
-                 <AccordionTrigger className="text-xl font-semibold">
-                    <div className="flex items-center gap-2">
-                        <Wand2 /> Análise Preditiva e Cruzamento de Dados
-                    </div>
-                </AccordionTrigger>
-                <AccordionContent>
-                    <Card className="shadow-lg mt-2 border-0">
-                        <CardHeader>
-                            <CardTitle>Gerador de Relatórios de Frota</CardTitle>
-                            <CardDescription>A IA analisa os dados de viagem e gera insights acionáveis sobre anomalias e tendências.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            {(records.length === 0 || dieselPrices.length === 0) ? (
-                                <div className="p-4 text-center text-sm text-muted-foreground bg-muted/50 rounded-lg">
-                                    <p>
-                                        <span className="font-semibold text-foreground">Ação necessária:</span> Para gerar o relatório, é preciso ter registros de viagem e pelo menos um preço de diesel cadastrado.
-                                    </p>
-                                    <p className="mt-2">
-                                        Vá para a página de <Button variant="link" className="p-0 h-auto" asChild><a href="/admin/records">Registros</a></Button> para adicionar viagens ou para <Button variant="link" className="p-0 h-auto" asChild><a href="/admin/settings">Configurações</a></Button> para adicionar o preço do diesel.
-                                    </p>
-                                </div>
-                            ) : (
-                                <>
-                                    <p className="text-sm text-muted-foreground">
-                                        A análise usará o período de datas selecionado no filtro de desempenho acima: 
-                                        <span className="font-semibold text-foreground">
-                                            {dateRange?.from ? format(dateRange.from, 'dd/MM/yy') : ''} à {dateRange?.to ? format(dateRange.to, 'dd/MM/yy') : ''}
-                                        </span>
-                                    </p>
-                                    <Button onClick={handleGenerateFleetReport} disabled={isFleetLoading} className="w-full sm:w-auto">
-                                        {isFleetLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Wand2 className="mr-2 h-4 w-4"/>}
-                                        {isFleetLoading ? "Analisando Frota..." : "Gerar Relatório de Frota"}
-                                    </Button>
-                                </>
-                            )}
-                             {fleetReport && (
-                                <Card className="mt-6 bg-muted/20">
-                                    <CardHeader>
-                                        <CardTitle>Relatório da Frota Gerado</CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="space-y-6">
-                                        <div className="space-y-2">
-                                            <h3 className="font-semibold text-lg flex items-center gap-2"><ListChecks /> Resumo Executivo</h3>
-                                            <Textarea readOnly value={fleetReport.summary} className="h-24 bg-background" />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <h3 className="font-semibold text-lg flex items-center gap-2"><BarChart2 /> Análise de Anomalias</h3>
-                                            <Textarea readOnly value={fleetReport.trends} className="h-32 bg-background" />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <h3 className="font-semibold text-lg flex items-center gap-2"><Lightbulb /> Recomendações</h3>
-                                            <Textarea readOnly value={fleetReport.recommendations} className="h-32 bg-background" />
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            )}
-                        </CardContent>
-                    </Card>
-                </AccordionContent>
-            </AccordionItem>
-            
-             <AccordionItem value="item-3">
-                <AccordionTrigger className="text-xl font-semibold">
-                    <div className="flex items-center gap-2">
-                        <FileText /> Análise de Documentos (OCR)
-                    </div>
-                </AccordionTrigger>
-                <AccordionContent>
-                    <Card className="shadow-lg mt-2 border-0">
-                        <CardHeader>
-                            <CardTitle>Análise Inteligente de Documentos</CardTitle>
-                            <CardDescription>
-                                Faça o upload de planilhas, PDFs ou imagens de RH (atestados) ou Manutenção para que a IA identifique anomalias e tendências.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="grid sm:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                <Label htmlFor="analysis-type">Tipo de Análise</Label>
-                                <Select
-                                    value={analysisType}
-                                    onValueChange={(value: string) => setAnalysisType(value)}
-                                    disabled={isSheetLoading}
-                                >
-                                    <SelectTrigger id="analysis-type">
-                                    <SelectValue placeholder="Selecione o tipo" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="Análise de Atestados Médicos">Análise de Atestados Médicos</SelectItem>
-                                        <SelectItem value="Análise de Manutenção de Frota">Análise de Manutenção de Frota</SelectItem>
-                                        <SelectItem value="Análise de Viagens Atrasadas/Não Realizadas">Viagens Atrasadas/Não Realizadas</SelectItem>
-                                        <SelectItem value="Análise de Outras Ocorrências">Outras Ocorrências</SelectItem>
-                                        <SelectItem value="Análise de RH">Análise de RH</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                </div>
-                                <div className="space-y-2">
-                                <Label htmlFor="sheet-upload">Arquivo do Documento</Label>
-                                <div className="relative">
-                                    <Input
-                                        id="sheet-upload"
-                                        type="file"
-                                        accept=".xlsx, .xls, .csv, image/*, application/pdf"
-                                        onChange={(e) => handleFileChange(e, setSheetFile)}
-                                        disabled={isSheetLoading}
-                                        className="pr-12"
-                                    />
-                                    <Upload className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
-                                </div>
-                                </div>
-                            </div>
-                            <Button
-                                onClick={handleGenerateSheetAnalysis}
-                                disabled={isSheetLoading || !sheetFile}
-                                className="w-full"
-                            >
-                                {isSheetLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
-                                {isSheetLoading ? 'Analisando Documento...' : 'Analisar com IA'}
-                            </Button>
-
-                            {sheetAnalysisResult && (
-                                <Card className="mt-6 bg-muted/20">
-                                    <CardHeader>
-                                        <CardTitle>{sheetAnalysisResult.title}</CardTitle>
-                                        <CardDescription>Abaixo estão os insights gerados pela IA com base no arquivo enviado.</CardDescription>
-                                    </CardHeader>
-                                    <CardContent className="space-y-6">
-                                        <div className="space-y-2">
-                                            <h3 className="font-semibold text-lg"><ListChecks /> Resumo Executivo</h3>
-                                            <Textarea readOnly value={sheetAnalysisResult.summary} className="h-24 bg-background" />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <h3 className="font-semibold text-lg"><BarChart2 /> Principais Descobertas</h3>
-                                            <div className="space-y-4">
-                                                {sheetAnalysisResult.keyFindings.map((finding, index) => (
-                                                    <div key={index} className="p-4 border rounded-lg bg-background/50">
-                                                        <h4 className="font-semibold">{finding.finding}</h4>
-                                                        <p className="text-sm text-muted-foreground mt-1"><span className="font-semibold">Detalhes:</span> {finding.details}</p>
-                                                        <p className="text-sm text-muted-foreground mt-1"><span className="font-semibold">Impacto:</span> {finding.implication}</p>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <h3 className="font-semibold text-lg"><Lightbulb /> Recomendações</h3>
-                                            <ul className="list-disc list-inside space-y-1 bg-background p-4 rounded-md">
-                                                {sheetAnalysisResult.recommendations.map((rec, index) => (
-                                                    <li key={index}>{rec}</li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            )}
-                        </CardContent>
-                    </Card>
-                </AccordionContent>
-            </AccordionItem>
-
-            <AccordionItem value="item-4">
-                <AccordionTrigger className="text-xl font-semibold">
-                    <div className="flex items-center gap-2">
-                        <Presentation /> Assistente de Apresentação
-                    </div>
-                </AccordionTrigger>
-                <AccordionContent>
-                    <Card className="shadow-lg mt-2 border-0">
-                        <CardHeader>
-                            <CardTitle>Gerador de Resumo para Reuniões</CardTitle>
-                            <CardDescription>
-                                Cole abaixo o conteúdo (texto, links, anotações) e/ou anexe um arquivo de apoio. A IA criará um resumo executivo estruturado para a sua apresentação.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="grid gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="presentation-content">Repositório de Contexto</Label>
-                                    <Textarea
-                                        id="presentation-content"
-                                        placeholder="Cole aqui todas as suas anotações, links, rascunhos de e-mail, ou qualquer texto que sirva de base para a reunião..."
-                                        rows={8}
-                                        value={presentationContent}
-                                        onChange={(e) => setPresentationContent(e.target.value)}
-                                        disabled={isPresentationLoading}
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="presentation-upload">Arquivo de Apoio (Opcional)</Label>
-                                     <div className="relative">
-                                        <Input
-                                            id="presentation-upload"
-                                            type="file"
-                                            onChange={(e) => handleFileChange(e, setPresentationFile)}
-                                            disabled={isPresentationLoading}
-                                            className="pr-12"
-                                        />
-                                        <Upload className="absolute right-3 top-2.5 h-5 w-5 text-muted-foreground" />
-                                    </div>
-                                </div>
-                            </div>
-                            <Button
-                                onClick={handleGeneratePresentation}
-                                disabled={isPresentationLoading || (!presentationContent && !presentationFile)}
-                                className="w-full"
-                            >
-                                {isPresentationLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
-                                {isPresentationLoading ? 'Gerando Resumo...' : 'Gerar Resumo com IA'}
-                            </Button>
-
-                            {presentationResult && (
-                                <Card className="mt-6 bg-muted/20">
-                                    <CardHeader>
-                                        <CardTitle>{presentationResult.title}</CardTitle>
-                                        <CardDescription>Abaixo está o resumo gerado pela IA, pronto para ser usado.</CardDescription>
-                                    </CardHeader>
-                                    <CardContent className="space-y-6">
-                                        <div className="space-y-2">
-                                            <h3 className="font-semibold text-lg"><ListChecks /> Resumo Executivo</h3>
-                                            <Textarea readOnly value={presentationResult.summary} className="h-28 bg-background" />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <h3 className="font-semibold text-lg"><BarChart2 /> Pontos de Discussão</h3>
-                                             <ul className="list-disc list-inside space-y-1 bg-background p-4 rounded-md">
-                                                {presentationResult.talkingPoints.map((point, index) => (
-                                                    <li key={index}>{point}</li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <h3 className="font-semibold text-lg"><Lightbulb /> Próximos Passos</h3>
-                                             <ul className="list-disc list-inside space-y-1 bg-background p-4 rounded-md">
-                                                {presentationResult.nextSteps.map((step, index) => (
-                                                    <li key={index}>{step}</li>
-                                                ))}
-                                            </ul>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            )}
-                        </CardContent>
-                    </Card>
-                </AccordionContent>
-            </AccordionItem>
-            
         </Accordion>
     </div>
   );
