@@ -2,7 +2,7 @@
 'use server';
 
 import { db, storage } from '@/lib/firebase';
-import { collection, addDoc, getDoc, getDocs, query, orderBy, doc, setDoc, limit, where, updateDoc } from 'firebase/firestore';
+import { collection, addDoc, getDoc, getDocs, query, orderBy, doc, setDoc, limit, where, updateDoc, select } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { v4 as uuidv4 } from 'uuid';
 import { analyzeVehicleDamage } from '@/ai/flows/damage-analysis-flow';
@@ -43,7 +43,6 @@ export interface ChecklistRecord {
   signature: string | null;
   damageAnalysis?: DamageAnalysisOutput & { acknowledged?: boolean };
   // Photo fields
-  odometerPhoto?: string | null; // This field seems to be unused here, but keeping for type consistency if needed elsewhere.
   frontDiagonalPhoto: string | null;
   rearDiagonalPhoto: string | null;
   leftSidePhoto: string | null;
@@ -57,7 +56,7 @@ export interface ChecklistRecordWithDamage extends ChecklistRecord {
 }
 
 // Type used when adding a new checklist record from the form
-export type ChecklistRecordPayload = Omit<ChecklistRecord, 'id' | 'date' | 'damageAnalysis' | 'odometerPhoto'> & {
+export type ChecklistRecordPayload = Omit<ChecklistRecord, 'id' | 'date' | 'damageAnalysis'> & {
     frontDiagonalPhoto: string | null; // Base64 string from form
     rearDiagonalPhoto: string | null;  // Base64 string from form
     leftSidePhoto: string | null;    // Base64 string from form
@@ -69,24 +68,15 @@ async function uploadPhoto(photoBase64: string | null, recordId: string, type: s
     if (!photoBase64 || !photoBase64.startsWith('data:image')) {
         return null;
     }
-
-    const mimeTypeMatch = photoBase64.match(/^data:(image\/[a-z]+);base64,/);
-    const mimeType = mimeTypeMatch ? mimeTypeMatch[1] : 'image/jpeg';
-    const base64Data = photoBase64.split(',')[1];
     
-    // Convert base64 to blob
-    const byteCharacters = atob(base64Data);
-    const byteNumbers = new Array(byteCharacters.length);
-    for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i);
-    }
-    const byteArray = new Uint8Array(byteNumbers);
-    const blob = new Blob([byteArray], { type: mimeType });
+    // Convert base64 data URI to a Blob, which is more robust for uploading.
+    const response = await fetch(photoBase64);
+    const blob = await response.blob();
 
     const storageRef = ref(storage, `checklist_photos/${recordId}-${type}-${uuidv4()}`);
     
     try {
-        const metadata = { contentType: mimeType };
+        const metadata = { contentType: blob.type || 'image/jpeg' };
         await uploadBytes(storageRef, blob, metadata);
         const downloadURL = await getDownloadURL(storageRef);
         return downloadURL;
@@ -98,16 +88,17 @@ async function uploadPhoto(photoBase64: string | null, recordId: string, type: s
 
 
 /**
- * Busca o último checklist registrado para um carro específico.
+ * Busca o último checklist registrado para um carro específico, retornando apenas as fotos.
  * @param carId O ID do carro.
- * @returns O último registro de vistoria ou null se não houver.
+ * @returns O último registro de vistoria (apenas com campos de foto) ou null se não houver.
  */
 async function getLastChecklistForCar(carId: string): Promise<ChecklistRecord | null> {
     const q = query(
         collection(db, "checklistRecords"),
         where("carId", "==", carId),
         orderBy("date", "desc"),
-        limit(1)
+        limit(1),
+        select("frontDiagonalPhoto", "rearDiagonalPhoto", "leftSidePhoto", "rightSidePhoto")
     );
     const querySnapshot = await getDocs(q);
     if (querySnapshot.empty) {
@@ -187,8 +178,7 @@ export async function addChecklistRecord(record: ChecklistRecordPayload): Promis
         rightSidePhoto: rightSidePhotoUrl,
     };
     
-    const docRef = doc(db, 'checklistRecords', recordId);
-    await setDoc(docRef, dataToSave);
+    await setDoc(doc(db, 'checklistRecords', recordId), dataToSave);
     
     // --- Start Damage Analysis in Background ---
     const previousChecklist = await getLastChecklistForCar(record.carId);
@@ -202,7 +192,7 @@ export async function addChecklistRecord(record: ChecklistRecordPayload): Promis
     }
     // --- End Damage Analysis Logic ---
     
-    const docSnap = await getDoc(docRef);
+    const docSnap = await getDoc(doc(db, 'checklistRecords', recordId));
     return { id: docSnap.id, ...docSnap.data() } as ChecklistRecord;
 }
 
