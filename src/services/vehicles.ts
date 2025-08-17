@@ -80,7 +80,7 @@ export async function getVehicleParameters(): Promise<VehicleParameters[]> {
  * @returns O parâmetro de veículo mais recente ou null se não houver nenhum.
  */
 export async function getMostRecentVehicleParameter(): Promise<VehicleParameters | null> {
-    const q = query(collection(db, COLLECTION_NAME), orderBy("lastUpdated", "desc"), limit(1));
+    const q = query(collection(db, COLLECTION_NAME), orderBy("updatedAt", "desc"), limit(1));
     const querySnapshot = await getDocs(q);
     if (querySnapshot.empty) {
         return null;
