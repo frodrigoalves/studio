@@ -1,426 +1,125 @@
-[debug] [2025-08-16T12:44:12.983Z] ----------------------------------------------------------------------
-[debug] [2025-08-16T12:44:12.988Z] Command:       /nix/store/ws50yvm6vzlzf7jzz6n7xh4szddrack1-nodejs-20.19.1/bin/node /nix/store/4ba3nh7p56fsnidgr9jcqnpv4k7nwwrv-firebase-tools-14.12.0/lib/node_modules/firebase-tools/lib/bin/firebase.js emulators:start --project=demo-app --only=auth,firestore
-[debug] [2025-08-16T12:44:12.990Z] CLI Version:   14.12.0
-[debug] [2025-08-16T12:44:12.990Z] Platform:      linux
-[debug] [2025-08-16T12:44:12.991Z] Node Version:  v20.19.1
-[debug] [2025-08-16T12:44:12.991Z] Time:          Sat Aug 16 2025 12:44:12 GMT+0000 (Coordinated Universal Time)
-[debug] [2025-08-16T12:44:12.992Z] ----------------------------------------------------------------------
+[debug] [2025-08-17T08:58:05.121Z] ----------------------------------------------------------------------
+[debug] [2025-08-17T08:58:05.124Z] Command:       /nix/store/ws50yvm6vzlzf7jzz6n7xh4szddrack1-nodejs-20.19.1/bin/node /home/user/.global_modules/bin/firebase deploy
+[debug] [2025-08-17T08:58:05.125Z] CLI Version:   14.12.1
+[debug] [2025-08-17T08:58:05.125Z] Platform:      linux
+[debug] [2025-08-17T08:58:05.125Z] Node Version:  v20.19.1
+[debug] [2025-08-17T08:58:05.126Z] Time:          Sun Aug 17 2025 08:58:05 GMT+0000 (Coordinated Universal Time)
+[debug] [2025-08-17T08:58:05.126Z] ----------------------------------------------------------------------
 [debug] 
-[debug] [2025-08-16T12:44:14.033Z] Object "/emulators" in "firebase.json" has unknown property: {"additionalProperty":"project"}
-[debug] [2025-08-16T12:44:14.895Z] openjdk version "21.0.7" 2025-04-15
-OpenJDK Runtime Environment (build 21.0.7+6-nixos)
-OpenJDK 64-Bit Server VM (build 21.0.7+6-nixos, mixed mode, sharing)
-
-[debug] [2025-08-16T12:44:14.949Z] Parsed Java major version: 21
-[info] i  emulators: Starting emulators: auth, firestore {"metadata":{"emulator":{"name":"hub"},"message":"Starting emulators: auth, firestore"}}
-[info] i  emulators: Detected demo project ID "demo-app", emulated services will use a demo configuration and attempts to access non-emulated services for this project will fail. {"metadata":{"emulator":{"name":"hub"},"message":"Detected demo project ID \"demo-app\", emulated services will use a demo configuration and attempts to access non-emulated services for this project will fail."}}
-[warn] ⚠  hub: Error when trying to check port 4400 on ::1: Error: listen EADDRNOTAVAIL: address not available ::1:4400 {"metadata":{"emulator":{"name":"hub"},"message":"Error when trying to check port 4400 on ::1: Error: listen EADDRNOTAVAIL: address not available ::1:4400"}}
-[warn] ⚠  hub: Port 4400 is available on 127.0.0.1 but not ::1. This may cause issues with some clients. {"metadata":{"emulator":{"name":"hub"},"message":"Port 4400 is available on 127.0.0.1 but not ::1. This may cause issues with some clients."}}
-[warn] ⚠  hub: If you encounter connectivity issues, consider switching to a different port or explicitly specifying "host": "<ip address>" instead of hostname in firebase.json {"metadata":{"emulator":{"name":"hub"},"message":"If you encounter connectivity issues, consider switching to a different port or explicitly specifying \"host\": \"<ip address>\" instead of hostname in firebase.json"}}
-[warn] ⚠  ui: Error when trying to check port 4000 on ::1: Error: listen EADDRNOTAVAIL: address not available ::1:4000 {"metadata":{"emulator":{"name":"ui"},"message":"Error when trying to check port 4000 on ::1: Error: listen EADDRNOTAVAIL: address not available ::1:4000"}}
-[warn] ⚠  ui: Port 4000 is available on 127.0.0.1 but not ::1. This may cause issues with some clients. {"metadata":{"emulator":{"name":"ui"},"message":"Port 4000 is available on 127.0.0.1 but not ::1. This may cause issues with some clients."}}
-[warn] ⚠  ui: If you encounter connectivity issues, consider switching to a different port or explicitly specifying "host": "<ip address>" instead of hostname in firebase.json {"metadata":{"emulator":{"name":"ui"},"message":"If you encounter connectivity issues, consider switching to a different port or explicitly specifying \"host\": \"<ip address>\" instead of hostname in firebase.json"}}
-[warn] ⚠  logging: Error when trying to check port 4500 on ::1: Error: listen EADDRNOTAVAIL: address not available ::1:4500 {"metadata":{"emulator":{"name":"logging"},"message":"Error when trying to check port 4500 on ::1: Error: listen EADDRNOTAVAIL: address not available ::1:4500"}}
-[warn] ⚠  logging: Port 4500 is available on 127.0.0.1 but not ::1. This may cause issues with some clients. {"metadata":{"emulator":{"name":"logging"},"message":"Port 4500 is available on 127.0.0.1 but not ::1. This may cause issues with some clients."}}
-[warn] ⚠  logging: If you encounter connectivity issues, consider switching to a different port or explicitly specifying "host": "<ip address>" instead of hostname in firebase.json {"metadata":{"emulator":{"name":"logging"},"message":"If you encounter connectivity issues, consider switching to a different port or explicitly specifying \"host\": \"<ip address>\" instead of hostname in firebase.json"}}
-[warn] ⚠  auth: Error when trying to check port 9099 on ::1: Error: listen EADDRNOTAVAIL: address not available ::1:9099 {"metadata":{"emulator":{"name":"auth"},"message":"Error when trying to check port 9099 on ::1: Error: listen EADDRNOTAVAIL: address not available ::1:9099"}}
-[warn] ⚠  auth: Port 9099 is available on 127.0.0.1 but not ::1. This may cause issues with some clients. {"metadata":{"emulator":{"name":"auth"},"message":"Port 9099 is available on 127.0.0.1 but not ::1. This may cause issues with some clients."}}
-[warn] ⚠  auth: If you encounter connectivity issues, consider switching to a different port or explicitly specifying "host": "<ip address>" instead of hostname in firebase.json {"metadata":{"emulator":{"name":"auth"},"message":"If you encounter connectivity issues, consider switching to a different port or explicitly specifying \"host\": \"<ip address>\" instead of hostname in firebase.json"}}
-[warn] ⚠  firestore: Error when trying to check port 8080 on ::1: Error: listen EADDRNOTAVAIL: address not available ::1:8080 {"metadata":{"emulator":{"name":"firestore"},"message":"Error when trying to check port 8080 on ::1: Error: listen EADDRNOTAVAIL: address not available ::1:8080"}}
-[warn] ⚠  firestore: Port 8080 is available on 127.0.0.1 but not ::1. This may cause issues with some clients. {"metadata":{"emulator":{"name":"firestore"},"message":"Port 8080 is available on 127.0.0.1 but not ::1. This may cause issues with some clients."}}
-[warn] ⚠  firestore: If you encounter connectivity issues, consider switching to a different port or explicitly specifying "host": "<ip address>" instead of hostname in firebase.json {"metadata":{"emulator":{"name":"firestore"},"message":"If you encounter connectivity issues, consider switching to a different port or explicitly specifying \"host\": \"<ip address>\" instead of hostname in firebase.json"}}
-[warn] ⚠  firestore.websocket: Error when trying to check port 9150 on ::1: Error: listen EADDRNOTAVAIL: address not available ::1:9150 {"metadata":{"emulator":{"name":"firestore"},"message":"Error when trying to check port 9150 on ::1: Error: listen EADDRNOTAVAIL: address not available ::1:9150"}}
-[warn] ⚠  firestore: Port 9150 is available on 127.0.0.1 but not ::1. This may cause issues with some clients. {"metadata":{"emulator":{"name":"firestore"},"message":"Port 9150 is available on 127.0.0.1 but not ::1. This may cause issues with some clients."}}
-[warn] ⚠  firestore: If you encounter connectivity issues, consider switching to a different port or explicitly specifying "host": "<ip address>" instead of hostname in firebase.json {"metadata":{"emulator":{"name":"firestore"},"message":"If you encounter connectivity issues, consider switching to a different port or explicitly specifying \"host\": \"<ip address>\" instead of hostname in firebase.json"}}
-[debug] [2025-08-16T12:44:14.988Z] assigned listening specs for emulators {"user":{"hub":[{"address":"127.0.0.1","family":"IPv4","port":4400}],"ui":[{"address":"127.0.0.1","family":"IPv4","port":4000}],"logging":[{"address":"127.0.0.1","family":"IPv4","port":4500}],"auth":[{"address":"127.0.0.1","family":"IPv4","port":9099}],"firestore":[{"address":"127.0.0.1","family":"IPv4","port":8080}],"firestore.websocket":[{"address":"127.0.0.1","family":"IPv4","port":9150}]},"metadata":{"message":"assigned listening specs for emulators"}}
-[debug] [2025-08-16T12:44:14.996Z] [hub] writing locator at /tmp/hub-demo-app.json
-[debug] [2025-08-16T12:44:15.028Z] Ignoring unsupported arg: auto_download {"metadata":{"emulator":{"name":"firestore"},"message":"Ignoring unsupported arg: auto_download"}}
-[debug] [2025-08-16T12:44:15.029Z] Ignoring unsupported arg: single_project_mode_error {"metadata":{"emulator":{"name":"firestore"},"message":"Ignoring unsupported arg: single_project_mode_error"}}
-[debug] [2025-08-16T12:44:15.031Z] Starting Firestore Emulator with command {"binary":"java","args":["-Dgoogle.cloud_firestore.debug_log_level=FINE","-Duser.language=en","-jar","/nix/store/8srlj4j2m67g5852hw1ain98qzznyamj-emulators/cloud-firestore-emulator-v1.19.8.jar","--host","127.0.0.1","--port",8080,"--websocket_port",9150,"--project_id","demo-app","--rules","/home/user/studio/firestore.rules","--single_project_mode",true],"optionalArgs":["port","webchannel_port","host","rules","websocket_port","functions_emulator","seed_from_export","project_id","single_project_mode"],"joinArgs":false,"shell":false,"port":8080} {"metadata":{"emulator":{"name":"firestore"},"message":"Starting Firestore Emulator with command {\"binary\":\"java\",\"args\":[\"-Dgoogle.cloud_firestore.debug_log_level=FINE\",\"-Duser.language=en\",\"-jar\",\"/nix/store/8srlj4j2m67g5852hw1ain98qzznyamj-emulators/cloud-firestore-emulator-v1.19.8.jar\",\"--host\",\"127.0.0.1\",\"--port\",8080,\"--websocket_port\",9150,\"--project_id\",\"demo-app\",\"--rules\",\"/home/user/studio/firestore.rules\",\"--single_project_mode\",true],\"optionalArgs\":[\"port\",\"webchannel_port\",\"host\",\"rules\",\"websocket_port\",\"functions_emulator\",\"seed_from_export\",\"project_id\",\"single_project_mode\"],\"joinArgs\":false,\"shell\":false,\"port\":8080}"}}
-[info] i  firestore: Firestore Emulator logging to firestore-debug.log {"metadata":{"emulator":{"name":"firestore"},"message":"Firestore Emulator logging to firestore-debug.log"}}
-[debug] [2025-08-16T12:44:19.220Z] Aug 16, 2025 12:44:19 PM com.google.cloud.datastore.emulator.firestore.websocket.WebSocketServer start
-INFO: Started WebSocket server on ws://127.0.0.1:9150
- {"metadata":{"emulator":{"name":"firestore"},"message":"Aug 16, 2025 12:44:19 PM com.google.cloud.datastore.emulator.firestore.websocket.WebSocketServer start\nINFO: Started WebSocket server on ws://127.0.0.1:9150\n"}}
-[debug] [2025-08-16T12:44:19.283Z] API endpoint: http:// {"metadata":{"emulator":{"name":"firestore"},"message":"API endpoint: http://"}}
-[debug] [2025-08-16T12:44:19.286Z] 127.0.0.1:8080
-If you are using a library that supports the FIRESTORE_EMULATOR_HOST environment variable, run:
-
-   export FIRESTORE_EMULATOR_HOST=127.0.0.1:8080
-
-If you are running a Firestore in Datastore Mode project, run:
-
-   export DATASTORE_EMULATOR_HOST=127.0.0.1:8080
-
-Note: Support for Datastore Mode is in preview. If you encounter any bugs please file at https://github.com/firebase/firebase-tools/issues.
-Dev App Server is now running.
-
- {"metadata":{"emulator":{"name":"firestore"},"message":"127.0.0.1:8080\nIf you are using a library that supports the FIRESTORE_EMULATOR_HOST environment variable, run:\n\n   export FIRESTORE_EMULATOR_HOST=127.0.0.1:8080\n\nIf you are running a Firestore in Datastore Mode project, run:\n\n   export DATASTORE_EMULATOR_HOST=127.0.0.1:8080\n\nNote: Support for Datastore Mode is in preview. If you encounter any bugs please file at https://github.com/firebase/firebase-tools/issues.\nDev App Server is now running.\n\n"}}
-[info] ✔  firestore: Firestore Emulator UI websocket is running on 9150. {"metadata":{"emulator":{"name":"firestore"},"message":"Firestore Emulator UI websocket is running on 9150."}}
-[debug] [2025-08-16T12:44:33.952Z] Could not find VSCode notification endpoint: FetchError: request to http://localhost:40001/vscode/notify failed, reason: connect ECONNREFUSED 127.0.0.1:40001. If you are not running the Firebase Data Connect VSCode extension, this is expected and not an issue.
-[info] 
-┌─────────────────────────────────────────────────────────────┐
-│ ✔  All emulators ready! It is now safe to connect your app. │
-│ i  View Emulator UI at http://127.0.0.1:4000/               │
-└─────────────────────────────────────────────────────────────┘
-
-┌────────────────┬────────────────┬─────────────────────────────────┐
-│ Emulator       │ Host:Port      │ View in Emulator UI             │
-├────────────────┼────────────────┼─────────────────────────────────┤
-│ Authentication │ 127.0.0.1:9099 │ http://127.0.0.1:4000/auth      │
-├────────────────┼────────────────┼─────────────────────────────────┤
-│ Firestore      │ 127.0.0.1:8080 │ http://127.0.0.1:4000/firestore │
-└────────────────┴────────────────┴─────────────────────────────────┘
-  Emulator Hub host: 127.0.0.1 port: 4400
-  Other reserved ports: 4500, 9150
-
-Issues? Report them at https://github.com/firebase/firebase-tools/issues and attach the *-debug.log files.
- 
-[debug] [2025-08-17T03:40:06.219Z] ----------------------------------------------------------------------
-[debug] [2025-08-17T03:40:06.222Z] Command:       /nix/store/ws50yvm6vzlzf7jzz6n7xh4szddrack1-nodejs-20.19.1/bin/node /nix/store/4ba3nh7p56fsnidgr9jcqnpv4k7nwwrv-firebase-tools-14.12.0/lib/node_modules/firebase-tools/lib/bin/firebase.js emulators:start --project=demo-app --only=auth,firestore
-[debug] [2025-08-17T03:40:06.223Z] CLI Version:   14.12.0
-[debug] [2025-08-17T03:40:06.224Z] Platform:      linux
-[debug] [2025-08-17T03:40:06.224Z] Node Version:  v20.19.1
-[debug] [2025-08-17T03:40:06.224Z] Time:          Sun Aug 17 2025 03:40:06 GMT+0000 (Coordinated Universal Time)
-[debug] [2025-08-17T03:40:06.225Z] ----------------------------------------------------------------------
-[debug] 
-[debug] [2025-08-17T03:40:06.822Z] Object "/emulators" in "firebase.json" has unknown property: {"additionalProperty":"project"}
-[debug] [2025-08-17T03:40:07.303Z] openjdk version "21.0.7" 2025-04-15
-OpenJDK Runtime Environment (build 21.0.7+6-nixos)
-OpenJDK 64-Bit Server VM (build 21.0.7+6-nixos, mixed mode, sharing)
-
-[debug] [2025-08-17T03:40:07.335Z] Parsed Java major version: 21
-[info] i  emulators: Starting emulators: auth, firestore {"metadata":{"emulator":{"name":"hub"},"message":"Starting emulators: auth, firestore"}}
-[info] i  emulators: Detected demo project ID "demo-app", emulated services will use a demo configuration and attempts to access non-emulated services for this project will fail. {"metadata":{"emulator":{"name":"hub"},"message":"Detected demo project ID \"demo-app\", emulated services will use a demo configuration and attempts to access non-emulated services for this project will fail."}}
-[warn] ⚠  hub: Error when trying to check port 4400 on ::1: Error: listen EADDRNOTAVAIL: address not available ::1:4400 {"metadata":{"emulator":{"name":"hub"},"message":"Error when trying to check port 4400 on ::1: Error: listen EADDRNOTAVAIL: address not available ::1:4400"}}
-[warn] ⚠  hub: Port 4400 is available on 127.0.0.1 but not ::1. This may cause issues with some clients. {"metadata":{"emulator":{"name":"hub"},"message":"Port 4400 is available on 127.0.0.1 but not ::1. This may cause issues with some clients."}}
-[warn] ⚠  hub: If you encounter connectivity issues, consider switching to a different port or explicitly specifying "host": "<ip address>" instead of hostname in firebase.json {"metadata":{"emulator":{"name":"hub"},"message":"If you encounter connectivity issues, consider switching to a different port or explicitly specifying \"host\": \"<ip address>\" instead of hostname in firebase.json"}}
-[warn] ⚠  ui: Error when trying to check port 4000 on ::1: Error: listen EADDRNOTAVAIL: address not available ::1:4000 {"metadata":{"emulator":{"name":"ui"},"message":"Error when trying to check port 4000 on ::1: Error: listen EADDRNOTAVAIL: address not available ::1:4000"}}
-[warn] ⚠  ui: Port 4000 is available on 127.0.0.1 but not ::1. This may cause issues with some clients. {"metadata":{"emulator":{"name":"ui"},"message":"Port 4000 is available on 127.0.0.1 but not ::1. This may cause issues with some clients."}}
-[warn] ⚠  ui: If you encounter connectivity issues, consider switching to a different port or explicitly specifying "host": "<ip address>" instead of hostname in firebase.json {"metadata":{"emulator":{"name":"ui"},"message":"If you encounter connectivity issues, consider switching to a different port or explicitly specifying \"host\": \"<ip address>\" instead of hostname in firebase.json"}}
-[warn] ⚠  logging: Error when trying to check port 4500 on ::1: Error: listen EADDRNOTAVAIL: address not available ::1:4500 {"metadata":{"emulator":{"name":"logging"},"message":"Error when trying to check port 4500 on ::1: Error: listen EADDRNOTAVAIL: address not available ::1:4500"}}
-[warn] ⚠  logging: Port 4500 is available on 127.0.0.1 but not ::1. This may cause issues with some clients. {"metadata":{"emulator":{"name":"logging"},"message":"Port 4500 is available on 127.0.0.1 but not ::1. This may cause issues with some clients."}}
-[warn] ⚠  logging: If you encounter connectivity issues, consider switching to a different port or explicitly specifying "host": "<ip address>" instead of hostname in firebase.json {"metadata":{"emulator":{"name":"logging"},"message":"If you encounter connectivity issues, consider switching to a different port or explicitly specifying \"host\": \"<ip address>\" instead of hostname in firebase.json"}}
-[warn] ⚠  auth: Error when trying to check port 9099 on ::1: Error: listen EADDRNOTAVAIL: address not available ::1:9099 {"metadata":{"emulator":{"name":"auth"},"message":"Error when trying to check port 9099 on ::1: Error: listen EADDRNOTAVAIL: address not available ::1:9099"}}
-[warn] ⚠  auth: Port 9099 is available on 127.0.0.1 but not ::1. This may cause issues with some clients. {"metadata":{"emulator":{"name":"auth"},"message":"Port 9099 is available on 127.0.0.1 but not ::1. This may cause issues with some clients."}}
-[warn] ⚠  auth: If you encounter connectivity issues, consider switching to a different port or explicitly specifying "host": "<ip address>" instead of hostname in firebase.json {"metadata":{"emulator":{"name":"auth"},"message":"If you encounter connectivity issues, consider switching to a different port or explicitly specifying \"host\": \"<ip address>\" instead of hostname in firebase.json"}}
-[warn] ⚠  firestore: Error when trying to check port 8080 on ::1: Error: listen EADDRNOTAVAIL: address not available ::1:8080 {"metadata":{"emulator":{"name":"firestore"},"message":"Error when trying to check port 8080 on ::1: Error: listen EADDRNOTAVAIL: address not available ::1:8080"}}
-[warn] ⚠  firestore: Port 8080 is available on 127.0.0.1 but not ::1. This may cause issues with some clients. {"metadata":{"emulator":{"name":"firestore"},"message":"Port 8080 is available on 127.0.0.1 but not ::1. This may cause issues with some clients."}}
-[warn] ⚠  firestore: If you encounter connectivity issues, consider switching to a different port or explicitly specifying "host": "<ip address>" instead of hostname in firebase.json {"metadata":{"emulator":{"name":"firestore"},"message":"If you encounter connectivity issues, consider switching to a different port or explicitly specifying \"host\": \"<ip address>\" instead of hostname in firebase.json"}}
-[warn] ⚠  firestore.websocket: Error when trying to check port 9150 on ::1: Error: listen EADDRNOTAVAIL: address not available ::1:9150 {"metadata":{"emulator":{"name":"firestore"},"message":"Error when trying to check port 9150 on ::1: Error: listen EADDRNOTAVAIL: address not available ::1:9150"}}
-[warn] ⚠  firestore: Port 9150 is available on 127.0.0.1 but not ::1. This may cause issues with some clients. {"metadata":{"emulator":{"name":"firestore"},"message":"Port 9150 is available on 127.0.0.1 but not ::1. This may cause issues with some clients."}}
-[warn] ⚠  firestore: If you encounter connectivity issues, consider switching to a different port or explicitly specifying "host": "<ip address>" instead of hostname in firebase.json {"metadata":{"emulator":{"name":"firestore"},"message":"If you encounter connectivity issues, consider switching to a different port or explicitly specifying \"host\": \"<ip address>\" instead of hostname in firebase.json"}}
-[debug] [2025-08-17T03:40:07.367Z] assigned listening specs for emulators {"user":{"hub":[{"address":"127.0.0.1","family":"IPv4","port":4400}],"ui":[{"address":"127.0.0.1","family":"IPv4","port":4000}],"logging":[{"address":"127.0.0.1","family":"IPv4","port":4500}],"auth":[{"address":"127.0.0.1","family":"IPv4","port":9099}],"firestore":[{"address":"127.0.0.1","family":"IPv4","port":8080}],"firestore.websocket":[{"address":"127.0.0.1","family":"IPv4","port":9150}]},"metadata":{"message":"assigned listening specs for emulators"}}
-[debug] [2025-08-17T03:40:07.371Z] [hub] writing locator at /tmp/hub-demo-app.json
-[debug] [2025-08-17T03:40:07.386Z] Ignoring unsupported arg: auto_download {"metadata":{"emulator":{"name":"firestore"},"message":"Ignoring unsupported arg: auto_download"}}
-[debug] [2025-08-17T03:40:07.387Z] Ignoring unsupported arg: single_project_mode_error {"metadata":{"emulator":{"name":"firestore"},"message":"Ignoring unsupported arg: single_project_mode_error"}}
-[debug] [2025-08-17T03:40:07.387Z] Starting Firestore Emulator with command {"binary":"java","args":["-Dgoogle.cloud_firestore.debug_log_level=FINE","-Duser.language=en","-jar","/nix/store/8srlj4j2m67g5852hw1ain98qzznyamj-emulators/cloud-firestore-emulator-v1.19.8.jar","--host","127.0.0.1","--port",8080,"--websocket_port",9150,"--project_id","demo-app","--rules","/home/user/studio/firestore.rules","--single_project_mode",true],"optionalArgs":["port","webchannel_port","host","rules","websocket_port","functions_emulator","seed_from_export","project_id","single_project_mode"],"joinArgs":false,"shell":false,"port":8080} {"metadata":{"emulator":{"name":"firestore"},"message":"Starting Firestore Emulator with command {\"binary\":\"java\",\"args\":[\"-Dgoogle.cloud_firestore.debug_log_level=FINE\",\"-Duser.language=en\",\"-jar\",\"/nix/store/8srlj4j2m67g5852hw1ain98qzznyamj-emulators/cloud-firestore-emulator-v1.19.8.jar\",\"--host\",\"127.0.0.1\",\"--port\",8080,\"--websocket_port\",9150,\"--project_id\",\"demo-app\",\"--rules\",\"/home/user/studio/firestore.rules\",\"--single_project_mode\",true],\"optionalArgs\":[\"port\",\"webchannel_port\",\"host\",\"rules\",\"websocket_port\",\"functions_emulator\",\"seed_from_export\",\"project_id\",\"single_project_mode\"],\"joinArgs\":false,\"shell\":false,\"port\":8080}"}}
-[info] i  firestore: Firestore Emulator logging to firestore-debug.log {"metadata":{"emulator":{"name":"firestore"},"message":"Firestore Emulator logging to firestore-debug.log"}}
-[debug] [2025-08-17T03:40:11.035Z] Aug 17, 2025 3:40:10 AM com.google.cloud.datastore.emulator.firestore.websocket.WebSocketServer start
-INFO: Started WebSocket server on ws://127.0.0.1:9150
- {"metadata":{"emulator":{"name":"firestore"},"message":"Aug 17, 2025 3:40:10 AM com.google.cloud.datastore.emulator.firestore.websocket.WebSocketServer start\nINFO: Started WebSocket server on ws://127.0.0.1:9150\n"}}
-[debug] [2025-08-17T03:40:11.155Z] API endpoint: http:// {"metadata":{"emulator":{"name":"firestore"},"message":"API endpoint: http://"}}
-[debug] [2025-08-17T03:40:11.157Z] 127.0.0.1:8080
-If you are using a library that supports the FIRESTORE_EMULATOR_HOST environment variable, run:
-
-   export FIRESTORE_EMULATOR_HOST=127.0.0.1:8080
-
-If you are running a Firestore in Datastore Mode project, run:
-
-   export DATASTORE_EMULATOR_HOST=127.0.0.1:8080
-
-Note: Support for Datastore Mode is in preview. If you encounter any bugs please file at https://github.com/firebase/firebase-tools/issues.
-Dev App Server is now running.
-
- {"metadata":{"emulator":{"name":"firestore"},"message":"127.0.0.1:8080\nIf you are using a library that supports the FIRESTORE_EMULATOR_HOST environment variable, run:\n\n   export FIRESTORE_EMULATOR_HOST=127.0.0.1:8080\n\nIf you are running a Firestore in Datastore Mode project, run:\n\n   export DATASTORE_EMULATOR_HOST=127.0.0.1:8080\n\nNote: Support for Datastore Mode is in preview. If you encounter any bugs please file at https://github.com/firebase/firebase-tools/issues.\nDev App Server is now running.\n\n"}}
-[info] ✔  firestore: Firestore Emulator UI websocket is running on 9150. {"metadata":{"emulator":{"name":"firestore"},"message":"Firestore Emulator UI websocket is running on 9150."}}
-[debug] [2025-08-17T03:40:47.461Z] Could not find VSCode notification endpoint: FetchError: request to http://localhost:40001/vscode/notify failed, reason: connect ECONNREFUSED 127.0.0.1:40001. If you are not running the Firebase Data Connect VSCode extension, this is expected and not an issue.
-[info] 
-┌─────────────────────────────────────────────────────────────┐
-│ ✔  All emulators ready! It is now safe to connect your app. │
-│ i  View Emulator UI at http://127.0.0.1:4000/               │
-└─────────────────────────────────────────────────────────────┘
-
-┌────────────────┬────────────────┬─────────────────────────────────┐
-│ Emulator       │ Host:Port      │ View in Emulator UI             │
-├────────────────┼────────────────┼─────────────────────────────────┤
-│ Authentication │ 127.0.0.1:9099 │ http://127.0.0.1:4000/auth      │
-├────────────────┼────────────────┼─────────────────────────────────┤
-│ Firestore      │ 127.0.0.1:8080 │ http://127.0.0.1:4000/firestore │
-└────────────────┴────────────────┴─────────────────────────────────┘
-  Emulator Hub host: 127.0.0.1 port: 4400
-  Other reserved ports: 4500, 9150
-
-Issues? Report them at https://github.com/firebase/firebase-tools/issues and attach the *-debug.log files.
- 
-[debug] [2025-08-17T08:08:14.383Z] ----------------------------------------------------------------------
-[debug] [2025-08-17T08:08:14.388Z] Command:       /nix/store/ws50yvm6vzlzf7jzz6n7xh4szddrack1-nodejs-20.19.1/bin/node /nix/store/4ba3nh7p56fsnidgr9jcqnpv4k7nwwrv-firebase-tools-14.12.0/lib/node_modules/firebase-tools/lib/bin/firebase.js emulators:start --project=demo-app --only=auth,firestore
-[debug] [2025-08-17T08:08:14.389Z] CLI Version:   14.12.0
-[debug] [2025-08-17T08:08:14.389Z] Platform:      linux
-[debug] [2025-08-17T08:08:14.391Z] Node Version:  v20.19.1
-[debug] [2025-08-17T08:08:14.392Z] Time:          Sun Aug 17 2025 08:08:14 GMT+0000 (Coordinated Universal Time)
-[debug] [2025-08-17T08:08:14.392Z] ----------------------------------------------------------------------
-[debug] 
-[debug] [2025-08-17T08:08:14.396Z] >>> [apiv2][query] GET https://firebase-public.firebaseio.com/cli.json [none]
-[debug] [2025-08-17T08:08:15.636Z] Object "/emulators" in "firebase.json" has unknown property: {"additionalProperty":"project"}
-[debug] [2025-08-17T08:08:16.261Z] <<< [apiv2][status] GET https://firebase-public.firebaseio.com/cli.json 200
-[debug] [2025-08-17T08:08:16.262Z] <<< [apiv2][body] GET https://firebase-public.firebaseio.com/cli.json {"cloudBuildErrorAfter":1594252800000,"cloudBuildWarnAfter":1590019200000,"defaultNode10After":1594252800000,"minVersion":"3.0.5","node8DeploysDisabledAfter":1613390400000,"node8RuntimeDisabledAfter":1615809600000,"node8WarnAfter":1600128000000}
-[debug] [2025-08-17T08:08:16.446Z] openjdk version "21.0.7" 2025-04-15
-
-[debug] [2025-08-17T08:08:16.447Z] OpenJDK Runtime Environment (build 21.0.7+6-nixos)
-OpenJDK 64-Bit Server VM (build 21.0.7+6-nixos, mixed mode, sharing)
-
-[debug] [2025-08-17T08:08:16.485Z] Parsed Java major version: 21
-[info] i  emulators: Starting emulators: auth, firestore {"metadata":{"emulator":{"name":"hub"},"message":"Starting emulators: auth, firestore"}}
-[info] i  emulators: Detected demo project ID "demo-app", emulated services will use a demo configuration and attempts to access non-emulated services for this project will fail. {"metadata":{"emulator":{"name":"hub"},"message":"Detected demo project ID \"demo-app\", emulated services will use a demo configuration and attempts to access non-emulated services for this project will fail."}}
-[warn] ⚠  hub: Error when trying to check port 4400 on ::1: Error: listen EADDRNOTAVAIL: address not available ::1:4400 {"metadata":{"emulator":{"name":"hub"},"message":"Error when trying to check port 4400 on ::1: Error: listen EADDRNOTAVAIL: address not available ::1:4400"}}
-[warn] ⚠  hub: Port 4400 is available on 127.0.0.1 but not ::1. This may cause issues with some clients. {"metadata":{"emulator":{"name":"hub"},"message":"Port 4400 is available on 127.0.0.1 but not ::1. This may cause issues with some clients."}}
-[warn] ⚠  hub: If you encounter connectivity issues, consider switching to a different port or explicitly specifying "host": "<ip address>" instead of hostname in firebase.json {"metadata":{"emulator":{"name":"hub"},"message":"If you encounter connectivity issues, consider switching to a different port or explicitly specifying \"host\": \"<ip address>\" instead of hostname in firebase.json"}}
-[warn] ⚠  ui: Error when trying to check port 4000 on ::1: Error: listen EADDRNOTAVAIL: address not available ::1:4000 {"metadata":{"emulator":{"name":"ui"},"message":"Error when trying to check port 4000 on ::1: Error: listen EADDRNOTAVAIL: address not available ::1:4000"}}
-[warn] ⚠  ui: Port 4000 is available on 127.0.0.1 but not ::1. This may cause issues with some clients. {"metadata":{"emulator":{"name":"ui"},"message":"Port 4000 is available on 127.0.0.1 but not ::1. This may cause issues with some clients."}}
-[warn] ⚠  ui: If you encounter connectivity issues, consider switching to a different port or explicitly specifying "host": "<ip address>" instead of hostname in firebase.json {"metadata":{"emulator":{"name":"ui"},"message":"If you encounter connectivity issues, consider switching to a different port or explicitly specifying \"host\": \"<ip address>\" instead of hostname in firebase.json"}}
-[warn] ⚠  logging: Error when trying to check port 4500 on ::1: Error: listen EADDRNOTAVAIL: address not available ::1:4500 {"metadata":{"emulator":{"name":"logging"},"message":"Error when trying to check port 4500 on ::1: Error: listen EADDRNOTAVAIL: address not available ::1:4500"}}
-[warn] ⚠  logging: Port 4500 is available on 127.0.0.1 but not ::1. This may cause issues with some clients. {"metadata":{"emulator":{"name":"logging"},"message":"Port 4500 is available on 127.0.0.1 but not ::1. This may cause issues with some clients."}}
-[warn] ⚠  logging: If you encounter connectivity issues, consider switching to a different port or explicitly specifying "host": "<ip address>" instead of hostname in firebase.json {"metadata":{"emulator":{"name":"logging"},"message":"If you encounter connectivity issues, consider switching to a different port or explicitly specifying \"host\": \"<ip address>\" instead of hostname in firebase.json"}}
-[warn] ⚠  auth: Error when trying to check port 9099 on ::1: Error: listen EADDRNOTAVAIL: address not available ::1:9099 {"metadata":{"emulator":{"name":"auth"},"message":"Error when trying to check port 9099 on ::1: Error: listen EADDRNOTAVAIL: address not available ::1:9099"}}
-[warn] ⚠  auth: Port 9099 is available on 127.0.0.1 but not ::1. This may cause issues with some clients. {"metadata":{"emulator":{"name":"auth"},"message":"Port 9099 is available on 127.0.0.1 but not ::1. This may cause issues with some clients."}}
-[warn] ⚠  auth: If you encounter connectivity issues, consider switching to a different port or explicitly specifying "host": "<ip address>" instead of hostname in firebase.json {"metadata":{"emulator":{"name":"auth"},"message":"If you encounter connectivity issues, consider switching to a different port or explicitly specifying \"host\": \"<ip address>\" instead of hostname in firebase.json"}}
-[warn] ⚠  firestore: Error when trying to check port 8080 on ::1: Error: listen EADDRNOTAVAIL: address not available ::1:8080 {"metadata":{"emulator":{"name":"firestore"},"message":"Error when trying to check port 8080 on ::1: Error: listen EADDRNOTAVAIL: address not available ::1:8080"}}
-[warn] ⚠  firestore: Port 8080 is available on 127.0.0.1 but not ::1. This may cause issues with some clients. {"metadata":{"emulator":{"name":"firestore"},"message":"Port 8080 is available on 127.0.0.1 but not ::1. This may cause issues with some clients."}}
-[warn] ⚠  firestore: If you encounter connectivity issues, consider switching to a different port or explicitly specifying "host": "<ip address>" instead of hostname in firebase.json {"metadata":{"emulator":{"name":"firestore"},"message":"If you encounter connectivity issues, consider switching to a different port or explicitly specifying \"host\": \"<ip address>\" instead of hostname in firebase.json"}}
-[warn] ⚠  firestore.websocket: Error when trying to check port 9150 on ::1: Error: listen EADDRNOTAVAIL: address not available ::1:9150 {"metadata":{"emulator":{"name":"firestore"},"message":"Error when trying to check port 9150 on ::1: Error: listen EADDRNOTAVAIL: address not available ::1:9150"}}
-[warn] ⚠  firestore: Port 9150 is available on 127.0.0.1 but not ::1. This may cause issues with some clients. {"metadata":{"emulator":{"name":"firestore"},"message":"Port 9150 is available on 127.0.0.1 but not ::1. This may cause issues with some clients."}}
-[warn] ⚠  firestore: If you encounter connectivity issues, consider switching to a different port or explicitly specifying "host": "<ip address>" instead of hostname in firebase.json {"metadata":{"emulator":{"name":"firestore"},"message":"If you encounter connectivity issues, consider switching to a different port or explicitly specifying \"host\": \"<ip address>\" instead of hostname in firebase.json"}}
-[debug] [2025-08-17T08:08:16.500Z] assigned listening specs for emulators {"user":{"hub":[{"address":"127.0.0.1","family":"IPv4","port":4400}],"ui":[{"address":"127.0.0.1","family":"IPv4","port":4000}],"logging":[{"address":"127.0.0.1","family":"IPv4","port":4500}],"auth":[{"address":"127.0.0.1","family":"IPv4","port":9099}],"firestore":[{"address":"127.0.0.1","family":"IPv4","port":8080}],"firestore.websocket":[{"address":"127.0.0.1","family":"IPv4","port":9150}]},"metadata":{"message":"assigned listening specs for emulators"}}
-[debug] [2025-08-17T08:08:16.505Z] [hub] writing locator at /tmp/hub-demo-app.json
-[debug] [2025-08-17T08:08:16.522Z] Ignoring unsupported arg: auto_download {"metadata":{"emulator":{"name":"firestore"},"message":"Ignoring unsupported arg: auto_download"}}
-[debug] [2025-08-17T08:08:16.523Z] Ignoring unsupported arg: single_project_mode_error {"metadata":{"emulator":{"name":"firestore"},"message":"Ignoring unsupported arg: single_project_mode_error"}}
-[debug] [2025-08-17T08:08:16.523Z] Starting Firestore Emulator with command {"binary":"java","args":["-Dgoogle.cloud_firestore.debug_log_level=FINE","-Duser.language=en","-jar","/nix/store/8srlj4j2m67g5852hw1ain98qzznyamj-emulators/cloud-firestore-emulator-v1.19.8.jar","--host","127.0.0.1","--port",8080,"--websocket_port",9150,"--project_id","demo-app","--rules","/home/user/studio/firestore.rules","--single_project_mode",true],"optionalArgs":["port","webchannel_port","host","rules","websocket_port","functions_emulator","seed_from_export","project_id","single_project_mode"],"joinArgs":false,"shell":false,"port":8080} {"metadata":{"emulator":{"name":"firestore"},"message":"Starting Firestore Emulator with command {\"binary\":\"java\",\"args\":[\"-Dgoogle.cloud_firestore.debug_log_level=FINE\",\"-Duser.language=en\",\"-jar\",\"/nix/store/8srlj4j2m67g5852hw1ain98qzznyamj-emulators/cloud-firestore-emulator-v1.19.8.jar\",\"--host\",\"127.0.0.1\",\"--port\",8080,\"--websocket_port\",9150,\"--project_id\",\"demo-app\",\"--rules\",\"/home/user/studio/firestore.rules\",\"--single_project_mode\",true],\"optionalArgs\":[\"port\",\"webchannel_port\",\"host\",\"rules\",\"websocket_port\",\"functions_emulator\",\"seed_from_export\",\"project_id\",\"single_project_mode\"],\"joinArgs\":false,\"shell\":false,\"port\":8080}"}}
-[info] i  firestore: Firestore Emulator logging to firestore-debug.log {"metadata":{"emulator":{"name":"firestore"},"message":"Firestore Emulator logging to firestore-debug.log"}}
-[debug] [2025-08-17T08:08:20.634Z] Aug 17, 2025 8:08:20 AM com.google.cloud.datastore.emulator.firestore.websocket.WebSocketServer start
-INFO: Started WebSocket server on ws://127.0.0.1:9150
- {"metadata":{"emulator":{"name":"firestore"},"message":"Aug 17, 2025 8:08:20 AM com.google.cloud.datastore.emulator.firestore.websocket.WebSocketServer start\nINFO: Started WebSocket server on ws://127.0.0.1:9150\n"}}
-[debug] [2025-08-17T08:08:20.708Z] API endpoint: http:// {"metadata":{"emulator":{"name":"firestore"},"message":"API endpoint: http://"}}
-[debug] [2025-08-17T08:08:20.709Z] 127.0.0.1:8080
-If you are using a library that supports the FIRESTORE_EMULATOR_HOST environment variable, run:
-
-   export FIRESTORE_EMULATOR_HOST=127.0.0.1:8080
-
-If you are running a Firestore in Datastore Mode project, run:
-
-   export DATASTORE_EMULATOR_HOST=127.0.0.1:8080
-
-Note: Support for Datastore Mode is in preview. If you encounter any bugs please file at https://github.com/firebase/firebase-tools/issues.
-Dev App Server is now running.
-
- {"metadata":{"emulator":{"name":"firestore"},"message":"127.0.0.1:8080\nIf you are using a library that supports the FIRESTORE_EMULATOR_HOST environment variable, run:\n\n   export FIRESTORE_EMULATOR_HOST=127.0.0.1:8080\n\nIf you are running a Firestore in Datastore Mode project, run:\n\n   export DATASTORE_EMULATOR_HOST=127.0.0.1:8080\n\nNote: Support for Datastore Mode is in preview. If you encounter any bugs please file at https://github.com/firebase/firebase-tools/issues.\nDev App Server is now running.\n\n"}}
-[info] ✔  firestore: Firestore Emulator UI websocket is running on 9150. {"metadata":{"emulator":{"name":"firestore"},"message":"Firestore Emulator UI websocket is running on 9150."}}
-[debug] [2025-08-17T08:08:44.630Z] Could not find VSCode notification endpoint: FetchError: request to http://localhost:40001/vscode/notify failed, reason: connect ECONNREFUSED 127.0.0.1:40001. If you are not running the Firebase Data Connect VSCode extension, this is expected and not an issue.
-[info] 
-┌─────────────────────────────────────────────────────────────┐
-│ ✔  All emulators ready! It is now safe to connect your app. │
-│ i  View Emulator UI at http://127.0.0.1:4000/               │
-└─────────────────────────────────────────────────────────────┘
-
-┌────────────────┬────────────────┬─────────────────────────────────┐
-│ Emulator       │ Host:Port      │ View in Emulator UI             │
-├────────────────┼────────────────┼─────────────────────────────────┤
-│ Authentication │ 127.0.0.1:9099 │ http://127.0.0.1:4000/auth      │
-├────────────────┼────────────────┼─────────────────────────────────┤
-│ Firestore      │ 127.0.0.1:8080 │ http://127.0.0.1:4000/firestore │
-└────────────────┴────────────────┴─────────────────────────────────┘
-  Emulator Hub host: 127.0.0.1 port: 4400
-  Other reserved ports: 4500, 9150
-
-Issues? Report them at https://github.com/firebase/firebase-tools/issues and attach the *-debug.log files.
- 
-[debug] [2025-08-17T08:19:50.142Z] Aug 17, 2025 8:19:50 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
-INFO: Detected HTTP/2 connection.
- {"metadata":{"emulator":{"name":"firestore"},"message":"Aug 17, 2025 8:19:50 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead\nINFO: Detected HTTP/2 connection.\n"}}
-[debug] [2025-08-17T08:19:50.371Z] Multiple projectIds are not recommended in single project mode. Requested project ID fleettrack-go, but the emulator is configured for demo-app. To opt-out of single project mode add/set the '"singleProjectMode": false' property in the firebase.json emulators config.
- {"metadata":{"emulator":{"name":"firestore"},"message":"Multiple projectIds are not recommended in single project mode. Requested project ID fleettrack-go, but the emulator is configured for demo-app. To opt-out of single project mode add/set the '\"singleProjectMode\": false' property in the firebase.json emulators config.\n"}}
-[debug] [2025-08-17T08:21:45.708Z] Multiple projectIds are not recommended in single project mode. Requested project ID fleettrack-go, but the emulator is configured for demo-app. To opt-out of single project mode add/set the '"singleProjectMode": false' property in the firebase.json emulators config.
- {"metadata":{"emulator":{"name":"firestore"},"message":"Multiple projectIds are not recommended in single project mode. Requested project ID fleettrack-go, but the emulator is configured for demo-app. To opt-out of single project mode add/set the '\"singleProjectMode\": false' property in the firebase.json emulators config.\n"}}
-[debug] [2025-08-17T08:22:56.599Z] Multiple projectIds are not recommended in single project mode. Requested project ID fleettrack-go, but the emulator is configured for demo-app. To opt-out of single project mode add/set the '"singleProjectMode": false' property in the firebase.json emulators config.
- {"metadata":{"emulator":{"name":"firestore"},"message":"Multiple projectIds are not recommended in single project mode. Requested project ID fleettrack-go, but the emulator is configured for demo-app. To opt-out of single project mode add/set the '\"singleProjectMode\": false' property in the firebase.json emulators config.\n"}}
-[debug] [2025-08-17T08:23:11.954Z] Aug 17, 2025 8:23:11 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
-INFO: Detected HTTP/2 connection.
- {"metadata":{"emulator":{"name":"firestore"},"message":"Aug 17, 2025 8:23:11 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead\nINFO: Detected HTTP/2 connection.\n"}}
-[debug] [2025-08-17T08:23:11.975Z] Multiple projectIds are not recommended in single project mode. Requested project ID fleettrack-go, but the emulator is configured for demo-app. To opt-out of single project mode add/set the '"singleProjectMode": false' property in the firebase.json emulators config.
- {"metadata":{"emulator":{"name":"firestore"},"message":"Multiple projectIds are not recommended in single project mode. Requested project ID fleettrack-go, but the emulator is configured for demo-app. To opt-out of single project mode add/set the '\"singleProjectMode\": false' property in the firebase.json emulators config.\n"}}
-[debug] [2025-08-17T08:23:55.072Z] Aug 17, 2025 8:23:55 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
-INFO: Detected HTTP/2 connection.
- {"metadata":{"emulator":{"name":"firestore"},"message":"Aug 17, 2025 8:23:55 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead\nINFO: Detected HTTP/2 connection.\n"}}
-[debug] [2025-08-17T08:23:55.081Z] Multiple projectIds are not recommended in single project mode. Requested project ID fleettrack-go, but the emulator is configured for demo-app. To opt-out of single project mode add/set the '"singleProjectMode": false' property in the firebase.json emulators config.
- {"metadata":{"emulator":{"name":"firestore"},"message":"Multiple projectIds are not recommended in single project mode. Requested project ID fleettrack-go, but the emulator is configured for demo-app. To opt-out of single project mode add/set the '\"singleProjectMode\": false' property in the firebase.json emulators config.\n"}}
-[debug] [2025-08-17T08:27:09.384Z] Aug 17, 2025 8:27:09 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
-INFO: Detected HTTP/2 connection.
- {"metadata":{"emulator":{"name":"firestore"},"message":"Aug 17, 2025 8:27:09 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead\nINFO: Detected HTTP/2 connection.\n"}}
-[debug] [2025-08-17T08:27:09.394Z] Multiple projectIds are not recommended in single project mode. Requested project ID fleettrack-go, but the emulator is configured for demo-app. To opt-out of single project mode add/set the '"singleProjectMode": false' property in the firebase.json emulators config.
- {"metadata":{"emulator":{"name":"firestore"},"message":"Multiple projectIds are not recommended in single project mode. Requested project ID fleettrack-go, but the emulator is configured for demo-app. To opt-out of single project mode add/set the '\"singleProjectMode\": false' property in the firebase.json emulators config.\n"}}
-[debug] [2025-08-17T08:27:37.084Z] Aug 17, 2025 8:27:37 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
-INFO: Detected HTTP/2 connection.
- {"metadata":{"emulator":{"name":"firestore"},"message":"Aug 17, 2025 8:27:37 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead\nINFO: Detected HTTP/2 connection.\n"}}
-[debug] [2025-08-17T08:27:37.091Z] Multiple projectIds are not recommended in single project mode. Requested project ID fleettrack-go, but the emulator is configured for demo-app. To opt-out of single project mode add/set the '"singleProjectMode": false' property in the firebase.json emulators config.
- {"metadata":{"emulator":{"name":"firestore"},"message":"Multiple projectIds are not recommended in single project mode. Requested project ID fleettrack-go, but the emulator is configured for demo-app. To opt-out of single project mode add/set the '\"singleProjectMode\": false' property in the firebase.json emulators config.\n"}}
-[debug] [2025-08-17T08:28:54.303Z] Aug 17, 2025 8:28:54 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
-INFO: Detected HTTP/2 connection.
- {"metadata":{"emulator":{"name":"firestore"},"message":"Aug 17, 2025 8:28:54 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead\nINFO: Detected HTTP/2 connection.\n"}}
-[debug] [2025-08-17T08:28:54.311Z] Multiple projectIds are not recommended in single project mode. Requested project ID fleettrack-go, but the emulator is configured for demo-app. To opt-out of single project mode add/set the '"singleProjectMode": false' property in the firebase.json emulators config.
- {"metadata":{"emulator":{"name":"firestore"},"message":"Multiple projectIds are not recommended in single project mode. Requested project ID fleettrack-go, but the emulator is configured for demo-app. To opt-out of single project mode add/set the '\"singleProjectMode\": false' property in the firebase.json emulators config.\n"}}
-[debug] [2025-08-17T08:35:09.448Z] Aug 17, 2025 8:35:09 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
-INFO: Detected HTTP/2 connection.
- {"metadata":{"emulator":{"name":"firestore"},"message":"Aug 17, 2025 8:35:09 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead\nINFO: Detected HTTP/2 connection.\n"}}
-[debug] [2025-08-17T08:35:09.454Z] Multiple projectIds are not recommended in single project mode. Requested project ID fleettrack-go, but the emulator is configured for demo-app. To opt-out of single project mode add/set the '"singleProjectMode": false' property in the firebase.json emulators config.
- {"metadata":{"emulator":{"name":"firestore"},"message":"Multiple projectIds are not recommended in single project mode. Requested project ID fleettrack-go, but the emulator is configured for demo-app. To opt-out of single project mode add/set the '\"singleProjectMode\": false' property in the firebase.json emulators config.\n"}}
-[debug] [2025-08-17T08:45:14.874Z] Aug 17, 2025 8:45:14 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
-INFO: Detected non-HTTP/2 connection.
- {"metadata":{"emulator":{"name":"firestore"},"message":"Aug 17, 2025 8:45:14 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead\nINFO: Detected non-HTTP/2 connection.\n"}}
-[debug] [2025-08-17T08:45:14.957Z] Aug 17, 2025 8:45:14 AM com.google.cloud.datastore.emulator.firestore.websocket.WebSocketChannelHandler initChannel
-INFO: Connected to new websocket client
- {"metadata":{"emulator":{"name":"firestore"},"message":"Aug 17, 2025 8:45:14 AM com.google.cloud.datastore.emulator.firestore.websocket.WebSocketChannelHandler initChannel\nINFO: Connected to new websocket client\n"}}
-[debug] [2025-08-17T08:45:16.830Z] Aug 17, 2025 8:45:16 AM io.grpc.netty.NettyServerTransport notifyTerminated
-INFO: Transport failed
-io.netty.handler.codec.http2.Http2Exception: Unexpected HTTP/1.x request: GET / 
-	at io.netty.handler.codec.http2.Http2Exception.connectionError(Http2Exception.java:107)
-	at io.netty.handler.codec.http2.Http2ConnectionHandler$PrefaceDecoder.readClientPrefaceString(Http2ConnectionHandler.java:315)
-	at io.netty.handler.codec.http2.Http2ConnectionHandler$PrefaceDecoder.decode(Http2ConnectionHandler.java:245)
-	at io.netty.handler.codec.http2.Http2ConnectionHandler.decode(Http2ConnectionHandler.java:451)
-	at io.netty.handler.codec.ByteToMessageDecoder.decodeRemovalReentryProtection(ByteToMessageDecoder.java:530)
-	at io.netty.handler.codec.ByteToMessageDecoder.callDecode(ByteToMessageDecoder.java:469)
-	at io.netty.handler.codec.ByteToMessageDecoder.channelRead(ByteToMessageDecoder.java:290)
-	at io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)
-	at io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)
-	at io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)
-	at io.netty.channel.DefaultChannelPipeline$HeadContext.channelRead(DefaultChannelPipeline.java:1407)
-	at io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:440)
-	at io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)
-	at io.netty.channel.DefaultChannelPipeline.fireChannelRead(DefaultChannelPipeline.java:918)
-	at io.netty.channel.nio.AbstractNioByteChannel$NioByteUnsafe.read(AbstractNioByteChannel.java:166)
-	at io.netty.channel.nio.NioEventLoop.processSelectedKey(NioEventLoop.java:788)
-	at io.netty.channel.nio.NioEventLoop.processSelectedKeysOptimized(NioEventLoop.java:724)
-	at io.netty.channel.nio.NioEventLoop.processSelectedKeys(NioEventLoop.java:650)
-	at io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:562)
-	at io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:994)
-	at io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)
-	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
-	at java.base/java.lang.Thread.run(Thread.java:1583)
-
- {"metadata":{"emulator":{"name":"firestore"},"message":"Aug 17, 2025 8:45:16 AM io.grpc.netty.NettyServerTransport notifyTerminated\nINFO: Transport failed\nio.netty.handler.codec.http2.Http2Exception: Unexpected HTTP/1.x request: GET / \n\tat io.netty.handler.codec.http2.Http2Exception.connectionError(Http2Exception.java:107)\n\tat io.netty.handler.codec.http2.Http2ConnectionHandler$PrefaceDecoder.readClientPrefaceString(Http2ConnectionHandler.java:315)\n\tat io.netty.handler.codec.http2.Http2ConnectionHandler$PrefaceDecoder.decode(Http2ConnectionHandler.java:245)\n\tat io.netty.handler.codec.http2.Http2ConnectionHandler.decode(Http2ConnectionHandler.java:451)\n\tat io.netty.handler.codec.ByteToMessageDecoder.decodeRemovalReentryProtection(ByteToMessageDecoder.java:530)\n\tat io.netty.handler.codec.ByteToMessageDecoder.callDecode(ByteToMessageDecoder.java:469)\n\tat io.netty.handler.codec.ByteToMessageDecoder.channelRead(ByteToMessageDecoder.java:290)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.DefaultChannelPipeline$HeadContext.channelRead(DefaultChannelPipeline.java:1407)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:440)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.DefaultChannelPipeline.fireChannelRead(DefaultChannelPipeline.java:918)\n\tat io.netty.channel.nio.AbstractNioByteChannel$NioByteUnsafe.read(AbstractNioByteChannel.java:166)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKey(NioEventLoop.java:788)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeysOptimized(NioEventLoop.java:724)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeys(NioEventLoop.java:650)\n\tat io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:562)\n\tat io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:994)\n\tat io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)\n\tat io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)\n\tat java.base/java.lang.Thread.run(Thread.java:1583)\n\n"}}
-[debug] [2025-08-17T08:45:17.013Z] Aug 17, 2025 8:45:16 AM io.grpc.netty.NettyServerTransport notifyTerminated
-INFO: Transport failed
-io.netty.handler.codec.http2.Http2Exception: HTTP/2 client preface string missing or corrupt. Hex dump for received bytes: 16030105a8010005a403033dc8643f50728194d2f2a61f75
-	at io.netty.handler.codec.http2.Http2Exception.connectionError(Http2Exception.java:107)
-	at io.netty.handler.codec.http2.Http2ConnectionHandler$PrefaceDecoder.readClientPrefaceString(Http2ConnectionHandler.java:319)
-	at io.netty.handler.codec.http2.Http2ConnectionHandler$PrefaceDecoder.decode(Http2ConnectionHandler.java:245)
-	at io.netty.handler.codec.http2.Http2ConnectionHandler.decode(Http2ConnectionHandler.java:451)
-	at io.netty.handler.codec.ByteToMessageDecoder.decodeRemovalReentryProtection(ByteToMessageDecoder.java:530)
-	at io.netty.handler.codec.ByteToMessageDecoder.callDecode(ByteToMessageDecoder.java:469)
-	at io.netty.handler.codec.ByteToMessageDecoder.channelRead(ByteToMessageDecoder.java:290)
-	at io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)
-	at io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)
-	at io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)
-	at io.netty.channel.DefaultChannelPipeline$HeadContext.channelRead(DefaultChannelPipeline.java:1407)
-	at io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:440)
-	at io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)
-	at io.netty.channel.DefaultChannelPipeline.fireChannelRead(DefaultChannelPipeline.java:918)
-	at io.netty.channel.nio.AbstractNioByteChannel$NioByteUnsafe.read(AbstractNioByteChannel.java:166)
-	at io.netty.channel.nio.NioEventLoop.processSelectedKey(NioEventLoop.java:788)
-	at io.netty.channel.nio.NioEventLoop.processSelectedKeysOptimized(NioEventLoop.java:724)
-	at io.netty.channel.nio.NioEventLoop.processSelectedKeys(NioEventLoop.java:650)
-	at io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:562)
-	at io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:994)
-	at io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)
-	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
-	at java.base/java.lang.Thread.run(Thread.java:1583)
-
- {"metadata":{"emulator":{"name":"firestore"},"message":"Aug 17, 2025 8:45:16 AM io.grpc.netty.NettyServerTransport notifyTerminated\nINFO: Transport failed\nio.netty.handler.codec.http2.Http2Exception: HTTP/2 client preface string missing or corrupt. Hex dump for received bytes: 16030105a8010005a403033dc8643f50728194d2f2a61f75\n\tat io.netty.handler.codec.http2.Http2Exception.connectionError(Http2Exception.java:107)\n\tat io.netty.handler.codec.http2.Http2ConnectionHandler$PrefaceDecoder.readClientPrefaceString(Http2ConnectionHandler.java:319)\n\tat io.netty.handler.codec.http2.Http2ConnectionHandler$PrefaceDecoder.decode(Http2ConnectionHandler.java:245)\n\tat io.netty.handler.codec.http2.Http2ConnectionHandler.decode(Http2ConnectionHandler.java:451)\n\tat io.netty.handler.codec.ByteToMessageDecoder.decodeRemovalReentryProtection(ByteToMessageDecoder.java:530)\n\tat io.netty.handler.codec.ByteToMessageDecoder.callDecode(ByteToMessageDecoder.java:469)\n\tat io.netty.handler.codec.ByteToMessageDecoder.channelRead(ByteToMessageDecoder.java:290)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:444)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.AbstractChannelHandlerContext.fireChannelRead(AbstractChannelHandlerContext.java:412)\n\tat io.netty.channel.DefaultChannelPipeline$HeadContext.channelRead(DefaultChannelPipeline.java:1407)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:440)\n\tat io.netty.channel.AbstractChannelHandlerContext.invokeChannelRead(AbstractChannelHandlerContext.java:420)\n\tat io.netty.channel.DefaultChannelPipeline.fireChannelRead(DefaultChannelPipeline.java:918)\n\tat io.netty.channel.nio.AbstractNioByteChannel$NioByteUnsafe.read(AbstractNioByteChannel.java:166)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKey(NioEventLoop.java:788)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeysOptimized(NioEventLoop.java:724)\n\tat io.netty.channel.nio.NioEventLoop.processSelectedKeys(NioEventLoop.java:650)\n\tat io.netty.channel.nio.NioEventLoop.run(NioEventLoop.java:562)\n\tat io.netty.util.concurrent.SingleThreadEventExecutor$4.run(SingleThreadEventExecutor.java:994)\n\tat io.netty.util.internal.ThreadExecutorMap$2.run(ThreadExecutorMap.java:74)\n\tat io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)\n\tat java.base/java.lang.Thread.run(Thread.java:1583)\n\n"}}
-[debug] [2025-08-17T08:45:18.781Z] Aug 17, 2025 8:45:18 AM com.google.cloud.datastore.emulator.firestore.websocket.WebSocketChannelHandler initChannel
-INFO: Connected to new websocket client
- {"metadata":{"emulator":{"name":"firestore"},"message":"Aug 17, 2025 8:45:18 AM com.google.cloud.datastore.emulator.firestore.websocket.WebSocketChannelHandler initChannel\nINFO: Connected to new websocket client\n"}}
-[debug] [2025-08-17T08:46:01.761Z] ----------------------------------------------------------------------
-[debug] [2025-08-17T08:46:01.764Z] Command:       /nix/store/ws50yvm6vzlzf7jzz6n7xh4szddrack1-nodejs-20.19.1/bin/node /home/user/.global_modules/bin/firebase deploy
-[debug] [2025-08-17T08:46:01.764Z] CLI Version:   14.12.1
-[debug] [2025-08-17T08:46:01.765Z] Platform:      linux
-[debug] [2025-08-17T08:46:01.765Z] Node Version:  v20.19.1
-[debug] [2025-08-17T08:46:01.765Z] Time:          Sun Aug 17 2025 08:46:01 GMT+0000 (Coordinated Universal Time)
-[debug] [2025-08-17T08:46:01.765Z] ----------------------------------------------------------------------
-[debug] 
-[debug] [2025-08-17T08:46:02.140Z] Object "/emulators" in "firebase.json" has unknown property: {"additionalProperty":"project"}
-[debug] [2025-08-17T08:46:02.143Z] No OAuth tokens found
-[debug] [2025-08-17T08:46:02.144Z] No OAuth tokens found
+[debug] [2025-08-17T08:58:05.526Z] Object "/emulators" in "firebase.json" has unknown property: {"additionalProperty":"project"}
+[debug] [2025-08-17T08:58:05.530Z] No OAuth tokens found
+[debug] [2025-08-17T08:58:05.530Z] No OAuth tokens found
 [error] Failed to fetch Firebase Project from current Studio Workspace: Unable to refresh auth: not yet authenticated.
-[debug] [2025-08-17T08:46:02.148Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/userinfo.email"]
-[debug] [2025-08-17T08:46:10.043Z] Running auto auth
-[debug] [2025-08-17T08:46:10.086Z] [iam] checking project fleettrack-go for permissions ["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get","firebaserules.releases.create","firebaserules.releases.update","firebaserules.rulesets.create"]
-[debug] [2025-08-17T08:46:10.088Z] No OAuth tokens found
-[debug] [2025-08-17T08:46:10.094Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/fleettrack-go:testIamPermissions [none]
-[debug] [2025-08-17T08:46:10.095Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/fleettrack-go:testIamPermissions x-goog-quota-user=projects/fleettrack-go
-[debug] [2025-08-17T08:46:10.095Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/fleettrack-go:testIamPermissions {"permissions":["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get","firebaserules.releases.create","firebaserules.releases.update","firebaserules.rulesets.create"]}
-[debug] [2025-08-17T08:46:11.049Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/fleettrack-go:testIamPermissions 200
-[debug] [2025-08-17T08:46:11.050Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/fleettrack-go:testIamPermissions {"permissions":["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get","firebaserules.releases.create","firebaserules.releases.update","firebaserules.rulesets.create"]}
+[debug] [2025-08-17T08:58:05.537Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/userinfo.email"]
+[debug] [2025-08-17T08:58:05.538Z] > authorizing via signed-in user (f.rodrigoalves12@gmail.com)
+[debug] [2025-08-17T08:58:05.538Z] [iam] checking project fleettrack-go for permissions ["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get","firebaserules.releases.create","firebaserules.releases.update","firebaserules.rulesets.create"]
+[debug] [2025-08-17T08:58:05.539Z] No OAuth tokens found
+[debug] [2025-08-17T08:58:05.539Z] No OAuth tokens found
+[debug] [2025-08-17T08:58:05.540Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/userinfo.email"]
+[debug] [2025-08-17T08:58:05.540Z] > authorizing via signed-in user (f.rodrigoalves12@gmail.com)
+[debug] [2025-08-17T08:58:05.541Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/fleettrack-go:testIamPermissions [none]
+[debug] [2025-08-17T08:58:05.541Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/fleettrack-go:testIamPermissions x-goog-quota-user=projects/fleettrack-go
+[debug] [2025-08-17T08:58:05.542Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/fleettrack-go:testIamPermissions {"permissions":["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get","firebaserules.releases.create","firebaserules.releases.update","firebaserules.rulesets.create"]}
+[debug] [2025-08-17T08:58:05.817Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/fleettrack-go:testIamPermissions 200
+[debug] [2025-08-17T08:58:05.817Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/fleettrack-go:testIamPermissions {"permissions":["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get","firebaserules.releases.create","firebaserules.releases.update","firebaserules.rulesets.create"]}
 [info] 
 [info] === Deploying to 'fleettrack-go'...
 [info] 
 [info] i  deploying storage, firestore 
 [info] i  storage: ensuring required API firebasestorage.googleapis.com is enabled... 
-[debug] [2025-08-17T08:46:11.061Z] No OAuth tokens found
-[debug] [2025-08-17T08:46:11.061Z] >>> [apiv2][query] GET https://firebasestorage.googleapis.com/v1alpha/projects/fleettrack-go/defaultBucket [none]
-[debug] [2025-08-17T08:46:12.027Z] <<< [apiv2][status] GET https://firebasestorage.googleapis.com/v1alpha/projects/fleettrack-go/defaultBucket 200
-[debug] [2025-08-17T08:46:12.030Z] <<< [apiv2][body] GET https://firebasestorage.googleapis.com/v1alpha/projects/fleettrack-go/defaultBucket {"name":"projects/fleettrack-go/defaultBucket","location":"US-CENTRAL1","bucket":{"name":"projects/fleettrack-go/buckets/fleettrack-go.firebasestorage.app"},"storageClass":"REGIONAL"}
+[debug] [2025-08-17T08:58:05.827Z] No OAuth tokens found
+[debug] [2025-08-17T08:58:05.828Z] No OAuth tokens found
+[debug] [2025-08-17T08:58:05.828Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/userinfo.email"]
+[debug] [2025-08-17T08:58:05.829Z] > authorizing via signed-in user (f.rodrigoalves12@gmail.com)
+[debug] [2025-08-17T08:58:05.829Z] >>> [apiv2][query] GET https://firebasestorage.googleapis.com/v1alpha/projects/fleettrack-go/defaultBucket [none]
+[debug] [2025-08-17T08:58:06.794Z] <<< [apiv2][status] GET https://firebasestorage.googleapis.com/v1alpha/projects/fleettrack-go/defaultBucket 200
+[debug] [2025-08-17T08:58:06.794Z] <<< [apiv2][body] GET https://firebasestorage.googleapis.com/v1alpha/projects/fleettrack-go/defaultBucket {"name":"projects/fleettrack-go/defaultBucket","location":"US-CENTRAL1","bucket":{"name":"projects/fleettrack-go/buckets/fleettrack-go.firebasestorage.app"},"storageClass":"REGIONAL"}
 [info] i  firebase.storage: checking storage.rules for compilation errors... 
-[debug] [2025-08-17T08:46:12.038Z] No OAuth tokens found
-[debug] [2025-08-17T08:46:12.038Z] >>> [apiv2][query] POST https://firebaserules.googleapis.com/v1/projects/fleettrack-go:test [none]
-[debug] [2025-08-17T08:46:12.038Z] >>> [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/fleettrack-go:test [omitted]
-[debug] [2025-08-17T08:46:13.156Z] <<< [apiv2][status] POST https://firebaserules.googleapis.com/v1/projects/fleettrack-go:test 200
-[debug] [2025-08-17T08:46:13.156Z] <<< [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/fleettrack-go:test {}
+[debug] [2025-08-17T08:58:06.799Z] No OAuth tokens found
+[debug] [2025-08-17T08:58:06.799Z] No OAuth tokens found
+[debug] [2025-08-17T08:58:06.800Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/userinfo.email"]
+[debug] [2025-08-17T08:58:06.800Z] > authorizing via signed-in user (f.rodrigoalves12@gmail.com)
+[debug] [2025-08-17T08:58:06.800Z] >>> [apiv2][query] POST https://firebaserules.googleapis.com/v1/projects/fleettrack-go:test [none]
+[debug] [2025-08-17T08:58:06.800Z] >>> [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/fleettrack-go:test [omitted]
+[debug] [2025-08-17T08:58:07.740Z] <<< [apiv2][status] POST https://firebaserules.googleapis.com/v1/projects/fleettrack-go:test 200
+[debug] [2025-08-17T08:58:07.740Z] <<< [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/fleettrack-go:test {}
 [info] ✔  firebase.storage: rules file storage.rules compiled successfully 
 [info] i  firestore: reading indexes from firestore.indexes.json... 
 [info] i  cloud.firestore: checking firestore.rules for compilation errors... 
-[debug] [2025-08-17T08:46:13.162Z] No OAuth tokens found
-[debug] [2025-08-17T08:46:13.162Z] >>> [apiv2][query] POST https://firebaserules.googleapis.com/v1/projects/fleettrack-go:test [none]
-[debug] [2025-08-17T08:46:13.162Z] >>> [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/fleettrack-go:test [omitted]
-[debug] [2025-08-17T08:46:13.513Z] <<< [apiv2][status] POST https://firebaserules.googleapis.com/v1/projects/fleettrack-go:test 200
-[debug] [2025-08-17T08:46:13.514Z] <<< [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/fleettrack-go:test {}
+[debug] [2025-08-17T08:58:07.751Z] No OAuth tokens found
+[debug] [2025-08-17T08:58:07.752Z] No OAuth tokens found
+[debug] [2025-08-17T08:58:07.752Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/userinfo.email"]
+[debug] [2025-08-17T08:58:07.752Z] > authorizing via signed-in user (f.rodrigoalves12@gmail.com)
+[debug] [2025-08-17T08:58:07.752Z] >>> [apiv2][query] POST https://firebaserules.googleapis.com/v1/projects/fleettrack-go:test [none]
+[debug] [2025-08-17T08:58:07.753Z] >>> [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/fleettrack-go:test [omitted]
+[debug] [2025-08-17T08:58:08.812Z] <<< [apiv2][status] POST https://firebaserules.googleapis.com/v1/projects/fleettrack-go:test 200
+[debug] [2025-08-17T08:58:08.812Z] <<< [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/fleettrack-go:test {}
 [info] ✔  cloud.firestore: rules file firestore.rules compiled successfully 
-[debug] [2025-08-17T08:46:13.518Z] No OAuth tokens found
-[debug] [2025-08-17T08:46:13.519Z] >>> [apiv2][query] GET https://firebaserules.googleapis.com/v1/projects/fleettrack-go/releases pageSize=10&pageToken=
-[debug] [2025-08-17T08:46:14.453Z] <<< [apiv2][status] GET https://firebaserules.googleapis.com/v1/projects/fleettrack-go/releases 200
-[debug] [2025-08-17T08:46:14.453Z] <<< [apiv2][body] GET https://firebaserules.googleapis.com/v1/projects/fleettrack-go/releases {"releases":[{"name":"projects/fleettrack-go/releases/cloud.firestore","rulesetName":"projects/fleettrack-go/rulesets/6d254176-e34c-47d4-9d00-d8064860f50a","createTime":"2025-07-24T06:49:42.252573Z","updateTime":"2025-08-17T05:55:21.930812Z"},{"name":"projects/fleettrack-go/releases/firebase.storage/fleettrack-go.firebasestorage.app","rulesetName":"projects/fleettrack-go/rulesets/8a39bf2e-c26e-44be-8dd3-1d36a812be9c","createTime":"2025-07-24T10:10:30.416198Z","updateTime":"2025-08-17T05:55:20.933239Z"}]}
-[debug] [2025-08-17T08:46:14.473Z] No OAuth tokens found
-[debug] [2025-08-17T08:46:14.473Z] >>> [apiv2][query] GET https://firebaserules.googleapis.com/v1/projects/fleettrack-go/rulesets/8a39bf2e-c26e-44be-8dd3-1d36a812be9c [none]
-[debug] [2025-08-17T08:46:15.388Z] <<< [apiv2][status] GET https://firebaserules.googleapis.com/v1/projects/fleettrack-go/rulesets/8a39bf2e-c26e-44be-8dd3-1d36a812be9c 200
-[debug] [2025-08-17T08:46:15.389Z] <<< [apiv2][body] GET https://firebaserules.googleapis.com/v1/projects/fleettrack-go/rulesets/8a39bf2e-c26e-44be-8dd3-1d36a812be9c [omitted]
+[debug] [2025-08-17T08:58:08.815Z] No OAuth tokens found
+[debug] [2025-08-17T08:58:08.815Z] No OAuth tokens found
+[debug] [2025-08-17T08:58:08.816Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/userinfo.email"]
+[debug] [2025-08-17T08:58:08.816Z] > authorizing via signed-in user (f.rodrigoalves12@gmail.com)
+[debug] [2025-08-17T08:58:08.824Z] >>> [apiv2][query] GET https://firebaserules.googleapis.com/v1/projects/fleettrack-go/releases pageSize=10&pageToken=
+[debug] [2025-08-17T08:58:09.748Z] <<< [apiv2][status] GET https://firebaserules.googleapis.com/v1/projects/fleettrack-go/releases 200
+[debug] [2025-08-17T08:58:09.748Z] <<< [apiv2][body] GET https://firebaserules.googleapis.com/v1/projects/fleettrack-go/releases {"releases":[{"name":"projects/fleettrack-go/releases/cloud.firestore","rulesetName":"projects/fleettrack-go/rulesets/6d254176-e34c-47d4-9d00-d8064860f50a","createTime":"2025-07-24T06:49:42.252573Z","updateTime":"2025-08-17T05:55:21.930812Z"},{"name":"projects/fleettrack-go/releases/firebase.storage/fleettrack-go.firebasestorage.app","rulesetName":"projects/fleettrack-go/rulesets/8a39bf2e-c26e-44be-8dd3-1d36a812be9c","createTime":"2025-07-24T10:10:30.416198Z","updateTime":"2025-08-17T05:55:20.933239Z"}]}
+[debug] [2025-08-17T08:58:09.766Z] No OAuth tokens found
+[debug] [2025-08-17T08:58:09.766Z] No OAuth tokens found
+[debug] [2025-08-17T08:58:09.767Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/userinfo.email"]
+[debug] [2025-08-17T08:58:09.767Z] > authorizing via signed-in user (f.rodrigoalves12@gmail.com)
+[debug] [2025-08-17T08:58:09.767Z] >>> [apiv2][query] GET https://firebaserules.googleapis.com/v1/projects/fleettrack-go/rulesets/8a39bf2e-c26e-44be-8dd3-1d36a812be9c [none]
+[debug] [2025-08-17T08:58:10.689Z] <<< [apiv2][status] GET https://firebaserules.googleapis.com/v1/projects/fleettrack-go/rulesets/8a39bf2e-c26e-44be-8dd3-1d36a812be9c 200
+[debug] [2025-08-17T08:58:10.689Z] <<< [apiv2][body] GET https://firebaserules.googleapis.com/v1/projects/fleettrack-go/rulesets/8a39bf2e-c26e-44be-8dd3-1d36a812be9c [omitted]
 [info] i  storage: latest version of storage.rules already up to date, skipping upload... 
-[debug] [2025-08-17T08:46:15.395Z] No OAuth tokens found
-[debug] [2025-08-17T08:46:15.395Z] >>> [apiv2][query] GET https://firestore.googleapis.com/v1/projects/fleettrack-go/databases/(default) [none]
-[debug] [2025-08-17T08:46:16.539Z] <<< [apiv2][status] GET https://firestore.googleapis.com/v1/projects/fleettrack-go/databases/(default) 200
-[debug] [2025-08-17T08:46:16.540Z] <<< [apiv2][body] GET https://firestore.googleapis.com/v1/projects/fleettrack-go/databases/(default) {"name":"projects/fleettrack-go/databases/(default)","uid":"bd6b976d-1cc2-4cea-9073-38dcd9c9d974","createTime":"2025-07-24T06:49:33.265657Z","updateTime":"2025-07-24T06:49:33.265657Z","locationId":"nam5","type":"FIRESTORE_NATIVE","concurrencyMode":"PESSIMISTIC","versionRetentionPeriod":"604800s","earliestVersionTime":"2025-08-10T08:47:00Z","appEngineIntegrationMode":"DISABLED","keyPrefix":"s","pointInTimeRecoveryEnablement":"POINT_IN_TIME_RECOVERY_ENABLED","deleteProtectionState":"DELETE_PROTECTION_DISABLED","databaseEdition":"STANDARD","freeTier":false,"etag":"IMqX37+6kY8DMM3jnNfXjo8D"}
-[debug] [2025-08-17T08:46:16.541Z] No OAuth tokens found
-[debug] [2025-08-17T08:46:16.541Z] >>> [apiv2][query] GET https://firebaserules.googleapis.com/v1/projects/fleettrack-go/releases pageSize=10&pageToken=
-[debug] [2025-08-17T08:46:17.469Z] <<< [apiv2][status] GET https://firebaserules.googleapis.com/v1/projects/fleettrack-go/releases 200
-[debug] [2025-08-17T08:46:17.469Z] <<< [apiv2][body] GET https://firebaserules.googleapis.com/v1/projects/fleettrack-go/releases {"releases":[{"name":"projects/fleettrack-go/releases/cloud.firestore","rulesetName":"projects/fleettrack-go/rulesets/6d254176-e34c-47d4-9d00-d8064860f50a","createTime":"2025-07-24T06:49:42.252573Z","updateTime":"2025-08-17T05:55:21.930812Z"},{"name":"projects/fleettrack-go/releases/firebase.storage/fleettrack-go.firebasestorage.app","rulesetName":"projects/fleettrack-go/rulesets/8a39bf2e-c26e-44be-8dd3-1d36a812be9c","createTime":"2025-07-24T10:10:30.416198Z","updateTime":"2025-08-17T05:55:20.933239Z"}]}
-[debug] [2025-08-17T08:46:17.469Z] No OAuth tokens found
-[debug] [2025-08-17T08:46:17.469Z] >>> [apiv2][query] GET https://firebaserules.googleapis.com/v1/projects/fleettrack-go/rulesets/6d254176-e34c-47d4-9d00-d8064860f50a [none]
-[debug] [2025-08-17T08:46:17.648Z] <<< [apiv2][status] GET https://firebaserules.googleapis.com/v1/projects/fleettrack-go/rulesets/6d254176-e34c-47d4-9d00-d8064860f50a 200
-[debug] [2025-08-17T08:46:17.648Z] <<< [apiv2][body] GET https://firebaserules.googleapis.com/v1/projects/fleettrack-go/rulesets/6d254176-e34c-47d4-9d00-d8064860f50a [omitted]
+[debug] [2025-08-17T08:58:10.695Z] No OAuth tokens found
+[debug] [2025-08-17T08:58:10.695Z] No OAuth tokens found
+[debug] [2025-08-17T08:58:10.696Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/userinfo.email"]
+[debug] [2025-08-17T08:58:10.696Z] > authorizing via signed-in user (f.rodrigoalves12@gmail.com)
+[debug] [2025-08-17T08:58:10.696Z] >>> [apiv2][query] GET https://firestore.googleapis.com/v1/projects/fleettrack-go/databases/(default) [none]
+[debug] [2025-08-17T08:58:11.659Z] <<< [apiv2][status] GET https://firestore.googleapis.com/v1/projects/fleettrack-go/databases/(default) 200
+[debug] [2025-08-17T08:58:11.659Z] <<< [apiv2][body] GET https://firestore.googleapis.com/v1/projects/fleettrack-go/databases/(default) {"name":"projects/fleettrack-go/databases/(default)","uid":"bd6b976d-1cc2-4cea-9073-38dcd9c9d974","createTime":"2025-07-24T06:49:33.265657Z","updateTime":"2025-07-24T06:49:33.265657Z","locationId":"nam5","type":"FIRESTORE_NATIVE","concurrencyMode":"PESSIMISTIC","versionRetentionPeriod":"604800s","earliestVersionTime":"2025-08-10T08:59:00Z","appEngineIntegrationMode":"DISABLED","keyPrefix":"s","pointInTimeRecoveryEnablement":"POINT_IN_TIME_RECOVERY_ENABLED","deleteProtectionState":"DELETE_PROTECTION_DISABLED","databaseEdition":"STANDARD","freeTier":false,"etag":"IML24JS9kY8DMM3jnNfXjo8D"}
+[debug] [2025-08-17T08:58:11.660Z] No OAuth tokens found
+[debug] [2025-08-17T08:58:11.660Z] No OAuth tokens found
+[debug] [2025-08-17T08:58:11.660Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/userinfo.email"]
+[debug] [2025-08-17T08:58:11.661Z] > authorizing via signed-in user (f.rodrigoalves12@gmail.com)
+[debug] [2025-08-17T08:58:11.661Z] >>> [apiv2][query] GET https://firebaserules.googleapis.com/v1/projects/fleettrack-go/releases pageSize=10&pageToken=
+[debug] [2025-08-17T08:58:12.582Z] <<< [apiv2][status] GET https://firebaserules.googleapis.com/v1/projects/fleettrack-go/releases 200
+[debug] [2025-08-17T08:58:12.582Z] <<< [apiv2][body] GET https://firebaserules.googleapis.com/v1/projects/fleettrack-go/releases {"releases":[{"name":"projects/fleettrack-go/releases/cloud.firestore","rulesetName":"projects/fleettrack-go/rulesets/6d254176-e34c-47d4-9d00-d8064860f50a","createTime":"2025-07-24T06:49:42.252573Z","updateTime":"2025-08-17T05:55:21.930812Z"},{"name":"projects/fleettrack-go/releases/firebase.storage/fleettrack-go.firebasestorage.app","rulesetName":"projects/fleettrack-go/rulesets/8a39bf2e-c26e-44be-8dd3-1d36a812be9c","createTime":"2025-07-24T10:10:30.416198Z","updateTime":"2025-08-17T05:55:20.933239Z"}]}
+[debug] [2025-08-17T08:58:12.583Z] No OAuth tokens found
+[debug] [2025-08-17T08:58:12.583Z] No OAuth tokens found
+[debug] [2025-08-17T08:58:12.583Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/userinfo.email"]
+[debug] [2025-08-17T08:58:12.583Z] > authorizing via signed-in user (f.rodrigoalves12@gmail.com)
+[debug] [2025-08-17T08:58:12.586Z] >>> [apiv2][query] GET https://firebaserules.googleapis.com/v1/projects/fleettrack-go/rulesets/6d254176-e34c-47d4-9d00-d8064860f50a [none]
+[debug] [2025-08-17T08:58:13.527Z] <<< [apiv2][status] GET https://firebaserules.googleapis.com/v1/projects/fleettrack-go/rulesets/6d254176-e34c-47d4-9d00-d8064860f50a 200
+[debug] [2025-08-17T08:58:13.527Z] <<< [apiv2][body] GET https://firebaserules.googleapis.com/v1/projects/fleettrack-go/rulesets/6d254176-e34c-47d4-9d00-d8064860f50a [omitted]
 [info] i  firestore: uploading rules firestore.rules... 
-[debug] [2025-08-17T08:46:17.652Z] No OAuth tokens found
-[debug] [2025-08-17T08:46:17.652Z] >>> [apiv2][query] POST https://firebaserules.googleapis.com/v1/projects/fleettrack-go/rulesets [none]
-[debug] [2025-08-17T08:46:17.653Z] >>> [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/fleettrack-go/rulesets [omitted]
-[debug] [2025-08-17T08:46:18.650Z] <<< [apiv2][status] POST https://firebaserules.googleapis.com/v1/projects/fleettrack-go/rulesets 200
-[debug] [2025-08-17T08:46:18.652Z] <<< [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/fleettrack-go/rulesets {"name":"projects/fleettrack-go/rulesets/5c3378bd-ff50-4569-a44b-57bdb4101c73","source":{"files":[{"content":"\nrules_version = '2';\n\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    \n    // Default deny all\n    match /{document=**} {\n      allow read, write: if false;\n    }\n\n    // Allow public read/write access for trip records form\n    match /tripRecords/{recordId} {\n      allow read, create: if true;\n      allow update, delete: if request.auth != null;\n    }\n\n    // Allow public read/write access for checklist records form\n     match /checklistRecords/{recordId} {\n      allow read, create, update: if true;\n      allow delete: if request.auth != null;\n    }\n    \n    // Allow public read/write access for fueling records form\n    match /fuelingRecords/{recordId} {\n      allow read, create: if true;\n      allow update, delete: if request.auth != null;\n    }\n    \n    match /tireRecords/{recordId} {\n      allow read, create: if true;\n      allow update, delete: if request.auth != null;\n    }\n\n    // Settings collections are read-only for clients, writable for admin\n    match /dieselPrices/{priceId} {\n      allow read: if true;\n      allow create, update, delete: if request.auth != null;\n    }\n    \n    match /vehicleParameters/{carId} {\n        allow read: if true;\n        allow create, update, delete: if request.auth != null;\n    }\n    \n    match /maintenanceRecords/{recordId} {\n        allow read: if true;\n        allow create, update, delete: if request.auth != null;\n    }\n  }\n}\n","name":"firestore.rules"}]},"createTime":"2025-08-17T08:46:18.557071Z","metadata":{"services":["cloud.firestore"]}}
-[debug] [2025-08-17T08:46:18.653Z] [rules] created ruleset projects/fleettrack-go/rulesets/5c3378bd-ff50-4569-a44b-57bdb4101c73
+[debug] [2025-08-17T08:58:13.532Z] No OAuth tokens found
+[debug] [2025-08-17T08:58:13.532Z] No OAuth tokens found
+[debug] [2025-08-17T08:58:13.533Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/userinfo.email"]
+[debug] [2025-08-17T08:58:13.533Z] > authorizing via signed-in user (f.rodrigoalves12@gmail.com)
+[debug] [2025-08-17T08:58:13.533Z] >>> [apiv2][query] POST https://firebaserules.googleapis.com/v1/projects/fleettrack-go/rulesets [none]
+[debug] [2025-08-17T08:58:13.535Z] >>> [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/fleettrack-go/rulesets [omitted]
+[debug] [2025-08-17T08:58:14.510Z] <<< [apiv2][status] POST https://firebaserules.googleapis.com/v1/projects/fleettrack-go/rulesets 200
+[debug] [2025-08-17T08:58:14.511Z] <<< [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/fleettrack-go/rulesets {"name":"projects/fleettrack-go/rulesets/2178ce2e-a6db-4673-8f98-2257d52e65f6","source":{"files":[{"content":"\nrules_version = '2';\n\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    \n    // Default deny all\n    match /{document=**} {\n      allow read, write: if false;\n    }\n\n    // Allow public read/write access for trip records form\n    match /tripRecords/{recordId} {\n      allow read, create: if true;\n      allow update, delete: if request.auth != null;\n    }\n\n    // Allow public read/write access for checklist records form\n     match /checklistRecords/{recordId} {\n      allow read, create, update: if true;\n      allow delete: if request.auth != null;\n    }\n    \n    // Allow public read/write access for fueling records form\n    match /fuelingRecords/{recordId} {\n      allow read, create: if true;\n      allow update, delete: if request.auth != null;\n    }\n    \n    match /tireRecords/{recordId} {\n      allow read, create: if true;\n      allow update, delete: if request.auth != null;\n    }\n\n    // Settings collections are read-only for clients, writable for admin\n    match /dieselPrices/{priceId} {\n      allow read: if true;\n      allow create, update, delete: if request.auth != null;\n    }\n    \n    match /vehicleParameters/{carId} {\n        allow read: if true;\n        allow create, update, delete: if request.auth != null;\n    }\n    \n    match /maintenanceRecords/{recordId} {\n        allow read: if true;\n        allow create, update, delete: if request.auth != null;\n    }\n  }\n}\n","name":"firestore.rules"}]},"createTime":"2025-08-17T08:58:14.417183Z","metadata":{"services":["cloud.firestore"]}}
+[debug] [2025-08-17T08:58:14.511Z] [rules] created ruleset projects/fleettrack-go/rulesets/2178ce2e-a6db-4673-8f98-2257d52e65f6
 [info] i  firestore: deploying indexes... 
-[debug] [2025-08-17T08:46:18.656Z] No OAuth tokens found
-[debug] [2025-08-17T08:46:18.659Z] >>> [apiv2][query] GET https://firestore.googleapis.com/v1/projects/fleettrack-go/databases/(default)/collectionGroups/-/indexes [none]
-[debug] [2025-08-17T08:46:18.901Z] <<< [apiv2][status] GET https://firestore.googleapis.com/v1/projects/fleettrack-go/databases/(default)/collectionGroups/-/indexes 200
-[debug] [2025-08-17T08:46:18.901Z] <<< [apiv2][body] GET https://firestore.googleapis.com/v1/projects/fleettrack-go/databases/(default)/collectionGroups/-/indexes {"indexes":[{"name":"projects/fleettrack-go/databases/(default)/collectionGroups/tripRecords/indexes/CICAgJim14AK","queryScope":"COLLECTION","fields":[{"fieldPath":"car","order":"ASCENDING"},{"fieldPath":"date","order":"ASCENDING"},{"fieldPath":"__name__","order":"ASCENDING"}],"state":"READY","density":"SPARSE_ALL"},{"name":"projects/fleettrack-go/databases/(default)/collectionGroups/tripRecords/indexes/CICAgOjXh4EK","queryScope":"COLLECTION","fields":[{"fieldPath":"plate","order":"ASCENDING"},{"fieldPath":"status","order":"ASCENDING"},{"fieldPath":"date","order":"DESCENDING"},{"fieldPath":"__name__","order":"DESCENDING"}],"state":"READY","density":"SPARSE_ALL"},{"name":"projects/fleettrack-go/databases/(default)/collectionGroups/checklistRecords/indexes/CICAgJjF9oIK","queryScope":"COLLECTION","fields":[{"fieldPath":"damageAnalysis.hasNewDamage","order":"ASCENDING"},{"fieldPath":"date","order":"DESCENDING"},{"fieldPath":"__name__","order":"DESCENDING"}],"state":"READY","density":"SPARSE_ALL"},{"name":"projects/fleettrack-go/databases/(default)/collectionGroups/tripRecords/indexes/CICAgJiUpoMK","queryScope":"COLLECTION","fields":[{"fieldPath":"car","order":"ASCENDING"},{"fieldPath":"date","order":"DESCENDING"},{"fieldPath":"__name__","order":"DESCENDING"}],"state":"READY","density":"SPARSE_ALL"}]}
-[debug] [2025-08-17T08:46:18.902Z] No OAuth tokens found
-[debug] [2025-08-17T08:46:18.903Z] >>> [apiv2][query] GET https://firestore.googleapis.com/v1/projects/fleettrack-go/databases/(default)/collectionGroups/-/fields?filter=indexConfig.usesAncestorConfig=false OR ttlConfig:* [none]
-[debug] [2025-08-17T08:46:19.119Z] <<< [apiv2][status] GET https://firestore.googleapis.com/v1/projects/fleettrack-go/databases/(default)/collectionGroups/-/fields?filter=indexConfig.usesAncestorConfig=false OR ttlConfig:* 200
-[debug] [2025-08-17T08:46:19.120Z] <<< [apiv2][body] GET https://firestore.googleapis.com/v1/projects/fleettrack-go/databases/(default)/collectionGroups/-/fields?filter=indexConfig.usesAncestorConfig=false OR ttlConfig:* {"fields":[{"name":"projects/fleettrack-go/databases/(default)/collectionGroups/__default__/fields/*","indexConfig":{"indexes":[{"queryScope":"COLLECTION","fields":[{"fieldPath":"*","order":"ASCENDING"}],"state":"READY"},{"queryScope":"COLLECTION","fields":[{"fieldPath":"*","order":"DESCENDING"}],"state":"READY"},{"queryScope":"COLLECTION","fields":[{"fieldPath":"*","arrayConfig":"CONTAINS"}],"state":"READY"}]}}]}
+[debug] [2025-08-17T08:58:14.518Z] No OAuth tokens found
+[debug] [2025-08-17T08:58:14.518Z] No OAuth tokens found
+[debug] [2025-08-17T08:58:14.518Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/userinfo.email"]
+[debug] [2025-08-17T08:58:14.518Z] > authorizing via signed-in user (f.rodrigoalves12@gmail.com)
+[debug] [2025-08-17T08:58:14.519Z] >>> [apiv2][query] GET https://firestore.googleapis.com/v1/projects/fleettrack-go/databases/(default)/collectionGroups/-/indexes [none]
+[debug] [2025-08-17T08:58:14.753Z] <<< [apiv2][status] GET https://firestore.googleapis.com/v1/projects/fleettrack-go/databases/(default)/collectionGroups/-/indexes 200
+[debug] [2025-08-17T08:58:14.754Z] <<< [apiv2][body] GET https://firestore.googleapis.com/v1/projects/fleettrack-go/databases/(default)/collectionGroups/-/indexes {"indexes":[{"name":"projects/fleettrack-go/databases/(default)/collectionGroups/tripRecords/indexes/CICAgJim14AK","queryScope":"COLLECTION","fields":[{"fieldPath":"car","order":"ASCENDING"},{"fieldPath":"date","order":"ASCENDING"},{"fieldPath":"__name__","order":"ASCENDING"}],"state":"READY","density":"SPARSE_ALL"},{"name":"projects/fleettrack-go/databases/(default)/collectionGroups/tripRecords/indexes/CICAgOjXh4EK","queryScope":"COLLECTION","fields":[{"fieldPath":"plate","order":"ASCENDING"},{"fieldPath":"status","order":"ASCENDING"},{"fieldPath":"date","order":"DESCENDING"},{"fieldPath":"__name__","order":"DESCENDING"}],"state":"READY","density":"SPARSE_ALL"},{"name":"projects/fleettrack-go/databases/(default)/collectionGroups/tripRecords/indexes/CICAgJj7z4EK","queryScope":"COLLECTION","fields":[{"fieldPath":"carId","order":"ASCENDING"},{"fieldPath":"date","order":"DESCENDING"},{"fieldPath":"__name__","order":"DESCENDING"}],"state":"READY","density":"SPARSE_ALL"},{"name":"projects/fleettrack-go/databases/(default)/collectionGroups/checklistRecords/indexes/CICAgJjF9oIK","queryScope":"COLLECTION","fields":[{"fieldPath":"damageAnalysis.hasNewDamage","order":"ASCENDING"},{"fieldPath":"date","order":"DESCENDING"},{"fieldPath":"__name__","order":"DESCENDING"}],"state":"READY","density":"SPARSE_ALL"},{"name":"projects/fleettrack-go/databases/(default)/collectionGroups/tripRecords/indexes/CICAgJiUpoMK","queryScope":"COLLECTION","fields":[{"fieldPath":"car","order":"ASCENDING"},{"fieldPath":"date","order":"DESCENDING"},{"fieldPath":"__name__","order":"DESCENDING"}],"state":"READY","density":"SPARSE_ALL"},{"name":"projects/fleettrack-go/databases/(default)/collectionGroups/tripRecords/indexes/CICAgNi47oMK","queryScope":"COLLECTION","fields":[{"fieldPath":"plate","order":"ASCENDING"},{"fieldPath":"status","order":"ASCENDING"},{"fieldPath":"__name__","order":"ASCENDING"}],"state":"READY","density":"SPARSE_ALL"}]}
+[debug] [2025-08-17T08:58:14.758Z] No OAuth tokens found
+[debug] [2025-08-17T08:58:14.758Z] No OAuth tokens found
+[debug] [2025-08-17T08:58:14.758Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/userinfo.email"]
+[debug] [2025-08-17T08:58:14.759Z] > authorizing via signed-in user (f.rodrigoalves12@gmail.com)
+[debug] [2025-08-17T08:58:14.759Z] >>> [apiv2][query] GET https://firestore.googleapis.com/v1/projects/fleettrack-go/databases/(default)/collectionGroups/-/fields?filter=indexConfig.usesAncestorConfig=false OR ttlConfig:* [none]
+[debug] [2025-08-17T08:58:14.941Z] <<< [apiv2][status] GET https://firestore.googleapis.com/v1/projects/fleettrack-go/databases/(default)/collectionGroups/-/fields?filter=indexConfig.usesAncestorConfig=false OR ttlConfig:* 200
+[debug] [2025-08-17T08:58:14.941Z] <<< [apiv2][body] GET https://firestore.googleapis.com/v1/projects/fleettrack-go/databases/(default)/collectionGroups/-/fields?filter=indexConfig.usesAncestorConfig=false OR ttlConfig:* {"fields":[{"name":"projects/fleettrack-go/databases/(default)/collectionGroups/__default__/fields/*","indexConfig":{"indexes":[{"queryScope":"COLLECTION","fields":[{"fieldPath":"*","order":"ASCENDING"}],"state":"READY"},{"queryScope":"COLLECTION","fields":[{"fieldPath":"*","order":"DESCENDING"}],"state":"READY"},{"queryScope":"COLLECTION","fields":[{"fieldPath":"*","arrayConfig":"CONTAINS"}],"state":"READY"}]}}]}
 [info] i  firestore: The following indexes are defined in your project but are not present in your firestore indexes file:
 	(tripRecords) -- (car,ASCENDING) (date,ASCENDING) 
 	(tripRecords) -- (plate,ASCENDING) (status,ASCENDING) (date,DESCENDING) 
+	(tripRecords) -- (carId,ASCENDING) (date,DESCENDING) 
 	(checklistRecords) -- (damageAnalysis.hasNewDamage,ASCENDING) (date,DESCENDING) 
-	(tripRecords) -- (car,ASCENDING) (date,DESCENDING)  
+	(tripRecords) -- (car,ASCENDING) (date,DESCENDING) 
+	(tripRecords) -- (plate,ASCENDING) (status,ASCENDING)  
