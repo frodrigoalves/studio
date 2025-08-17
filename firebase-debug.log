@@ -1,125 +1,54 @@
-[debug] [2025-08-17T09:14:06.456Z] ----------------------------------------------------------------------
-[debug] [2025-08-17T09:14:06.459Z] Command:       /nix/store/ws50yvm6vzlzf7jzz6n7xh4szddrack1-nodejs-20.19.1/bin/node /home/user/.global_modules/bin/firebase deploy
-[debug] [2025-08-17T09:14:06.459Z] CLI Version:   14.12.1
-[debug] [2025-08-17T09:14:06.459Z] Platform:      linux
-[debug] [2025-08-17T09:14:06.459Z] Node Version:  v20.19.1
-[debug] [2025-08-17T09:14:06.460Z] Time:          Sun Aug 17 2025 09:14:06 GMT+0000 (Coordinated Universal Time)
-[debug] [2025-08-17T09:14:06.460Z] ----------------------------------------------------------------------
+[debug] [2025-08-17T09:15:46.497Z] ----------------------------------------------------------------------
+[debug] [2025-08-17T09:15:46.506Z] Command:       /nix/store/ws50yvm6vzlzf7jzz6n7xh4szddrack1-nodejs-20.19.1/bin/node /home/user/.global_modules/bin/firebase deploy
+[debug] [2025-08-17T09:15:46.507Z] CLI Version:   14.12.1
+[debug] [2025-08-17T09:15:46.511Z] Platform:      linux
+[debug] [2025-08-17T09:15:46.511Z] Node Version:  v20.19.1
+[debug] [2025-08-17T09:15:46.511Z] Time:          Sun Aug 17 2025 09:15:46 GMT+0000 (Coordinated Universal Time)
+[debug] [2025-08-17T09:15:46.511Z] ----------------------------------------------------------------------
 [debug] 
-[debug] [2025-08-17T09:14:07.128Z] Object "/emulators" in "firebase.json" has unknown property: {"additionalProperty":"project"}
-[debug] [2025-08-17T09:14:07.135Z] No OAuth tokens found
-[debug] [2025-08-17T09:14:07.135Z] No OAuth tokens found
+[debug] [2025-08-17T09:15:47.371Z] Object "/emulators" in "firebase.json" has unknown property: {"additionalProperty":"project"}
+[debug] [2025-08-17T09:15:47.375Z] No OAuth tokens found
+[debug] [2025-08-17T09:15:47.376Z] No OAuth tokens found
 [error] Failed to fetch Firebase Project from current Studio Workspace: Unable to refresh auth: not yet authenticated.
-[debug] [2025-08-17T09:14:07.147Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/userinfo.email"]
-[debug] [2025-08-17T09:14:07.150Z] > authorizing via signed-in user (f.rodrigoalves12@gmail.com)
-[debug] [2025-08-17T09:14:07.150Z] [iam] checking project fleettrack-go for permissions ["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get","firebaserules.releases.create","firebaserules.releases.update","firebaserules.rulesets.create"]
-[debug] [2025-08-17T09:14:07.152Z] No OAuth tokens found
-[debug] [2025-08-17T09:14:07.153Z] No OAuth tokens found
-[debug] [2025-08-17T09:14:07.153Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/userinfo.email"]
-[debug] [2025-08-17T09:14:07.153Z] > authorizing via signed-in user (f.rodrigoalves12@gmail.com)
-[debug] [2025-08-17T09:14:07.157Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/fleettrack-go:testIamPermissions [none]
-[debug] [2025-08-17T09:14:07.160Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/fleettrack-go:testIamPermissions x-goog-quota-user=projects/fleettrack-go
-[debug] [2025-08-17T09:14:07.161Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/fleettrack-go:testIamPermissions {"permissions":["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get","firebaserules.releases.create","firebaserules.releases.update","firebaserules.rulesets.create"]}
-[debug] [2025-08-17T09:14:08.093Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/fleettrack-go:testIamPermissions 200
-[debug] [2025-08-17T09:14:08.093Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/fleettrack-go:testIamPermissions {"permissions":["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get","firebaserules.releases.create","firebaserules.releases.update","firebaserules.rulesets.create"]}
+[debug] [2025-08-17T09:15:47.380Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/userinfo.email"]
+[debug] [2025-08-17T09:15:47.380Z] > authorizing via signed-in user (f.rodrigoalves12@gmail.com)
+[debug] [2025-08-17T09:15:47.381Z] [iam] checking project fleettrack-go for permissions ["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get","firebaserules.releases.create","firebaserules.releases.update","firebaserules.rulesets.create"]
+[debug] [2025-08-17T09:15:47.381Z] No OAuth tokens found
+[debug] [2025-08-17T09:15:47.381Z] No OAuth tokens found
+[debug] [2025-08-17T09:15:47.382Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/userinfo.email"]
+[debug] [2025-08-17T09:15:47.382Z] > authorizing via signed-in user (f.rodrigoalves12@gmail.com)
+[debug] [2025-08-17T09:15:47.383Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/fleettrack-go:testIamPermissions [none]
+[debug] [2025-08-17T09:15:47.383Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/fleettrack-go:testIamPermissions x-goog-quota-user=projects/fleettrack-go
+[debug] [2025-08-17T09:15:47.383Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/fleettrack-go:testIamPermissions {"permissions":["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get","firebaserules.releases.create","firebaserules.releases.update","firebaserules.rulesets.create"]}
+[debug] [2025-08-17T09:15:48.321Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/fleettrack-go:testIamPermissions 200
+[debug] [2025-08-17T09:15:48.323Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/fleettrack-go:testIamPermissions {"permissions":["datastore.indexes.create","datastore.indexes.delete","datastore.indexes.list","datastore.indexes.update","firebase.projects.get","firebaserules.releases.create","firebaserules.releases.update","firebaserules.rulesets.create"]}
 [info] 
 [info] === Deploying to 'fleettrack-go'...
 [info] 
 [info] i  deploying storage, firestore 
 [info] i  storage: ensuring required API firebasestorage.googleapis.com is enabled... 
-[debug] [2025-08-17T09:14:08.101Z] No OAuth tokens found
-[debug] [2025-08-17T09:14:08.102Z] No OAuth tokens found
-[debug] [2025-08-17T09:14:08.102Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/userinfo.email"]
-[debug] [2025-08-17T09:14:08.102Z] > authorizing via signed-in user (f.rodrigoalves12@gmail.com)
-[debug] [2025-08-17T09:14:08.102Z] >>> [apiv2][query] GET https://firebasestorage.googleapis.com/v1alpha/projects/fleettrack-go/defaultBucket [none]
-[debug] [2025-08-17T09:14:09.029Z] <<< [apiv2][status] GET https://firebasestorage.googleapis.com/v1alpha/projects/fleettrack-go/defaultBucket 200
-[debug] [2025-08-17T09:14:09.029Z] <<< [apiv2][body] GET https://firebasestorage.googleapis.com/v1alpha/projects/fleettrack-go/defaultBucket {"name":"projects/fleettrack-go/defaultBucket","location":"US-CENTRAL1","bucket":{"name":"projects/fleettrack-go/buckets/fleettrack-go.firebasestorage.app"},"storageClass":"REGIONAL"}
+[debug] [2025-08-17T09:15:48.328Z] No OAuth tokens found
+[debug] [2025-08-17T09:15:48.328Z] No OAuth tokens found
+[debug] [2025-08-17T09:15:48.328Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/userinfo.email"]
+[debug] [2025-08-17T09:15:48.328Z] > authorizing via signed-in user (f.rodrigoalves12@gmail.com)
+[debug] [2025-08-17T09:15:48.329Z] >>> [apiv2][query] GET https://firebasestorage.googleapis.com/v1alpha/projects/fleettrack-go/defaultBucket [none]
+[debug] [2025-08-17T09:15:49.285Z] <<< [apiv2][status] GET https://firebasestorage.googleapis.com/v1alpha/projects/fleettrack-go/defaultBucket 200
+[debug] [2025-08-17T09:15:49.285Z] <<< [apiv2][body] GET https://firebasestorage.googleapis.com/v1alpha/projects/fleettrack-go/defaultBucket {"name":"projects/fleettrack-go/defaultBucket","location":"US-CENTRAL1","bucket":{"name":"projects/fleettrack-go/buckets/fleettrack-go.firebasestorage.app"},"storageClass":"REGIONAL"}
 [info] i  firebase.storage: checking storage.rules for compilation errors... 
-[debug] [2025-08-17T09:14:09.036Z] No OAuth tokens found
-[debug] [2025-08-17T09:14:09.036Z] No OAuth tokens found
-[debug] [2025-08-17T09:14:09.037Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/userinfo.email"]
-[debug] [2025-08-17T09:14:09.037Z] > authorizing via signed-in user (f.rodrigoalves12@gmail.com)
-[debug] [2025-08-17T09:14:09.037Z] >>> [apiv2][query] POST https://firebaserules.googleapis.com/v1/projects/fleettrack-go:test [none]
-[debug] [2025-08-17T09:14:09.037Z] >>> [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/fleettrack-go:test [omitted]
-[debug] [2025-08-17T09:14:09.952Z] <<< [apiv2][status] POST https://firebaserules.googleapis.com/v1/projects/fleettrack-go:test 200
-[debug] [2025-08-17T09:14:09.952Z] <<< [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/fleettrack-go:test {}
+[debug] [2025-08-17T09:15:49.293Z] No OAuth tokens found
+[debug] [2025-08-17T09:15:49.293Z] No OAuth tokens found
+[debug] [2025-08-17T09:15:49.293Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/userinfo.email"]
+[debug] [2025-08-17T09:15:49.293Z] > authorizing via signed-in user (f.rodrigoalves12@gmail.com)
+[debug] [2025-08-17T09:15:49.294Z] >>> [apiv2][query] POST https://firebaserules.googleapis.com/v1/projects/fleettrack-go:test [none]
+[debug] [2025-08-17T09:15:49.294Z] >>> [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/fleettrack-go:test [omitted]
+[debug] [2025-08-17T09:15:50.371Z] <<< [apiv2][status] POST https://firebaserules.googleapis.com/v1/projects/fleettrack-go:test 200
+[debug] [2025-08-17T09:15:50.372Z] <<< [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/fleettrack-go:test {}
 [info] ✔  firebase.storage: rules file storage.rules compiled successfully 
 [info] i  firestore: reading indexes from firestore.indexes.json... 
 [info] i  cloud.firestore: checking firestore.rules for compilation errors... 
-[debug] [2025-08-17T09:14:09.956Z] No OAuth tokens found
-[debug] [2025-08-17T09:14:09.956Z] No OAuth tokens found
-[debug] [2025-08-17T09:14:09.956Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/userinfo.email"]
-[debug] [2025-08-17T09:14:09.956Z] > authorizing via signed-in user (f.rodrigoalves12@gmail.com)
-[debug] [2025-08-17T09:14:09.957Z] >>> [apiv2][query] POST https://firebaserules.googleapis.com/v1/projects/fleettrack-go:test [none]
-[debug] [2025-08-17T09:14:09.957Z] >>> [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/fleettrack-go:test [omitted]
-[debug] [2025-08-17T09:14:10.861Z] <<< [apiv2][status] POST https://firebaserules.googleapis.com/v1/projects/fleettrack-go:test 200
-[debug] [2025-08-17T09:14:10.861Z] <<< [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/fleettrack-go:test {}
-[info] ✔  cloud.firestore: rules file firestore.rules compiled successfully 
-[debug] [2025-08-17T09:14:10.864Z] No OAuth tokens found
-[debug] [2025-08-17T09:14:10.864Z] No OAuth tokens found
-[debug] [2025-08-17T09:14:10.864Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/userinfo.email"]
-[debug] [2025-08-17T09:14:10.864Z] > authorizing via signed-in user (f.rodrigoalves12@gmail.com)
-[debug] [2025-08-17T09:14:10.865Z] >>> [apiv2][query] GET https://firebaserules.googleapis.com/v1/projects/fleettrack-go/releases pageSize=10&pageToken=
-[debug] [2025-08-17T09:14:11.777Z] <<< [apiv2][status] GET https://firebaserules.googleapis.com/v1/projects/fleettrack-go/releases 200
-[debug] [2025-08-17T09:14:11.777Z] <<< [apiv2][body] GET https://firebaserules.googleapis.com/v1/projects/fleettrack-go/releases {"releases":[{"name":"projects/fleettrack-go/releases/cloud.firestore","rulesetName":"projects/fleettrack-go/rulesets/6d254176-e34c-47d4-9d00-d8064860f50a","createTime":"2025-07-24T06:49:42.252573Z","updateTime":"2025-08-17T05:55:21.930812Z"},{"name":"projects/fleettrack-go/releases/firebase.storage/fleettrack-go.firebasestorage.app","rulesetName":"projects/fleettrack-go/rulesets/8a39bf2e-c26e-44be-8dd3-1d36a812be9c","createTime":"2025-07-24T10:10:30.416198Z","updateTime":"2025-08-17T05:55:20.933239Z"}]}
-[debug] [2025-08-17T09:14:11.793Z] No OAuth tokens found
-[debug] [2025-08-17T09:14:11.794Z] No OAuth tokens found
-[debug] [2025-08-17T09:14:11.794Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/userinfo.email"]
-[debug] [2025-08-17T09:14:11.794Z] > authorizing via signed-in user (f.rodrigoalves12@gmail.com)
-[debug] [2025-08-17T09:14:11.794Z] >>> [apiv2][query] GET https://firebaserules.googleapis.com/v1/projects/fleettrack-go/rulesets/8a39bf2e-c26e-44be-8dd3-1d36a812be9c [none]
-[debug] [2025-08-17T09:14:12.704Z] <<< [apiv2][status] GET https://firebaserules.googleapis.com/v1/projects/fleettrack-go/rulesets/8a39bf2e-c26e-44be-8dd3-1d36a812be9c 200
-[debug] [2025-08-17T09:14:12.705Z] <<< [apiv2][body] GET https://firebaserules.googleapis.com/v1/projects/fleettrack-go/rulesets/8a39bf2e-c26e-44be-8dd3-1d36a812be9c [omitted]
-[info] i  storage: latest version of storage.rules already up to date, skipping upload... 
-[debug] [2025-08-17T09:14:12.714Z] No OAuth tokens found
-[debug] [2025-08-17T09:14:12.715Z] No OAuth tokens found
-[debug] [2025-08-17T09:14:12.715Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/userinfo.email"]
-[debug] [2025-08-17T09:14:12.716Z] > authorizing via signed-in user (f.rodrigoalves12@gmail.com)
-[debug] [2025-08-17T09:14:12.716Z] >>> [apiv2][query] GET https://firestore.googleapis.com/v1/projects/fleettrack-go/databases/(default) [none]
-[debug] [2025-08-17T09:14:13.644Z] <<< [apiv2][status] GET https://firestore.googleapis.com/v1/projects/fleettrack-go/databases/(default) 200
-[debug] [2025-08-17T09:14:13.644Z] <<< [apiv2][body] GET https://firestore.googleapis.com/v1/projects/fleettrack-go/databases/(default) {"name":"projects/fleettrack-go/databases/(default)","uid":"bd6b976d-1cc2-4cea-9073-38dcd9c9d974","createTime":"2025-07-24T06:49:33.265657Z","updateTime":"2025-07-24T06:49:33.265657Z","locationId":"nam5","type":"FIRESTORE_NATIVE","concurrencyMode":"PESSIMISTIC","versionRetentionPeriod":"604800s","earliestVersionTime":"2025-08-10T09:15:00Z","appEngineIntegrationMode":"DISABLED","keyPrefix":"s","pointInTimeRecoveryEnablement":"POINT_IN_TIME_RECOVERY_ENABLED","deleteProtectionState":"DELETE_PROTECTION_DISABLED","databaseEdition":"STANDARD","freeTier":false,"etag":"IPWLvN/AkY8DMM3jnNfXjo8D"}
-[debug] [2025-08-17T09:14:13.647Z] No OAuth tokens found
-[debug] [2025-08-17T09:14:13.647Z] No OAuth tokens found
-[debug] [2025-08-17T09:14:13.648Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/userinfo.email"]
-[debug] [2025-08-17T09:14:13.648Z] > authorizing via signed-in user (f.rodrigoalves12@gmail.com)
-[debug] [2025-08-17T09:14:13.648Z] >>> [apiv2][query] GET https://firebaserules.googleapis.com/v1/projects/fleettrack-go/releases pageSize=10&pageToken=
-[debug] [2025-08-17T09:14:14.564Z] <<< [apiv2][status] GET https://firebaserules.googleapis.com/v1/projects/fleettrack-go/releases 200
-[debug] [2025-08-17T09:14:14.564Z] <<< [apiv2][body] GET https://firebaserules.googleapis.com/v1/projects/fleettrack-go/releases {"releases":[{"name":"projects/fleettrack-go/releases/cloud.firestore","rulesetName":"projects/fleettrack-go/rulesets/6d254176-e34c-47d4-9d00-d8064860f50a","createTime":"2025-07-24T06:49:42.252573Z","updateTime":"2025-08-17T05:55:21.930812Z"},{"name":"projects/fleettrack-go/releases/firebase.storage/fleettrack-go.firebasestorage.app","rulesetName":"projects/fleettrack-go/rulesets/8a39bf2e-c26e-44be-8dd3-1d36a812be9c","createTime":"2025-07-24T10:10:30.416198Z","updateTime":"2025-08-17T05:55:20.933239Z"}]}
-[debug] [2025-08-17T09:14:14.565Z] No OAuth tokens found
-[debug] [2025-08-17T09:14:14.565Z] No OAuth tokens found
-[debug] [2025-08-17T09:14:14.565Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/userinfo.email"]
-[debug] [2025-08-17T09:14:14.565Z] > authorizing via signed-in user (f.rodrigoalves12@gmail.com)
-[debug] [2025-08-17T09:14:14.566Z] >>> [apiv2][query] GET https://firebaserules.googleapis.com/v1/projects/fleettrack-go/rulesets/6d254176-e34c-47d4-9d00-d8064860f50a [none]
-[debug] [2025-08-17T09:14:15.476Z] <<< [apiv2][status] GET https://firebaserules.googleapis.com/v1/projects/fleettrack-go/rulesets/6d254176-e34c-47d4-9d00-d8064860f50a 200
-[debug] [2025-08-17T09:14:15.477Z] <<< [apiv2][body] GET https://firebaserules.googleapis.com/v1/projects/fleettrack-go/rulesets/6d254176-e34c-47d4-9d00-d8064860f50a [omitted]
-[info] i  firestore: uploading rules firestore.rules... 
-[debug] [2025-08-17T09:14:15.478Z] No OAuth tokens found
-[debug] [2025-08-17T09:14:15.479Z] No OAuth tokens found
-[debug] [2025-08-17T09:14:15.479Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/userinfo.email"]
-[debug] [2025-08-17T09:14:15.479Z] > authorizing via signed-in user (f.rodrigoalves12@gmail.com)
-[debug] [2025-08-17T09:14:15.482Z] >>> [apiv2][query] POST https://firebaserules.googleapis.com/v1/projects/fleettrack-go/rulesets [none]
-[debug] [2025-08-17T09:14:15.482Z] >>> [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/fleettrack-go/rulesets [omitted]
-[debug] [2025-08-17T09:14:16.566Z] <<< [apiv2][status] POST https://firebaserules.googleapis.com/v1/projects/fleettrack-go/rulesets 200
-[debug] [2025-08-17T09:14:16.567Z] <<< [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/fleettrack-go/rulesets {"name":"projects/fleettrack-go/rulesets/0f92a153-2ba1-4f8a-b03d-93b404dc8bd8","source":{"files":[{"content":"\nrules_version = '2';\n\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    \n    // Default deny all\n    match /{document=**} {\n      allow read, write: if false;\n    }\n\n    // Allow public read/write access for trip records form\n    match /tripRecords/{recordId} {\n      allow read, create: if true;\n      allow update, delete: if request.auth != null;\n    }\n\n    // Allow public read/write access for checklist records form\n     match /checklistRecords/{recordId} {\n      allow read, create, update: if true;\n      allow delete: if request.auth != null;\n    }\n    \n    // Allow public read/write access for fueling records form\n    match /fuelingRecords/{recordId} {\n      allow read, create: if true;\n      allow update, delete: if request.auth != null;\n    }\n    \n    match /tireRecords/{recordId} {\n      allow read, create: if true;\n      allow update, delete: if request.auth != null;\n    }\n\n    // Settings collections are read-only for clients, writable for admin\n    match /dieselPrices/{priceId} {\n      allow read: if true;\n      allow create, update, delete: if request.auth != null;\n    }\n    \n    match /vehicleParameters/{carId} {\n        allow read: if true;\n        allow create, update, delete: if request.auth != null;\n    }\n    \n    match /maintenanceRecords/{recordId} {\n        allow read: if true;\n        allow create, update, delete: if request.auth != null;\n    }\n  }\n}\n","name":"firestore.rules"}]},"createTime":"2025-08-17T09:14:16.450623Z","metadata":{"services":["cloud.firestore"]}}
-[debug] [2025-08-17T09:14:16.567Z] [rules] created ruleset projects/fleettrack-go/rulesets/0f92a153-2ba1-4f8a-b03d-93b404dc8bd8
-[info] i  firestore: deploying indexes... 
-[debug] [2025-08-17T09:14:16.573Z] No OAuth tokens found
-[debug] [2025-08-17T09:14:16.573Z] No OAuth tokens found
-[debug] [2025-08-17T09:14:16.573Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/userinfo.email"]
-[debug] [2025-08-17T09:14:16.574Z] > authorizing via signed-in user (f.rodrigoalves12@gmail.com)
-[debug] [2025-08-17T09:14:16.574Z] >>> [apiv2][query] GET https://firestore.googleapis.com/v1/projects/fleettrack-go/databases/(default)/collectionGroups/-/indexes [none]
-[debug] [2025-08-17T09:14:16.757Z] <<< [apiv2][status] GET https://firestore.googleapis.com/v1/projects/fleettrack-go/databases/(default)/collectionGroups/-/indexes 200
-[debug] [2025-08-17T09:14:16.758Z] <<< [apiv2][body] GET https://firestore.googleapis.com/v1/projects/fleettrack-go/databases/(default)/collectionGroups/-/indexes {"indexes":[{"name":"projects/fleettrack-go/databases/(default)/collectionGroups/tripRecords/indexes/CICAgJim14AK","queryScope":"COLLECTION","fields":[{"fieldPath":"car","order":"ASCENDING"},{"fieldPath":"date","order":"ASCENDING"},{"fieldPath":"__name__","order":"ASCENDING"}],"state":"READY","density":"SPARSE_ALL"},{"name":"projects/fleettrack-go/databases/(default)/collectionGroups/tripRecords/indexes/CICAgOjXh4EK","queryScope":"COLLECTION","fields":[{"fieldPath":"plate","order":"ASCENDING"},{"fieldPath":"status","order":"ASCENDING"},{"fieldPath":"date","order":"DESCENDING"},{"fieldPath":"__name__","order":"DESCENDING"}],"state":"READY","density":"SPARSE_ALL"},{"name":"projects/fleettrack-go/databases/(default)/collectionGroups/tripRecords/indexes/CICAgJj7z4EK","queryScope":"COLLECTION","fields":[{"fieldPath":"carId","order":"ASCENDING"},{"fieldPath":"date","order":"DESCENDING"},{"fieldPath":"__name__","order":"DESCENDING"}],"state":"READY","density":"SPARSE_ALL"},{"name":"projects/fleettrack-go/databases/(default)/collectionGroups/checklistRecords/indexes/CICAgJjF9oIK","queryScope":"COLLECTION","fields":[{"fieldPath":"damageAnalysis.hasNewDamage","order":"ASCENDING"},{"fieldPath":"date","order":"DESCENDING"},{"fieldPath":"__name__","order":"DESCENDING"}],"state":"READY","density":"SPARSE_ALL"},{"name":"projects/fleettrack-go/databases/(default)/collectionGroups/tripRecords/indexes/CICAgJiUpoMK","queryScope":"COLLECTION","fields":[{"fieldPath":"car","order":"ASCENDING"},{"fieldPath":"date","order":"DESCENDING"},{"fieldPath":"__name__","order":"DESCENDING"}],"state":"READY","density":"SPARSE_ALL"},{"name":"projects/fleettrack-go/databases/(default)/collectionGroups/tripRecords/indexes/CICAgNi47oMK","queryScope":"COLLECTION","fields":[{"fieldPath":"plate","order":"ASCENDING"},{"fieldPath":"status","order":"ASCENDING"},{"fieldPath":"__name__","order":"ASCENDING"}],"state":"READY","density":"SPARSE_ALL"}]}
-[debug] [2025-08-17T09:14:16.758Z] No OAuth tokens found
-[debug] [2025-08-17T09:14:16.759Z] No OAuth tokens found
-[debug] [2025-08-17T09:14:16.759Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/userinfo.email"]
-[debug] [2025-08-17T09:14:16.759Z] > authorizing via signed-in user (f.rodrigoalves12@gmail.com)
-[debug] [2025-08-17T09:14:16.759Z] >>> [apiv2][query] GET https://firestore.googleapis.com/v1/projects/fleettrack-go/databases/(default)/collectionGroups/-/fields?filter=indexConfig.usesAncestorConfig=false OR ttlConfig:* [none]
-[debug] [2025-08-17T09:14:16.938Z] <<< [apiv2][status] GET https://firestore.googleapis.com/v1/projects/fleettrack-go/databases/(default)/collectionGroups/-/fields?filter=indexConfig.usesAncestorConfig=false OR ttlConfig:* 200
-[debug] [2025-08-17T09:14:16.939Z] <<< [apiv2][body] GET https://firestore.googleapis.com/v1/projects/fleettrack-go/databases/(default)/collectionGroups/-/fields?filter=indexConfig.usesAncestorConfig=false OR ttlConfig:* {"fields":[{"name":"projects/fleettrack-go/databases/(default)/collectionGroups/__default__/fields/*","indexConfig":{"indexes":[{"queryScope":"COLLECTION","fields":[{"fieldPath":"*","order":"ASCENDING"}],"state":"READY"},{"queryScope":"COLLECTION","fields":[{"fieldPath":"*","order":"DESCENDING"}],"state":"READY"},{"queryScope":"COLLECTION","fields":[{"fieldPath":"*","arrayConfig":"CONTAINS"}],"state":"READY"}]}}]}
-[info] i  firestore: The following indexes are defined in your project but are not present in your firestore indexes file:
-	(tripRecords) -- (car,ASCENDING) (date,ASCENDING) 
-	(tripRecords) -- (plate,ASCENDING) (status,ASCENDING) (date,DESCENDING) 
-	(tripRecords) -- (carId,ASCENDING) (date,DESCENDING) 
-	(checklistRecords) -- (damageAnalysis.hasNewDamage,ASCENDING) (date,DESCENDING) 
-	(tripRecords) -- (car,ASCENDING) (date,DESCENDING) 
-	(tripRecords) -- (plate,ASCENDING) (status,ASCENDING)  
+[debug] [2025-08-17T09:15:50.386Z] No OAuth tokens found
+[debug] [2025-08-17T09:15:50.386Z] No OAuth tokens found
+[debug] [2025-08-17T09:15:50.386Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/userinfo.email"]
+[debug] [2025-08-17T09:15:50.386Z] > authorizing via signed-in user (f.rodrigoalves12@gmail.com)
+[debug] [2025-08-17T09:15:50.387Z] >>> [apiv2][query] POST https://firebaserules.googleapis.com/v1/projects/fleettrack-go:test [none]
+[debug] [2025-08-17T09:15:50.387Z] >>> [apiv2][body] POST https://firebaserules.googleapis.com/v1/projects/fleettrack-go:test [omitted]
