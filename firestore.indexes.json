@@ -48,6 +48,20 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
+          "fieldPath": "carId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "date",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "tripRecords",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
           "fieldPath": "plate",
           "order": "ASCENDING"
         },
