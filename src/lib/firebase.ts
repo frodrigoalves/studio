@@ -4,7 +4,7 @@ import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
 import { getStorage, connectStorageEmulator } from "firebase/storage";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDdsVOyr7K__oSQif1hpPCll3G11cX0vGk",
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: "fleettrack-go.firebaseapp.com",
   projectId: "fleettrack-go",
   storageBucket: "fleettrack-go.appspot.com",
