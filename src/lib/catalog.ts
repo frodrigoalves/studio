@@ -91,7 +91,7 @@ export function parseVehiclesFromXlsx(buf: Buffer, sheetName?: string) {
     out[parsed.carId] = { ...parsed, _hash: hash };
   }
 
-  if (!Object.keys(out).length) throw new Error("Nenhum veículo válido encontrado.");
+  if (!Object.keys(out).length) throw new Error("Nenhum veículo válido encontrado na planilha.");
   return out;
 }
 
