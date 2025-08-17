@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useCallback } from "react";
@@ -103,43 +104,6 @@ const ConventionalChassis = ({ selected, onTireSelect }: { selected: string, onT
     </div>
 );
 
-const ArticulatedChassis = ({ selected, onTireSelect }: { selected: string, onTireSelect: (pos: string) => void }) => (
-     <div className="flex justify-center items-center p-4 bg-muted/30 rounded-lg border border-dashed">
-        <div className="space-y-4">
-            {/* Axle Front */}
-            <div className="flex justify-between items-center w-64 mx-auto relative">
-                <div className="absolute h-1.5 w-full bg-border/50 rounded-full" />
-                <TireButton position="de" label="Dianteiro Esquerdo" selected={selected === 'de'} onClick={onTireSelect} />
-                <TireButton position="dd" label="Dianteiro Direito" selected={selected === 'dd'} onClick={onTireSelect} />
-            </div>
-            {/* Axle Middle */}
-            <div className="flex justify-between items-center w-80 mx-auto relative">
-                <div className="absolute h-1.5 w-full bg-border/50 rounded-full" />
-                <div className="flex gap-1">
-                     <TireButton position="tme" label="Traseiro Meio Esquerdo" selected={selected === 'tme'} onClick={onTireSelect} />
-                     <TireButton position="tmie" label="Traseiro Meio Interno Esquerdo" selected={selected === 'tmie'} onClick={onTireSelect} />
-                </div>
-                <div className="flex gap-1">
-                    <TireButton position="tmid" label="Traseiro Meio Interno Direito" selected={selected === 'tmid'} onClick={onTireSelect} />
-                    <TireButton position="tmd" label="Traseiro Meio Direito" selected={selected === 'tmd'} onClick={onTireSelect} />
-                </div>
-            </div>
-             {/* Axle Rear */}
-            <div className="flex justify-between items-center w-80 mx-auto relative">
-                <div className="absolute h-1.5 w-full bg-border/50 rounded-full" />
-                <div className="flex gap-1">
-                     <TireButton position="tee" label="Traseiro Externo Esquerdo" selected={selected === 'tee'} onClick={onTireSelect} />
-                     <TireButton position="tie" label="Traseiro Interno Esquerdo" selected={selected === 'tie'} onClick={onTireSelect} />
-                </div>
-                <div className="flex gap-1">
-                    <TireButton position="tide" label="Traseiro Interno Direito" selected={selected === 'tide'} onClick={onTireSelect} />
-                    <TireButton position="tede" label="Traseiro Externo Direito" selected={selected === 'tede'} onClick={onTireSelect} />
-                </div>
-            </div>
-        </div>
-    </div>
-);
-
 
 export function TireForm() {
   const { toast } = useToast();
@@ -233,7 +197,7 @@ export function TireForm() {
                                     {...field}
                                     onBlur={(e) => handleCarIdBlur(e.target.value)}
                                 />
-                                {isFetchingVehicle && <Loader2 className="absolute right-3 top-2.5 h-5 w-5 animate-spin" />}
+                                {isFetchingVehicle && <Loader2 className="absolute right-3 top-2.5 h-5 w-5 animate-spin text-primary" />}
                             </div>
                         </FormControl>
                         <FormMessage />
@@ -265,9 +229,7 @@ export function TireForm() {
                         </FormLabel>
                         <FormControl>
                            <div>
-                             {vehicle?.chassisType === 'ARTICULADO' ? (
-                                <ArticulatedChassis selected={field.value} onTireSelect={field.onChange} />
-                             ) : vehicle?.chassisType === 'PADRON' || vehicle?.chassisType === 'CONVENCIONAL' ? (
+                             {vehicle?.chassisType ? (
                                 <ConventionalChassis selected={field.value} onTireSelect={field.onChange} />
                              ) : (
                                <div className="flex justify-center items-center p-4 h-48 bg-muted/30 rounded-lg border border-dashed">
@@ -388,3 +350,5 @@ export function TireForm() {
     </Card>
   );
 }
+
+    

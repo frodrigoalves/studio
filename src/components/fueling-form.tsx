@@ -159,7 +159,7 @@ export function FuelingForm() {
                             {...field} 
                             onBlur={(e) => handleCarIdBlur(e.target.value)}
                         />
-                        {isFetchingVehicle && <Loader2 className="absolute right-3 top-2.5 h-5 w-5 animate-spin" />}
+                        {isFetchingVehicle && <Loader2 className="absolute right-3 top-2.5 h-5 w-5 animate-spin text-primary" />}
                     </div>
                   </FormControl>
                   <FormMessage />
@@ -175,7 +175,7 @@ export function FuelingForm() {
                   <FormControl>
                     <div className="relative">
                         <Input type="number" step="0.1" placeholder="Digite o KM do veículo" {...field} />
-                        {isFetchingVehicle && <Loader2 className="absolute right-3 top-2.5 h-5 w-5 animate-spin" />}
+                        {isFetchingVehicle && <Loader2 className="absolute right-3 top-2.5 h-5 w-5 animate-spin text-primary" />}
                     </div>
                   </FormControl>
                   <FormMessage />

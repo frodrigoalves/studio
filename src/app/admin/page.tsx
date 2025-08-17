@@ -393,7 +393,7 @@ export default function AdminDashboard() {
                                             <Info className="h-3 w-3 text-muted-foreground cursor-pointer" />
                                         </PopoverTrigger>
                                         <PopoverContent className="text-xs">
-                                           Estimativa de custo calculada usando a fórmula: (KM Total / Consumo do Veículo) * Último Preço do Diesel. O consumo é a meta 'Verde' específica de cada veículo, ou 2.5 KM/L se não houver parâmetro.
+                                           Estimativa de custo calculada usando a fórmula: (KM Total / Consumo do Veículo) * Último Preço do Diesel. O consumo é a meta 'Verde' específica de cada veículo, ou {DEFAULT_KM_PER_LITER} KM/L se não houver parâmetro.
                                         </PopoverContent>
                                     </Popover>
                                 </div>

@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    --background: 210 20% 98%; /* Light Grayish Blue */
+    --background: 207 67% 95%; /* Very Light Blue (#EBF4FA) */
     --foreground: 222 47% 11%; /* Dark Slate Blue */
 
     --card: 210 20% 100%;
@@ -16,7 +16,7 @@
     --primary: 212 98% 74%; /* Soft Blue (#77B5FE) */
     --primary-foreground: 222 47% 11%;
 
-    --secondary: 210 30% 96%; /* Very Light Blue (#EBF4FA) */
+    --secondary: 210 30% 96%;
     --secondary-foreground: 222 47% 11%;
 
     --muted: 210 30% 96%;

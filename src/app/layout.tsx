@@ -4,9 +4,9 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
-import { Quicksand } from 'next/font/google';
+import { Inter } from 'next/font/google';
 
-const quicksand = Quicksand({ subsets: ['latin'], variable: '--font-quicksand' });
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 
 const metadata: Metadata = {
   title: 'TopBus | Gestão Inteligente de Frotas e Análise de Dados',
@@ -20,7 +20,7 @@ export default function RootLayout({
 }>) {
 
   return (
-    <html lang="pt-BR" className={quicksand.variable}>
+    <html lang="pt-BR" className={inter.variable}>
       <head>
         <link rel="icon" href="/favicon.ico" sizes="any" />
       </head>
