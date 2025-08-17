@@ -47,6 +47,7 @@ export interface ChecklistRecord {
   rearDiagonalPhoto: string | null;
   leftSidePhoto: string | null;
   rightSidePhoto: string | null;
+  odometerPhoto?: string | null; // Keep for retro-compatibility if needed, but not actively used
 }
 
 // Type for the view on the Vigia Digital page
@@ -97,8 +98,7 @@ async function getLastChecklistForCar(carId: string): Promise<ChecklistRecord | 
         collection(db, "checklistRecords"),
         where("carId", "==", carId),
         orderBy("date", "desc"),
-        limit(1),
-        select("frontDiagonalPhoto", "rearDiagonalPhoto", "leftSidePhoto", "rightSidePhoto")
+        limit(1)
     );
     const querySnapshot = await getDocs(q);
     if (querySnapshot.empty) {
@@ -163,7 +163,7 @@ export async function addChecklistRecord(record: ChecklistRecordPayload): Promis
     ]);
 
     // Create a clean object to save to Firestore, without the base64 photo data
-    const dataToSave: Omit<ChecklistRecord, 'id'> = {
+    const dataToSave: Omit<ChecklistRecord, 'id' | 'odometerPhoto'> = {
         date: new Date().toISOString(),
         driverChapa: record.driverChapa,
         driverName: record.driverName,
