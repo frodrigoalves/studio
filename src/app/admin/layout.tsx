@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Settings, FileText, LogOut, BrainCircuit, Loader2, Clock4, FileHeart, Wrench, Users, Fuel, ClipboardCheck, CircleDot, ShieldAlert, LayoutDashboard } from "lucide-react";
+import { Settings, FileText, LogOut, BrainCircuit, Loader2, Clock4, FileHeart, Wrench, Users, Fuel, ClipboardCheck, CircleDot, ShieldAlert, LayoutDashboard, Database } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const AUTH_KEY = 'topbus_admin_auth';
@@ -31,6 +31,7 @@ const pageTitles: { [key: string]: string } = {
     '/admin/checklist': 'Registros de Vistoria',
     '/admin/vigia-digital': 'Vigia Digital - Análise de Danos',
     '/admin/settings': 'Configurações e Importação',
+    '/admin/vehicles-upload': 'Catálogo de Veículos',
 };
 
 
@@ -192,6 +193,15 @@ export default function AdminLayout({
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarSeparator />
+            
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild>
+                <Link href="/admin/vehicles-upload">
+                  <Database />
+                  Catálogo de Veículos
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
 
             <SidebarMenuItem>
                <SidebarMenuButton asChild>

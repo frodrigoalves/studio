@@ -2,63 +2,66 @@
 'use server';
 
 import { db } from '@/lib/firebase';
-import { collection, doc, writeBatch, getDocs, query, orderBy, limit, getDoc } from 'firebase/firestore';
+import { collection, doc, writeBatch, getDocs, query, orderBy, limit, getDoc, serverTimestamp } from 'firebase/firestore';
+import { VehicleParameters } from '@/lib/schemas';
 
-export interface VehicleParameters {
-  carId: string;
-  status: 'active' | 'inactive';
-  chassisType: 'CONVENCIONAL' | 'ARTICULADO' | 'PADRON' | 'UNKNOWN';
-  thresholds: {
-    yellow: number;
-    green: number;
-    gold: number;
-  };
-  tankCapacity?: number;
-  lastUpdated: string; // ISO date string
-}
+const BATCH_LIMIT = 450;
+const COLLECTION_NAME = 'vehicleParameters';
 
 /**
- * Salva uma lista de parâmetros de veículos no Firestore.
- * Cada documento terá o ID do veículo como seu ID no Firestore para fácil acesso.
- * @param parameters A lista de parâmetros de veículos a ser salva.
+ * Aplica um diff ao catálogo de veículos no Firestore.
+ * Adiciona novos, atualiza existentes e inativa os removidos.
+ * @param items A lista de parâmetros de veículos a serem aplicados.
  */
-export async function saveVehicleParameters(parameters: Omit<VehicleParameters, 'id' | 'status' | 'lastUpdated'>[]): Promise<void> {
-  const batch = writeBatch(db);
-  const parametersCollection = collection(db, 'vehicleParameters');
-  const now = new Date().toISOString();
+export async function upsertCatalogDiff(items: VehicleParameters[]): Promise<void> {
+  for (let i = 0; i < items.length; i += BATCH_LIMIT) {
+    const slice = items.slice(i, i + BATCH_LIMIT);
+    const batch = writeBatch(db);
 
-  for (const param of parameters) {
-     const carId = (param.carId || '').trim().toUpperCase();
-     if (!carId) continue;
-      
-      const docRef = doc(parametersCollection, carId);
-      const docSnap = await getDoc(docRef);
+    for (const v of slice) {
+      const carId = (v.carId || '').replace(/\D/g, '');
+      if (!carId) continue;
 
-      const dataToSave: Omit<VehicleParameters, 'carId'> = {
-          status: 'active',
-          chassisType: param.chassisType,
-          thresholds: param.thresholds,
-          tankCapacity: param.tankCapacity,
-          lastUpdated: now,
+      const ref = doc(collection(db, COLLECTION_NAME), carId);
+      const payload = {
+        status: v.status ?? 'active',
+        chassisType: v.chassisType,
+        thresholds: {
+          yellow: Number(v.thresholds?.yellow ?? 0),
+          green:  Number(v.thresholds?.green  ?? 0),
+          gold:   Number(v.thresholds?.gold   ?? 0),
+        },
+        tankCapacity: v.tankCapacity ?? null,
+        _hash: v._hash ?? null,
+        updatedAt: serverTimestamp(),
       };
 
-      if (docSnap.exists()) {
-        batch.update(docRef, dataToSave);
-      } else {
-        batch.set(docRef, dataToSave);
-      }
-  }
+      batch.set(ref, payload, { merge: true });
+    }
 
-  await batch.commit();
+    await batch.commit();
+  }
 }
 
+/**
+ * Carrega o catálogo completo de veículos do Firestore.
+ * @returns Um Record (mapa) com carId como chave e VehicleParameters como valor.
+ */
+export async function loadCatalog(): Promise<Record<string, VehicleParameters>> {
+  const snap = await getDocs(collection(db, COLLECTION_NAME));
+  const map: Record<string, VehicleParameters> = {};
+  snap.forEach(d => {
+    map[d.id] = { carId: d.id, ...(d.data() as any) } as VehicleParameters;
+  });
+  return map;
+}
 
 /**
- * Busca todos os parâmetros de veículos do Firestore.
+ * Busca todos os parâmetros de veículos do Firestore (função legada, usar loadCatalog).
  * @returns Uma lista de todos os parâmetros de veículos.
  */
 export async function getVehicleParameters(): Promise<VehicleParameters[]> {
-    const querySnapshot = await getDocs(collection(db, 'vehicleParameters'));
+    const querySnapshot = await getDocs(collection(db, COLLECTION_NAME));
     if (querySnapshot.empty) {
         return [];
     }
@@ -77,7 +80,7 @@ export async function getVehicleParameters(): Promise<VehicleParameters[]> {
  * @returns O parâmetro de veículo mais recente ou null se não houver nenhum.
  */
 export async function getMostRecentVehicleParameter(): Promise<VehicleParameters | null> {
-    const q = query(collection(db, "vehicleParameters"), orderBy("lastUpdated", "desc"), limit(1));
+    const q = query(collection(db, COLLECTION_NAME), orderBy("lastUpdated", "desc"), limit(1));
     const querySnapshot = await getDocs(q);
     if (querySnapshot.empty) {
         return null;
@@ -94,10 +97,12 @@ export async function getMostRecentVehicleParameter(): Promise<VehicleParameters
 export async function getVehicleById(carId: string): Promise<VehicleParameters | null> {
     if (!carId) return null;
     const normalizedCarId = carId.trim().toUpperCase();
-    const docRef = doc(db, 'vehicleParameters', normalizedCarId);
+    const docRef = doc(db, COLLECTION_NAME, normalizedCarId);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
-        return { carId: docSnap.id, ...docSnap.data() } as VehicleParameters;
+        const data = { carId: docSnap.id, ...docSnap.data() } as VehicleParameters;
+        if(data.status === 'inactive') return null;
+        return data;
     }
     return null;
 }
