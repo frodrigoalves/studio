@@ -2,11 +2,39 @@
 {
   "indexes": [
     {
+      "collectionGroup": "checklistRecords",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "damageAnalysis.hasNewDamage",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "date",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "tripRecords",
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "carId",
+          "fieldPath": "car",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "date",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "tripRecords",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "car",
           "order": "ASCENDING"
         },
         {
@@ -30,11 +58,15 @@
       ]
     },
     {
-      "collectionGroup": "checklistRecords",
+      "collectionGroup": "tripRecords",
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "damageAnalysis.hasNewDamage",
+          "fieldPath": "plate",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
           "order": "ASCENDING"
         },
         {
