@@ -21,5 +21,13 @@
     },
     "singleProjectMode": true,
     "project": "fleettrack-go"
+  },
+  "hosting": {
+    "public": ".next",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ]
   }
 }
